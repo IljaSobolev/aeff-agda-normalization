@@ -4,7 +4,6 @@ open import Data.Product
 open import Data.Sum
 
 open import AEff
-open import EffectAnnotations
 open import Types
 
 open import Relation.Binary.PropositionalEquality hiding ([_])
@@ -15,38 +14,24 @@ module AwaitingComputations where
 
 -- COMPUTATIONS THAT ARE TEMPORARILY STUCK DUE TO AWAITING FOR A PARTICULAR PROMISE
     
-data _⧗_ {Γ : Ctx} {X : VType} (x : ⟨ X ⟩ ∈ Γ) : {C : CType} → Γ ⊢M⦂ C → Set where
+data _⧗_ {Γ : Ctx} {X : Type} (x : ⟨ X ⟩ ∈ Γ) : {C : Type} → Γ ⊢M⦂ C → Set where
 
-  await     : {C : CType}
+  await     : {C : Type}
               {M : Γ ∷ X ⊢M⦂ C} →
               -------------------------
               x ⧗ (await (` x) until M)
 
-  let-in    : {X Y : VType}
-              {o : O}
-              {i : I}
-              {M : Γ ⊢M⦂ X ! (o , i)}
-              {N : Γ ∷ X ⊢M⦂ Y ! (o , i)} →
+  let-in    : {X Y : Type}
+              {M : Γ ⊢M⦂ X}
+              {N : Γ ∷ X ⊢M⦂ Y} →
               x ⧗ M →
               -----------------------------
               x ⧗ (let= M `in N)
 
-  interrupt : {X : VType}
-              {o : O}
-              {i : I}
+  interrupt : {X : Type}
               {op : Σₛ}
               {V : Γ ⊢V⦂ ``(payload op)}
-              {M : Γ ⊢M⦂ X ! (o , i)} →
+              {M : Γ ⊢M⦂ X} →
               x ⧗ M →
               -------------------------
               x ⧗ (↓ op V M)
-
-  coerce    : {X : VType}
-              {o o' : O}
-              {i i' : I}
-              {p : o ⊑ₒ o'}
-              {q : i ⊑ᵢ i'}
-              {M : Γ ⊢M⦂ X ! (o , i)} →
-              x ⧗ M →
-              -------------------------
-              x ⧗ (coerce p q M)

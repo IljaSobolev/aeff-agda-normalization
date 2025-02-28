@@ -3,7 +3,6 @@ open import Data.Maybe
 open import Data.Product
 
 open import AEff
-open import EffectAnnotations
 open import Renamings
 open import Substitutions
 open import Types
@@ -16,67 +15,47 @@ module Preservation where
 
 -- BINDING CONTEXTS
 
-BCtx = List VType
+BCtx = List Type
 
 
 -- WELL-TYPED EVALUATION CONTEXTS
 
-data _⊢E[_]⦂_ (Γ : Ctx) : (Δ : BCtx) → CType → Set where
+data _⊢E[_]⦂_ (Γ : Ctx) : (Δ : BCtx) → Type → Set where
 
-  [-]              : {C : CType} → 
+  [-]              : {C : Type} → 
                      -------------
                      Γ ⊢E[ [] ]⦂ C
 
   let=_`in_        : {Δ : BCtx}
-                     {X Y : VType}
-                     {o : O}
-                     {i : I} →
-                     Γ ⊢E[ Δ ]⦂ X ! (o , i) →
-                     Γ ∷ X ⊢M⦂ Y ! (o , i) →
+                     {X Y : Type} →
+                     Γ ⊢E[ Δ ]⦂ X →
+                     Γ ∷ X ⊢M⦂ Y →
                      ------------------------
-                     Γ ⊢E[ Δ ]⦂ Y ! (o , i)
+                     Γ ⊢E[ Δ ]⦂ Y
 
   ↑                : {Δ : BCtx}
-                     {X : VType}
-                     {o : O}
-                     {i : I} →
+                     {X : Type}
                      (op : Σₛ) →
-                     op ∈ₒ o →
                      Γ ⊢V⦂ ``(payload op) →
-                     Γ ⊢E[ Δ ]⦂ X ! (o , i) →
+                     Γ ⊢E[ Δ ]⦂ X →
                      ------------------------
-                     Γ ⊢E[ Δ ]⦂ X ! (o , i)
+                     Γ ⊢E[ Δ ]⦂ X
 
   ↓                : {Δ : BCtx}
-                     {X : VType}
-                     {o : O}
-                     {i : I}
+                     {X : Type}
                      (op : Σₛ) →
                      Γ ⊢V⦂ ``(payload op) →
-                     Γ ⊢E[ Δ ]⦂ X ! (o , i) →
+                     Γ ⊢E[ Δ ]⦂ X →
                      ---------------------------
-                     Γ ⊢E[ Δ ]⦂ X ! op ↓ₑ (o , i)
+                     Γ ⊢E[ Δ ]⦂ X
 
-  promise_∣_↦_`in_ : {Δ : BCtx}
-                     {X Y : VType}
-                     {o o' : O}
-                     {i i' : I} → 
+  promise_↦_`in_ : {Δ : BCtx}
+                     {X Y : Type}
                      (op : Σₛ) →
-                     lkpᵢ op i ≡ just (o' , i') →
-                     Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i') →
-                     Γ ∷ ⟨ X ⟩ ⊢E[ Δ ]⦂ Y ! (o , i) →
+                     Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ →
+                     Γ ∷ ⟨ X ⟩ ⊢E[ Δ ]⦂ Y →
                      ------------------------------------------
-                     Γ ⊢E[ X ∷ₗ Δ ]⦂ Y ! (o , i)
-
-  coerce           : {Δ : BCtx}
-                     {X : VType}
-                     {o o' : O}
-                     {i i' : I} →
-                     o ⊑ₒ o' →
-                     i ⊑ᵢ i' → 
-                     Γ ⊢E[ Δ ]⦂ X ! (o , i) →
-                     ------------------------
-                     Γ ⊢E[ Δ ]⦂ X ! (o' , i')
+                     Γ ⊢E[ X ∷ₗ Δ ]⦂ Y
 
 
 -- MERGING AN ORDINARY CONTEXT AND A BINDING CONTEXT
@@ -90,18 +69,16 @@ _⋈_ : Ctx → BCtx → Ctx
 
 -- FINDING THE TYPE OF THE HOLE OF A WELL-TYPED EVALUATION CONTEXT
 
-hole-ty-e : {Γ : Ctx} {Δ : BCtx} {C : CType} → Γ ⊢E[ Δ ]⦂ C → CType
+hole-ty-e : {Γ : Ctx} {Δ : BCtx} {C : Type} → Γ ⊢E[ Δ ]⦂ C → Type
 hole-ty-e {_} {_} {C} [-] =
   C
 hole-ty-e (let= E `in M) =
   hole-ty-e E
-hole-ty-e (↑ op p V E) =
+hole-ty-e (↑ op V E) =
   hole-ty-e E
 hole-ty-e (↓ op V E) =
   hole-ty-e E
-hole-ty-e (promise op ∣ p ↦ M `in E) =
-  hole-ty-e E
-hole-ty-e (coerce p q E) =
+hole-ty-e (promise op ↦ M `in E) =
   hole-ty-e E
 
 
@@ -111,19 +88,17 @@ hole-ty-e (coerce p q E) =
 
 infix 30 _[_]
 
-_[_] : {Γ : Ctx} {Δ : BCtx} {C : CType} → (E : Γ ⊢E[ Δ ]⦂ C) → Γ ⋈ Δ ⊢M⦂ (hole-ty-e E) → Γ ⊢M⦂ C
+_[_] : {Γ : Ctx} {Δ : BCtx} {C : Type} → (E : Γ ⊢E[ Δ ]⦂ C) → Γ ⋈ Δ ⊢M⦂ (hole-ty-e E) → Γ ⊢M⦂ C
 [-] [ M ] =
   M
 (let= E `in N) [ M ] =
   let= (E [ M ]) `in N
-↑ op p V E [ M ] =
-  ↑ op p V (E [ M ])
+↑ op V E [ M ] =
+  ↑ op V (E [ M ])
 ↓ op V E [ M ] =
   ↓ op V (E [ M ])
-(promise op ∣ p ↦ N `in E) [ M ] =
-  promise op ∣ p ↦ N `in (E [ M ])
-coerce p q E [ M ] =
-  coerce p q (E [ M ])
+(promise op ↦ N `in E) [ M ] =
+  promise op ↦ N `in (E [ M ])
 
 
 -- STRENGTHENING OF GROUND VALUES WRT BOUND PROMISES
@@ -159,12 +134,12 @@ strengthen-val-[] (``_ c) =
 
 infix 10 _↝_
 
-data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
+data _↝_ {Γ : Ctx} : {C : Type} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
 
   -- COMPUTATIONAL RULES
 
-  apply           : {X : VType}
-                    {C : CType} →
+  apply           : {X : Type}
+                    {C : Type} →
                     (M : Γ ∷ X ⊢M⦂ C) →
                     (V : Γ ⊢V⦂ X) →
                     ----------------------
@@ -172,127 +147,88 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
                     ↝
                     M [ id-subst [ V ]s ]m
 
-  let-return      : {X Y : VType}
-                    {o : O}
-                    {i : I} → 
+  let-return      : {X Y : Type}
                     (V : Γ ⊢V⦂ X) →
-                    (N : Γ ∷ X ⊢M⦂ Y ! (o , i)) →
+                    (N : Γ ∷ X ⊢M⦂ Y) →
                     -----------------------------
                     let= (return V) `in N
                     ↝
                     N [ id-subst [ V ]s ]m
 
-  let-↑           : {X Y : VType}
-                    {o : O}
-                    {i : I}
+  let-↑           : {X Y : Type}
                     {op : Σₛ} →
-                    (p : op ∈ₒ o) →
                     (V : Γ ⊢V⦂ ``(payload op)) →
-                    (M : Γ ⊢M⦂ X ! (o , i)) →
-                    (N : Γ ∷ X ⊢M⦂ Y ! (o , i)) →
+                    (M : Γ ⊢M⦂ X) →
+                    (N : Γ ∷ X ⊢M⦂ Y) →
                     -----------------------------
-                    let= (↑ op p V M) `in N
+                    let= (↑ op V M) `in N
                     ↝
-                    ↑ op p V (let= M `in N)
+                    ↑ op V (let= M `in N)
 
-  let-promise     : {X Y Z : VType}
-                    {o o' : O}
-                    {i i' : I}
+  let-promise     : {X Y Z : Type}
                     {op : Σₛ} →
-                    (p : lkpᵢ op i ≡ just (o' , i')) →
-                    (M₁ : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
-                    (M₂ : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
-                    (N : Γ ∷ Y ⊢M⦂ Z ! (o , i)) →
+                    (M₁ : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩) →
+                    (M₂ : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y) →
+                    (N : Γ ∷ Y ⊢M⦂ Z) →
                     ---------------------------------------------------------------------------
-                    let= (promise op ∣ p ↦ M₁ `in M₂) `in N
+                    let= (promise op ↦ M₁ `in M₂) `in N
                     ↝
-                    (promise op ∣ p ↦ M₁ `in (let= M₂ `in (M-rename (comp-ren exchange wk₁) N)))
+                    (promise op ↦ M₁ `in (let= M₂ `in (M-rename (comp-ren exchange wk₁) N)))
 
-  letrec-unfold   : {X : VType}
-                    {C D : CType}
-                    (M : Γ ∷ (X ⇒ C) ∷ X ⊢M⦂ C) →
-                    (N : Γ ∷ (X ⇒ C) ⊢M⦂ D) →
-                    ----------------------------------------
-                    (letrec M `in N)
-                    ↝
-                    N [ id-subst [ ƛ (letrec M-rename wk₃ M `in M-rename exchange M) ]s ]m
-
-  promise-↑       : {X Y : VType}
-                    {o o' : O}
-                    {i i' : I}
+  promise-↑       : {X Y : Type}
                     {op op' : Σₛ} →
-                    (p : lkpᵢ op i ≡ just (o' , i')) →
-                    (q : op' ∈ₒ o) →
                     (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``(payload op')) → 
-                    (M : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
-                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
+                    (M : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩) →
+                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y) →
                     --------------------------------------------
-                    (promise op ∣ p ↦ M `in (↑ op' q V N))
+                    (promise op ↦ M `in (↑ op' V N))
                     ↝
-                    ↑ op' q (strengthen-val {Δ = X ∷ₗ []} V) (promise op ∣ p ↦ M `in N)
+                    ↑ op' (strengthen-val {Δ = X ∷ₗ []} V) (promise op ↦ M `in N)
 
-  ↓-return        : {X : VType}
-                    {o : O}
-                    {i : I}
+  ↓-return        : {X : Type}
                     {op : Σₛ} →
                     (V : Γ ⊢V⦂ ``(payload op)) →
                     (W : Γ ⊢V⦂ X) →
                     ----------------------------------------------------------------
-                    ↓ {o = o} {i = i} op V (return W)
+                    ↓ op V (return W)
                     ↝
-                    return {o = proj₁ (op ↓ₑ (o , i))} {i = proj₂ (op ↓ₑ (o , i))} W
+                    return W
 
-  ↓-↑             : {X : VType}
-                    {o : O}
-                    {i : I}
+  ↓-↑             : {X : Type}
                     {op : Σₛ}
                     {op' : Σₛ} →
-                    (p : op' ∈ₒ o) →
                     (V : Γ ⊢V⦂ ``(payload op)) →
                     (W : Γ ⊢V⦂ ``(payload op')) →
-                    (M : Γ ⊢M⦂ X ! (o , i)) →
+                    (M : Γ ⊢M⦂ X) →
                     -------------------------------
-                    ↓ op V (↑ op' p W M)
+                    ↓ op V (↑ op' W M)
                     ↝
-                    ↑ op' (↓ₑ-⊑ₒ op' p) W (↓ op V M)
+                    ↑ op' W (↓ op V M)
 
-  ↓-promise-op    : {X Y : VType}
-                    {o o' : O}
-                    {i i' : I}
+  ↓-promise-op    : {X Y : Type}
                     {op : Σₛ} →
-                    (p : lkpᵢ op i ≡ just (o' , i')) →
                     (V : Γ ⊢V⦂ ``(payload op)) → 
-                    (M : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
-                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
+                    (M : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩) →
+                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y) →
                     ---------------------------------------------------------------------------------------
-                    ↓ op V (promise op ∣ p ↦ M `in N )
+                    ↓ op V (promise op ↦ M `in N )
                     ↝
-                    (let= (coerce (↓ₑ-⊑ₒ-o' {o} p) (↓ₑ-⊑ₒ-i' {o} p) (M [ id-subst [ V ]s ]m)) `in
+                    (let= (M [ id-subst [ V ]s ]m) `in
                       ↓ op (V-rename wk₁ V) ((M-rename (comp-ren exchange wk₁) N) [ id-subst [ ` Hd ]s ]m))
 
-  ↓-promise-op'   : {X Y : VType}
-                    {o o' : O}
-                    {i i' : I}
+  ↓-promise-op'   : {X Y : Type}
                     {op op' : Σₛ} →
                     (p : ¬ op ≡ op') →
-                    (q : lkpᵢ op' i ≡ just (o' , i')) →
                     (V : Γ ⊢V⦂ ``(payload op)) → 
-                    (M : Γ ∷ ``(payload op') ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
-                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
+                    (M : Γ ∷ ``(payload op') ⊢M⦂ ⟨ X ⟩) →
+                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y) →
                     ------------------------------------------------------------------------------------------
-                    ↓ op V (promise op' ∣ q ↦ M `in N )
+                    ↓ op V (promise op' ↦ M `in N )
                     ↝
-                    promise_∣_↦_`in_ {o' = proj₁ (lkpᵢ-↓ₑ-neq {o = o} {i = i} p q)}
-                                     {i' = proj₁ (proj₂ (lkpᵢ-↓ₑ-neq {o = o} {i = i} p q))}
-                                     op'
-                                     (proj₁ (proj₂ (proj₂ (lkpᵢ-↓ₑ-neq {o = o} {i = i} p q))))
-                                     (coerce (proj₁ (proj₂ (proj₂ (proj₂ (lkpᵢ-↓ₑ-neq {o = o} {i = i} p q)))))
-                                             (proj₂ (proj₂ (proj₂ (proj₂ (lkpᵢ-↓ₑ-neq {o = o} {i = i} p q)))))
-                                             M)
-                                     (↓ op (V-rename wk₁ V) N)
+                    promise op' ↦ M `in (↓ op (V-rename wk₁ V) N)
 
-  await-promise   : {X : VType}
-                    {C : CType} → 
+  await-promise   : {X : Type}
+                    {C : Type} → 
                     (V : Γ ⊢V⦂ X) → 
                     (M : Γ ∷ X ⊢M⦂ C) →
                     --------------------
@@ -303,54 +239,9 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
   -- EVALUATION CONTEXT RULE
 
   context         : {Δ : BCtx}
-                    {C : CType} → 
+                    {C : Type} → 
                     (E : Γ ⊢E[ Δ ]⦂ C) →
                     {M N : Γ ⋈ Δ ⊢M⦂ (hole-ty-e E)} →
                     M ↝ N →
                     -------------------------------
                     E [ M ] ↝ E [ N ]
-
-  -- COERCION RULES
-  -- (THE RESULT OF WORKING WITH WELL-TYPED SYNTAX AND MAKING SUBSUMPTION INTO AN EXPLICIT COERCION)
-
-  coerce-return   : {X : VType}
-                    {o o' : O}
-                    {i i' : I}
-                    {p : o ⊑ₒ o'}
-                    {q : i ⊑ᵢ i'} → 
-                    (V : Γ ⊢V⦂ X) →
-                    --------------------------------
-                    coerce p q (return V) ↝ return V
-
-  coerce-↑        : {X : VType}
-                    {o o' : O}
-                    {i i' : I}
-                    {p : o ⊑ₒ o'}
-                    {q : i ⊑ᵢ i'}
-                    {op : Σₛ} → 
-                    (r : op ∈ₒ o) →
-                    (V : Γ ⊢V⦂ ``(payload op)) →
-                    (M : Γ ⊢M⦂ X ! (o , i)) →
-                    -------------------------------
-                    coerce p q (↑ op r V M)
-                    ↝
-                    ↑ op (p op r) V (coerce p q M)
-
-  coerce-promise  : {X Y : VType}
-                    {o o' o'' : O}
-                    {i i' i'' : I}
-                    {p : o ⊑ₒ o'}
-                    {q : i ⊑ᵢ i'}
-                    {op : Σₛ} →
-                    (r : lkpᵢ op i ≡ just (o'' , i''))
-                    (M : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o'' , i'')) →
-                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
-                    ------------------------------------------------------------------
-                    coerce p q (promise op ∣ r ↦ M `in N)
-                    ↝
-                    promise_∣_↦_`in_ {o' = lkpᵢ-nextₒ q r}
-                                     {i' = lkpᵢ-nextᵢ q r}
-                                     op
-                                     (lkpᵢ-next-eq q r)
-                                     (coerce (lkpᵢ-next-⊑ₒ q r) (lkpᵢ-next-⊑ᵢ q r) M)
-                                     (coerce p q N)

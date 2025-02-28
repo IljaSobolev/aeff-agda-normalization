@@ -1,5 +1,4 @@
 open import AEff
-open import EffectAnnotations
 open import Renamings
 open import Types hiding (``)
 
@@ -10,7 +9,7 @@ module Substitutions where
 -- SET OF SUBSTITUTIONS BETWEEN CONTEXTS
 
 Sub : Ctx → Ctx → Set
-Sub Γ Γ' = {X : VType} → X ∈ Γ → Γ' ⊢V⦂ X
+Sub Γ Γ' = {X : Type} → X ∈ Γ → Γ' ⊢V⦂ X
 
 
 -- IDENTITY AND EXTENSION SUBSTITUTIONS
@@ -18,14 +17,14 @@ Sub Γ Γ' = {X : VType} → X ∈ Γ → Γ' ⊢V⦂ X
 id-subst : {Γ : Ctx} → Sub Γ Γ
 id-subst x = ` x
 
-_[_]s : {Γ Γ' : Ctx} {X : VType} → Sub Γ Γ' → Γ' ⊢V⦂ X → Sub (Γ ∷ X) Γ'
+_[_]s : {Γ Γ' : Ctx} {X : Type} → Sub Γ Γ' → Γ' ⊢V⦂ X → Sub (Γ ∷ X) Γ'
 (s [ V ]s) Hd = V
 (s [ V ]s) (Tl x) = s x
 
 
 -- LIFTING SUBSTITUTIONS
 
-lift : {Γ Γ' : Ctx} {X : VType} → Sub Γ Γ' → Sub (Γ ∷ X) (Γ' ∷ X)
+lift : {Γ Γ' : Ctx} {X : Type} → Sub Γ Γ' → Sub (Γ ∷ X) (Γ' ∷ X)
 lift s Hd = ` Hd
 lift s (Tl x) = V-rename Tl (s x)
 
@@ -37,7 +36,7 @@ mutual
   infix 40 _[_]v
   infix 40 _[_]m
 
-  _[_]v : {Γ Γ' : Ctx} → {X : VType} → Γ ⊢V⦂ X → Sub Γ Γ' → Γ' ⊢V⦂ X
+  _[_]v : {Γ Γ' : Ctx} → {X : Type} → Γ ⊢V⦂ X → Sub Γ Γ' → Γ' ⊢V⦂ X
   (` x) [ s ]v =
     s x
   (`` c) [ s ]v =
@@ -47,37 +46,33 @@ mutual
   ⟨ V ⟩ [ s ]v =
     ⟨ V [ s ]v ⟩
 
-  _[_]m : {Γ Γ' : Ctx} → {C : CType} → Γ ⊢M⦂ C → Sub Γ Γ'  → Γ' ⊢M⦂ C
+  _[_]m : {Γ Γ' : Ctx} → {C : Type} → Γ ⊢M⦂ C → Sub Γ Γ'  → Γ' ⊢M⦂ C
   (return V) [ s ]m =
     return (V [ s ]v)
   (let= M `in N) [ s ]m =
     let= (M [ s ]m) `in (N [ lift s ]m)
-  (letrec M `in N) [ s ]m =
-    letrec M [ lift (lift s) ]m `in (N [ lift s ]m)
   (V · W) [ s ]m =
     (V [ s ]v) · (W [ s ]v)
-  (↑ op p V M) [ s ]m =
-    ↑ op p (V [ s ]v) (M [ s ]m)
+  (↑ op V M) [ s ]m =
+    ↑ op (V [ s ]v) (M [ s ]m)
   (↓ op V M) [ s ]m =
     ↓ op (V [ s ]v) (M [ s ]m)
-  (promise op ∣ p ↦ M `in N) [ s ]m =
-    promise op ∣ p ↦ (M [ lift s ]m) `in (N [ lift s ]m)
+  (promise op ↦ M `in N) [ s ]m =
+    promise op ↦ (M [ lift s ]m) `in (N [ lift s ]m)
   (await V until M) [ s ]m =
     await (V [ s ]v) until (M [ lift s ]m)
-  (coerce p q M) [ s ]m =
-    coerce p q (M [ s ]m)
 
 
 -- ACTION OF SUBSTITUTION ON WELL-TYPED TERMS
 
 infix 40 _[_]p
 
-_[_]p : {Γ Γ' : Ctx} {o : O} {PP : PType o} → Γ ⊢P⦂ PP → Sub Γ Γ' → Γ' ⊢P⦂ PP
+_[_]p : {Γ Γ' : Ctx} {PP : PType} → Γ ⊢P⦂ PP → Sub Γ Γ' → Γ' ⊢P⦂ PP
 (run M) [ s ]p =
   run (M [ s ]m)
 (P ∥ Q) [ s ]p =
   (P [ s ]p) ∥ (Q [ s ]p)
-(↑ op p V P) [ s ]p =
-  ↑ op p (V [ s ]v) (P [ s ]p)
+(↑ op V P) [ s ]p =
+  ↑ op (V [ s ]v) (P [ s ]p)
 (↓ op V P) [ s ]p =
   ↓ op (V [ s ]v) (P [ s ]p)
