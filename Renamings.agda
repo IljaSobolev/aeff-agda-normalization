@@ -1,7 +1,7 @@
 open import AEff
 open import Types hiding (``)
 
-open import Relation.Binary.PropositionalEquality hiding ([_] ; Extensionality)
+open import Relation.Binary.PropositionalEquality hiding ([_])
 --open ≡-Reasoning
 
 module Renamings where
