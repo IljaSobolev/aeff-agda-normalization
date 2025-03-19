@@ -5,7 +5,9 @@ open import Types hiding (``)
 open import Finality
 open import Substitutions
 open import Renamings
+open import Preservation using (strengthen-val)
 
+open import Data.List hiding ([_]) renaming (_∷_ to _∷ₗ_)
 open import Relation.Binary.PropositionalEquality as Eq
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Function.Base using (_∘_)
@@ -205,6 +207,30 @@ sub-id-v : {Γ : Ctx} {X : Type} {V : Γ ⊢V⦂ X}
 sub-id-m : {Γ : Ctx} {X : Type} {M : Γ ⊢M⦂ X}
          → M [ id-subst ]m ≡ M
 
+ren-id-v : {Γ : Ctx} {X : Type} {V : Γ ⊢V⦂ X} → V-rename id-ren V ≡ V
+ren-id-v {V = V} =
+  begin
+    V-rename id-ren V
+  ≡⟨ V-rename-subst-ren ⟩
+    V [ ren id-ren ]v
+  ≡⟨ cong-sub-v {V = V} (λ x → refl) ⟩
+    V [ id-subst ]v
+  ≡⟨ sub-id-v ⟩
+    V
+  ∎
+
+ren-id-m : {Γ : Ctx} {X : Type} {M : Γ ⊢M⦂ X} → M-rename id-ren M ≡ M
+ren-id-m {M = M} =
+  begin
+    M-rename id-ren M
+  ≡⟨ M-rename-subst-ren ⟩
+    M [ ren id-ren ]m
+  ≡⟨ cong-sub-m {M = M} (λ x → refl) ⟩
+    M [ id-subst ]m
+  ≡⟨ sub-id-m ⟩
+    M
+  ∎
+
 sub-id-v {V = ` x} = refl
 sub-id-v {V = `` c} = refl
 sub-id-v {V = ƛ M} = cong ƛ (trans (cong-sub-m lift-ids) sub-id-m)
@@ -273,28 +299,28 @@ compose-rename-m {M = await V until M} = cong₂ await_until_ compose-rename-v (
 commute-subst-rename-v :  {Γ Γ' Δ Δ' : Ctx} {X : Type} {V : Γ ⊢V⦂ X}
                           {s : Sub Γ Δ} {s' : Sub Γ' Δ'}
                           {rΓ : Ren Γ Γ'} {rΔ : Ren Δ Δ'} →
-                          ({C : Type} {x : C ∈ Γ} → s' (rΓ x) ≡ V-rename rΔ (s x)) →
+                          ({C : Type} (x : C ∈ Γ) → s' (rΓ x) ≡ V-rename rΔ (s x)) →
                           (V-rename rΓ V) [ s' ]v ≡ V-rename rΔ (V [ s ]v)
 commute-subst-rename-m :  {Γ Γ' Δ Δ' : Ctx} {X : Type} {M : Γ ⊢M⦂ X}
                           {s : Sub Γ Δ} {s' : Sub Γ' Δ'}
                           {rΓ : Ren Γ Γ'} {rΔ : Ren Δ Δ'} →
-                          ({C : Type} {x : C ∈ Γ} → s' (rΓ x) ≡ V-rename rΔ (s x)) →
+                          ({C : Type} (x : C ∈ Γ) → s' (rΓ x) ≡ V-rename rΔ (s x)) →
                           (M-rename rΓ M) [ s' ]m ≡ M-rename rΔ (M [ s ]m)
 
 commute-subst-rename-lift : {Γ Γ' Δ Δ' : Ctx} {X Y : Type} {M : (Γ ∷ X) ⊢M⦂ Y}
                             {s : Sub Γ Δ } {s' : Sub Γ' Δ'}
                             {rΓ : Ren Γ Γ'} {rΔ : Ren Δ Δ'} →
-                            ({C : Type} {x : C ∈ Γ} → s' (rΓ x) ≡ V-rename rΔ (s x)) →
+                            ({C : Type} (x : C ∈ Γ) → s' (rΓ x) ≡ V-rename rΔ (s x)) →
                             M-rename (wk₂ rΓ) M [ lift s' ]m ≡ M-rename (wk₂ rΔ) (M [ lift s ]m)
 commute-subst-rename-lift {Γ} {X = X} {M = M} {s} {s'} {rΓ} {rΔ} H
-  = commute-subst-rename-m {M = M} {lift s} {lift s'} {wk₂ rΓ} {wk₂ rΔ} (λ {Z} {x} → H' {Z} {x})
+  = commute-subst-rename-m {M = M} {lift s} {lift s'} {wk₂ rΓ} {wk₂ rΔ} (λ {Z} → H')
   where
-  H' : {Z : Type} {x : Z ∈ Γ ∷ X} → lift s' (wk₂ rΓ x) ≡ V-rename (wk₂ rΔ) (lift s x)
-  H' {x = Hd} = refl
-  H' {x = Tl x} =
+  H' : {Z : Type} (x : Z ∈ Γ ∷ X) → lift s' (wk₂ rΓ x) ≡ V-rename (wk₂ rΔ) (lift s x)
+  H' Hd = refl
+  H' (Tl x) =
     begin
       V-rename wk₁ (s' (rΓ x))
-    ≡⟨ cong (V-rename wk₁) H ⟩
+    ≡⟨ cong (V-rename wk₁) (H x) ⟩
       V-rename Tl (V-rename rΔ (s x))
     ≡⟨ compose-rename-v ⟩
       V-rename (wk₁ ∘ rΔ) (s x)
@@ -302,7 +328,7 @@ commute-subst-rename-lift {Γ} {X = X} {M = M} {s} {s'} {rΓ} {rΔ} H
       V-rename (wk₂ rΔ) ((lift s) (Tl x))
     ∎
 
-commute-subst-rename-v {V = ` x} H = H
+commute-subst-rename-v {V = ` x} H = H x
 commute-subst-rename-v {V = `` c} H = refl
 commute-subst-rename-v {V = ƛ M} H = cong ƛ (commute-subst-rename-lift H)
 commute-subst-rename-v {V = ⟨ V ⟩} H = cong ⟨_⟩ (commute-subst-rename-v {V = V} H)
@@ -318,7 +344,7 @@ commute-subst-rename-m {M = await V until M} H = cong₂ await_until_ (commute-s
 lift-seq : {Γ Γ' Γ'' : Ctx} {X Y : Type} {s : Sub Γ Γ'} {s' : Sub Γ' Γ''} (x : Y ∈ (Γ ∷ X))
   → (lift s ⨟ lift s') x ≡ lift (s ⨟ s') x
 lift-seq Hd = refl
-lift-seq {s = s} {s' = s'} (Tl x) = commute-subst-rename-v {V = s x} (λ {C} {x = y} → refl)
+lift-seq {s = s} {s' = s'} (Tl x) = commute-subst-rename-v {V = s x} (λ z → refl)
 
 sub-sub-v : {Γ Γ' Γ'' : Ctx} {X : Type} {s : Sub Γ Γ'} {s' : Sub Γ' Γ''} (V : Γ ⊢V⦂ X)
             → (V [ s ]v) [ s' ]v ≡ V [ s ⨟ s' ]v
@@ -441,3 +467,50 @@ substitution-lemma-m {Γ} {Γ'} {X} {Y} {s} {N} {V} =
   ≡⟨ cong (_[ s ]m) (sym (cong-sub-m {M = N} subst-Z-cons-ids)) ⟩
     (N [ id-subst [ V ]s ]m) [ s ]m
   ∎
+
+strengthen-lemma : {Γ Γ' : Ctx}
+                   {X : Type}
+                   {c : BType}
+                   (s : Sub Γ Γ')
+                   (V : ((Γ ∷ ⟨ X ⟩) ⊢V⦂ Type.`` c)) →
+                   -------------------------------------------
+                   (strengthen-val {Δ = X ∷ₗ []} V) [ s ]v ≡ strengthen-val {Δ = X ∷ₗ []} (V [ lift {X = ⟨ X ⟩} s ]v)
+strengthen-lemma s (` Tl x) with s x
+... | ` y = refl
+... | `` c = refl
+strengthen-lemma s (`` c) = refl
+
+-- finally, the result that substitution preserves reductions
+sub-↝↝ : {Γ Γ' : Ctx} {X : Type}
+         {M N : Γ ⊢M⦂ X}
+         (s : Sub Γ Γ') →
+         M ↝↝ N →
+         ----------------------
+         M [ s ]m ↝↝ N [ s ]m
+sub-↝↝ s (apply M V) rewrite sym (substitution-lemma-m {s = s} {N = M} {V = V}) = apply (M [ lift s ]m) (V [ s ]v)
+sub-↝↝ s (let-return V N) rewrite sym (substitution-lemma-m {s = s} {N = N} {V = V}) = let-return (V [ s ]v) (N [ lift s ]m)
+sub-↝↝ s (let-↑ V M N) = let-↑ (V [ s ]v) (M [ s ]m) (N [ lift s ]m)
+sub-↝↝ s (let-promise {X} M₁ M₂ N)
+  rewrite commute-subst-rename-m {M = N} {s' = lift (lift {X = ⟨ X ⟩} s)} {rΓ = comp-ren exchange wk₁}
+          (λ {Hd → refl
+           ; (Tl x) → trans compose-rename-v (trans refl (sym compose-rename-v))})
+  = let-promise (M₁ [ lift s ]m) (M₂ [ lift s ]m) (N [ lift s ]m)
+sub-↝↝ s (promise-↑ V M N) rewrite strengthen-lemma s V = promise-↑ (V [ lift s ]v) (M [ lift s ]m) (N [ lift s ]m)
+sub-↝↝ s (↓-return V W) = ↓-return (V [ s ]v) (W [ s ]v)
+sub-↝↝ s (↓-↑ V W M) = ↓-↑ (V [ s ]v) (W [ s ]v) (M [ s ]m)
+sub-↝↝ s (↓-promise-op {X} V M N)
+  rewrite sym (substitution-lemma-m {s = s} {N = M} {V = V})
+  | commute-subst-rename-v {V = V} {s = s} {s' = lift {X = ⟨ X ⟩} s} {rΓ = wk₁} {rΔ = wk₁} (λ x → refl)
+  | sym (substitution-lemma-m {s = lift s} {N = M-rename (comp-ren exchange wk₁) N} {V = ` Hd})
+  | commute-subst-rename-m {M = N} {s = lift s} {s' = lift (lift {X = ⟨ X ⟩} s)} {rΓ = comp-ren exchange wk₁} {rΔ = comp-ren exchange wk₁}
+    (λ {Hd → refl
+     ; (Tl x) → trans compose-rename-v (trans refl (sym compose-rename-v))})
+  = ↓-promise-op (V [ s ]v) (M [ lift s ]m) (N [ lift s ]m)
+sub-↝↝ s (↓-promise-op' {X} p V M N)
+  rewrite commute-subst-rename-v {V = V} {s = s} {s' = lift {X = ⟨ X ⟩} s} {rΓ = wk₁} {rΔ = wk₁} (λ x → refl)
+  = ↓-promise-op' p (V [ s ]v) (M [ lift s ]m) (N [ lift s ]m)
+sub-↝↝ s (await-promise V M) rewrite sym (substitution-lemma-m {s = s} {N = M} {V = V}) = await-promise (V [ s ]v) (M [ lift s ]m)
+sub-↝↝ s (context-let r) = context-let (sub-↝↝ s r)
+sub-↝↝ s (context-↑ r) = context-↑ (sub-↝↝ s r)
+sub-↝↝ s (context-↓ r) = context-↓ (sub-↝↝ s r) 
+sub-↝↝ s (context-promise r) = context-promise (sub-↝↝ (lift s) r)
