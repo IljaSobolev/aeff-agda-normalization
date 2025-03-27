@@ -66,6 +66,14 @@ mutual
           Γ ⊢V⦂ X →
           -------------
           Γ ⊢V⦂ ⟨ X ⟩
+
+    -- a default value of promise type, representing a promise that would never be fulfilled
+    -- helps with normalisation proof
+
+    ★   : {X : Type} →
+          -------------
+          Γ ⊢V⦂ ⟨ X ⟩
+          
           
   infix 40 _·_
 

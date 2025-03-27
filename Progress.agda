@@ -43,11 +43,12 @@ data RunResult⟨_∣_⟩ (Γ : Ctx) : {C : Type} → ⟨⟨ Γ ⟩⟩ ⊢M⦂ C
 
   awaiting : {C : Type}
              {Y : Type}
-             {y : ⟨ Y ⟩ ∈ ⟨⟨ Γ ⟩⟩}
+             {y : ⟨⟨ Γ ⟩⟩ ⊢V⦂ ⟨ Y ⟩}
              {M : ⟨⟨ Γ ⟩⟩ ⊢M⦂ C} → 
              y ⧗ M →
              ---------------------
              RunResult⟨ Γ ∣ M ⟩
+
 
 data CompResult⟨_∣_⟩ (Γ : Ctx) : {C : Type} → ⟨⟨ Γ ⟩⟩ ⊢M⦂ C → Set where
 
@@ -130,6 +131,8 @@ progress (await ` x until M) =
   inj₂ (comp (awaiting await))
 progress (await ⟨ V ⟩ until M) =
   inj₁ (_ , await-promise V M)
+progress (await ★ until M) =
+  inj₂ (comp (awaiting blocked))
 
 
 -- PROGRESS THEOREM FOR CLOSED COMPUTATIONS

@@ -100,6 +100,7 @@ cong-sub-v {V = ` x} f = f x
 cong-sub-v {V = `` c} f = refl
 cong-sub-v {V = ƛ N} f = cong ƛ (cong-sub-m (λ x → cong-lift f x))
 cong-sub-v {V = ⟨ V ⟩} f = cong ⟨_⟩ (cong-sub-v {V = V} f)
+cong-sub-v {V = ★} f = refl
 
 cong-sub-m {M = return V} f = cong return (cong-sub-v {V = V} f)
 cong-sub-m {M = let= M `in N} f = cong₂ let=_`in_ (cong-sub-m f) (cong-sub-m (cong-lift f))
@@ -146,30 +147,31 @@ ren-wk₂ : {Γ Γ' : Ctx} {X Y : Type}
 ren-wk₂ Hd = refl
 ren-wk₂ (Tl x) = refl
 
-V-rename-subst-ren : {Γ Γ' : Ctx} {X : Type} {r : Ren Γ Γ'} {V : Γ ⊢V⦂ X}
+rename-subst-ren-v : {Γ Γ' : Ctx} {X : Type} {r : Ren Γ Γ'} {V : Γ ⊢V⦂ X}
                  → V-rename r V ≡ V [ ren r ]v
-M-rename-subst-ren : {Γ Γ' : Ctx} {X : Type} {r : Ren Γ Γ'} {M : Γ ⊢M⦂ X}
+rename-subst-ren-m : {Γ Γ' : Ctx} {X : Type} {r : Ren Γ Γ'} {M : Γ ⊢M⦂ X}
                  → M-rename r M ≡ M [ ren r ]m
 
-V-rename-subst-ren {V = ` x} = refl
-V-rename-subst-ren {V = `` c} = refl
-V-rename-subst-ren {r = r} {V = ƛ M} = cong ƛ (trans M-rename-subst-ren (cong-sub-m ren-wk₂))
-V-rename-subst-ren {V = ⟨ V ⟩} = cong ⟨_⟩ V-rename-subst-ren
+rename-subst-ren-v {V = ` x} = refl
+rename-subst-ren-v {V = `` c} = refl
+rename-subst-ren-v {r = r} {V = ƛ M} = cong ƛ (trans rename-subst-ren-m (cong-sub-m ren-wk₂))
+rename-subst-ren-v {V = ⟨ V ⟩} = cong ⟨_⟩ rename-subst-ren-v
+rename-subst-ren-v {V = ★} = refl
 
-M-rename-subst-ren {M = return V} = cong return V-rename-subst-ren
-M-rename-subst-ren {M = let= M `in N}
-  = cong₂ let=_`in_ M-rename-subst-ren (trans M-rename-subst-ren (cong-sub-m ren-wk₂))
-M-rename-subst-ren {M = V · W} = cong₂ _·_ V-rename-subst-ren V-rename-subst-ren
-M-rename-subst-ren {M = ↑ op V M} = cong₂ (↑ op) V-rename-subst-ren M-rename-subst-ren
-M-rename-subst-ren {M = ↓ op V M} = cong₂ (↓ op) V-rename-subst-ren M-rename-subst-ren
-M-rename-subst-ren {M = promise op ↦ M `in N}
-  = cong₂ (promise op ↦_`in_) (trans M-rename-subst-ren (cong-sub-m ren-wk₂)) (trans M-rename-subst-ren (cong-sub-m ren-wk₂))
-M-rename-subst-ren {M = await V until M} = cong₂ await_until_ V-rename-subst-ren (trans M-rename-subst-ren (cong-sub-m ren-wk₂))
+rename-subst-ren-m {M = return V} = cong return rename-subst-ren-v
+rename-subst-ren-m {M = let= M `in N}
+  = cong₂ let=_`in_ rename-subst-ren-m (trans rename-subst-ren-m (cong-sub-m ren-wk₂))
+rename-subst-ren-m {M = V · W} = cong₂ _·_ rename-subst-ren-v rename-subst-ren-v
+rename-subst-ren-m {M = ↑ op V M} = cong₂ (↑ op) rename-subst-ren-v rename-subst-ren-m
+rename-subst-ren-m {M = ↓ op V M} = cong₂ (↓ op) rename-subst-ren-v rename-subst-ren-m
+rename-subst-ren-m {M = promise op ↦ M `in N}
+  = cong₂ (promise op ↦_`in_) (trans rename-subst-ren-m (cong-sub-m ren-wk₂)) (trans rename-subst-ren-m (cong-sub-m ren-wk₂))
+rename-subst-ren-m {M = await V until M} = cong₂ await_until_ rename-subst-ren-v (trans rename-subst-ren-m (cong-sub-m ren-wk₂))
 
 lift-cons-shift : {Γ Γ' : Ctx} {X Y : Type} {s : Sub Γ Γ'} (x : X ∈ Γ ∷ Y)
                 → (lift s) x ≡ (` Hd • (s ⨟ ↑↑)) x
 lift-cons-shift Hd = refl
-lift-cons-shift (Tl x) = V-rename-subst-ren
+lift-cons-shift (Tl x) = rename-subst-ren-v
 
 wk₂-cons-Z-shift : {Γ Γ' : Ctx} {X Y : Type}
                    {r : Ren Γ Γ'}
@@ -211,7 +213,7 @@ ren-id-v : {Γ : Ctx} {X : Type} {V : Γ ⊢V⦂ X} → V-rename id-ren V ≡ V
 ren-id-v {V = V} =
   begin
     V-rename id-ren V
-  ≡⟨ V-rename-subst-ren ⟩
+  ≡⟨ rename-subst-ren-v ⟩
     V [ ren id-ren ]v
   ≡⟨ cong-sub-v {V = V} (λ x → refl) ⟩
     V [ id-subst ]v
@@ -223,7 +225,7 @@ ren-id-m : {Γ : Ctx} {X : Type} {M : Γ ⊢M⦂ X} → M-rename id-ren M ≡ M
 ren-id-m {M = M} =
   begin
     M-rename id-ren M
-  ≡⟨ M-rename-subst-ren ⟩
+  ≡⟨ rename-subst-ren-m ⟩
     M [ ren id-ren ]m
   ≡⟨ cong-sub-m {M = M} (λ x → refl) ⟩
     M [ id-subst ]m
@@ -235,6 +237,7 @@ sub-id-v {V = ` x} = refl
 sub-id-v {V = `` c} = refl
 sub-id-v {V = ƛ M} = cong ƛ (trans (cong-sub-m lift-ids) sub-id-m)
 sub-id-v {V = ⟨ V ⟩} = cong ⟨_⟩ sub-id-v
+sub-id-v {V = ★} = refl
 
 sub-id-m {M = return V} = cong return sub-id-v
 sub-id-m {M = let= M `in N} = cong₂ let=_`in_ sub-id-m (trans (cong-sub-m lift-ids) sub-id-m)
@@ -266,6 +269,7 @@ cong-rename-v {V = ` x} f = cong `_ (f x)
 cong-rename-v {V = `` c} f = refl
 cong-rename-v {V = ƛ M} f = cong ƛ (cong-rename-m (cong-wk₂ f))
 cong-rename-v {V = ⟨ V ⟩} f = cong ⟨_⟩ (cong-rename-v f)
+cong-rename-v {V = ★} f = refl
 
 cong-rename-m {M = return V} f = cong return (cong-rename-v f)
 cong-rename-m {M = let= M `in N} f = cong₂ let=_`in_ (cong-rename-m f) (cong-rename-m (cong-wk₂ f))
@@ -284,6 +288,7 @@ compose-rename-v {V = ` x} = refl
 compose-rename-v {V = `` c} = refl
 compose-rename-v {V = ƛ M} = cong ƛ (trans compose-rename-m (cong-rename-m compose-wk₂))
 compose-rename-v {V = ⟨ V ⟩} = cong ⟨_⟩ compose-rename-v
+compose-rename-v {V = ★} = refl
 
 compose-rename-m {M = return V} = cong return compose-rename-v
 compose-rename-m {M = let= M `in N} = cong₂ let=_`in_ compose-rename-m (trans compose-rename-m (cong-rename-m compose-wk₂))
@@ -296,6 +301,7 @@ compose-rename-m {M = await V until M} = cong₂ await_until_ compose-rename-v (
 -- since this is a typed calculus, the proof of the
 -- commute-subst-rename functions from PLFA does not work,
 -- instead we prove the following generalizations:
+
 commute-subst-rename-v :  {Γ Γ' Δ Δ' : Ctx} {X : Type} {V : Γ ⊢V⦂ X}
                           {s : Sub Γ Δ} {s' : Sub Γ' Δ'}
                           {rΓ : Ren Γ Γ'} {rΔ : Ren Δ Δ'} →
@@ -332,6 +338,7 @@ commute-subst-rename-v {V = ` x} H = H x
 commute-subst-rename-v {V = `` c} H = refl
 commute-subst-rename-v {V = ƛ M} H = cong ƛ (commute-subst-rename-lift H)
 commute-subst-rename-v {V = ⟨ V ⟩} H = cong ⟨_⟩ (commute-subst-rename-v {V = V} H)
+commute-subst-rename-v {V = ★} H = refl
 
 commute-subst-rename-m {M = return V} H = cong return (commute-subst-rename-v {V = V} H)
 commute-subst-rename-m {M = let= M `in N} H = cong₂ let=_`in_ (commute-subst-rename-m H) (commute-subst-rename-lift H)
@@ -368,6 +375,7 @@ sub-sub-v (` x) = refl
 sub-sub-v (`` c) = refl
 sub-sub-v (ƛ N) = cong ƛ (sub-sub-lift N)
 sub-sub-v ⟨ V ⟩ = cong ⟨_⟩ (sub-sub-v V)
+sub-sub-v ★ = refl
 
 sub-sub-m (return V) = cong return (sub-sub-v V)
 sub-sub-m (let= M `in N) = cong₂ let=_`in_ (sub-sub-m M) (sub-sub-lift N)
@@ -376,6 +384,21 @@ sub-sub-m (↑ op V M) = cong₂ (↑ op) (sub-sub-v V) (sub-sub-m M)
 sub-sub-m (↓ op V M) = cong₂ (↓ op) (sub-sub-v V) (sub-sub-m M)
 sub-sub-m (promise op ↦ M `in N) = cong₂ (promise op ↦_`in_) (sub-sub-lift M) (sub-sub-lift N)
 sub-sub-m (await V until M) = cong₂ await_until_ (sub-sub-v V) (sub-sub-lift M)
+
+ren-ren-v : {Γ Γ' Γ'' : Ctx} {X : Type} {rn : Ren Γ Γ'} {rn' : Ren Γ' Γ''} (V : Γ ⊢V⦂ X)
+            → V-rename rn' (V-rename rn V) ≡ V-rename (rn' ∘ rn) V
+ren-ren-m : {Γ Γ' Γ'' : Ctx} {X : Type} {rn : Ren Γ Γ'} {rn' : Ren Γ' Γ''} (M : Γ ⊢M⦂ X)
+            → M-rename rn' (M-rename rn M) ≡ M-rename (rn' ∘ rn) M
+ren-ren-v {rn = rn} {rn' = rn'} V
+  rewrite rename-subst-ren-v {r = rn} {V = V}
+  | rename-subst-ren-v {r = rn'} {V = V [ ren rn ]v}
+  | rename-subst-ren-v {r = rn' ∘ rn} {V = V}
+  = sub-sub-v V
+ren-ren-m {rn = rn} {rn' = rn'} M
+  rewrite rename-subst-ren-m {r = rn} {M = M}
+  | rename-subst-ren-m {r = rn'} {M = M [ ren rn ]m}
+  | rename-subst-ren-m {r = rn' ∘ rn} {M = M}
+  = sub-sub-m M
 
 sub-assoc : {Γ Γ' Γ'' Γ''' : Ctx} {X : Type}
             {s : Sub Γ Γ'} {s' : Sub Γ' Γ''} {s'' : Sub Γ'' Γ'''}
@@ -481,6 +504,7 @@ strengthen-lemma s (` Tl x) with s x
 strengthen-lemma s (`` c) = refl
 
 -- finally, the result that substitution preserves reductions
+
 sub-↝↝ : {Γ Γ' : Ctx} {X : Type}
          {M N : Γ ⊢M⦂ X}
          (s : Sub Γ Γ') →
@@ -514,3 +538,16 @@ sub-↝↝ s (context-let r) = context-let (sub-↝↝ s r)
 sub-↝↝ s (context-↑ r) = context-↑ (sub-↝↝ s r)
 sub-↝↝ s (context-↓ r) = context-↓ (sub-↝↝ s r) 
 sub-↝↝ s (context-promise r) = context-promise (sub-↝↝ (lift s) r)
+
+-- as a corollary, renaming preserves reductions
+
+ren-↝↝ : {Γ Γ' : Ctx} {X : Type}
+         {M N : Γ ⊢M⦂ X}
+         (rn : Ren Γ Γ') →
+         M ↝↝ N →
+         ----------------------
+         M-rename rn M ↝↝ M-rename rn N
+ren-↝↝ {M = M} {N = N} rn r
+  rewrite rename-subst-ren-m {r = rn} {M = M}
+  | rename-subst-ren-m {r = rn} {M = N}
+  = sub-↝↝ (λ x → ` rn x) r

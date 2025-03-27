@@ -14,24 +14,32 @@ module AwaitingComputations where
 
 -- COMPUTATIONS THAT ARE TEMPORARILY STUCK DUE TO AWAITING FOR A PARTICULAR PROMISE
     
-data _⧗_ {Γ : Ctx} {X : Type} (x : ⟨ X ⟩ ∈ Γ) : {C : Type} → Γ ⊢M⦂ C → Set where
+data _⧗_ {Γ : Ctx} {X : Type} : (x : Γ ⊢V⦂ ⟨ X ⟩) → {C : Type} → Γ ⊢M⦂ C → Set where
 
   await     : {C : Type}
-              {M : Γ ∷ X ⊢M⦂ C} →
-              -------------------------
-              x ⧗ (await (` x) until M)
+              {M : Γ ∷ X ⊢M⦂ C}
+              {x∈ : ⟨ X ⟩ ∈ Γ} →
+              -------------------------------
+              (` x∈) ⧗ (await (` x∈) until M)
 
-  let-in    : {X Y : Type}
-              {M : Γ ⊢M⦂ X}
-              {N : Γ ∷ X ⊢M⦂ Y} →
+  blocked   : {C : Type}
+              {M : Γ ∷ X ⊢M⦂ C} →
+              ---------------------
+              ★ ⧗ (await ★ until M)
+
+  let-in    : {Y Z : Type}
+              {M : Γ ⊢M⦂ Y}
+              {N : Γ ∷ Y ⊢M⦂ Z}
+              {x : Γ ⊢V⦂ ⟨ X ⟩} →
               x ⧗ M →
               -----------------------------
               x ⧗ (let= M `in N)
 
-  interrupt : {X : Type}
+  interrupt : {Y : Type}
               {op : Σₛ}
               {V : Γ ⊢V⦂ ``(payload op)}
-              {M : Γ ⊢M⦂ X} →
+              {M : Γ ⊢M⦂ Y}
+              {x : Γ ⊢V⦂ ⟨ X ⟩} →
               x ⧗ M →
               -------------------------
               x ⧗ (↓ op V M)

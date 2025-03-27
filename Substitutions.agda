@@ -45,6 +45,8 @@ mutual
     ƛ (M [ lift s ]m)
   ⟨ V ⟩ [ s ]v =
     ⟨ V [ s ]v ⟩
+  ★ [ s ]v =
+    ★
 
   _[_]m : {Γ Γ' : Ctx} → {C : Type} → Γ ⊢M⦂ C → Sub Γ Γ'  → Γ' ⊢M⦂ C
   (return V) [ s ]m =

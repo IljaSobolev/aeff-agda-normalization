@@ -289,6 +289,8 @@ run-invert-↓ : {Γ : Ctx}
 
 run-invert-↓ (awaiting (interrupt await)) =
   awaiting await
+run-invert-↓ (awaiting (interrupt blocked)) =
+  awaiting blocked
 run-invert-↓ (awaiting (interrupt (let-in R))) =
   awaiting (let-in R)
 run-invert-↓ (awaiting (interrupt (interrupt R))) =
@@ -375,7 +377,6 @@ run-finality-↝↝ (awaiting (interrupt ())) (↓-return V W)
 run-finality-↝↝ (awaiting (interrupt ())) (↓-↑ V W M)
 run-finality-↝↝ (awaiting (interrupt ())) (↓-promise-op V M N)
 run-finality-↝↝ (awaiting (interrupt ())) (↓-promise-op' p V M N)
-run-finality-↝↝ (awaiting ()) (await-promise V M)
 run-finality-↝↝ R (context-let r) =
   run-finality-↝↝ (run-invert-let R) r
 run-finality-↝↝ R (context-↑ r) =
