@@ -1,6 +1,6 @@
 open import Data.Product
 
-open import Relation.Binary.PropositionalEquality hiding ([_] ; Extensionality)
+open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 

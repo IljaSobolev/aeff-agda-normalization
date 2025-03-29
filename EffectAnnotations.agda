@@ -7,7 +7,7 @@ open import Data.Product
 open import Data.Sum
 open import Data.Unit
 
-open import Relation.Binary.PropositionalEquality hiding (Extensionality ; [_])
+open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 
