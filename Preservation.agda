@@ -208,15 +208,6 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
                     ↝
                     (promise op ∣ p ↦ M₁ `in (let= M₂ `in (M-rename (comp-ren exchange wk₁) N)))
 
-  letrec-unfold   : {X : VType}
-                    {C D : CType}
-                    (M : Γ ∷ (X ⇒ C) ∷ X ⊢M⦂ C) →
-                    (N : Γ ∷ (X ⇒ C) ⊢M⦂ D) →
-                    ----------------------------------------
-                    (letrec M `in N)
-                    ↝
-                    N [ id-subst [ ƛ (letrec M-rename wk₃ M `in M-rename exchange M) ]s ]m
-
   promise-↑       : {X Y : VType}
                     {o o' : O}
                     {i i' : I}

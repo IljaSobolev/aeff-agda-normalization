@@ -77,15 +77,6 @@ mutual
                       ↝↝
                       (promise op ∣ p ↦ M₁ `in (let= M₂ `in (M-rename (comp-ren exchange wk₁) N)))
 
-    letrec-unfold   : {X : VType}
-                      {C D : CType}
-                      (M : Γ ∷ (X ⇒ C) ∷ X ⊢M⦂ C) →
-                      (N : Γ ∷ (X ⇒ C) ⊢M⦂ D) →
-                      ----------------------------------------
-                      (letrec M `in N)
-                      ↝↝
-                      N [ id-subst [ ƛ (letrec M-rename wk₃ M `in M-rename exchange M) ]s ]m
-
     promise-↑       : {X Y : VType}
                       {o o' : O}
                       {i i' : I}
@@ -295,8 +286,6 @@ mutual
   let-↑ p V M N
 ↝↝-to-↝ (let-promise p M₁ M₂ N) =
   let-promise p M₁ M₂ N
-↝↝-to-↝ (letrec-unfold M N) =
-  letrec-unfold M N
 ↝↝-to-↝ (promise-↑ p q V M N) =
   promise-↑ p q V M N
 ↝↝-to-↝ (↓-return V W) =
@@ -366,8 +355,6 @@ mutual
     let-↑ p V M N
   ↝-to-↝↝ (let-promise p M₁ M₂ N) =
     let-promise p M₁ M₂ N
-  ↝-to-↝↝ (letrec-unfold M N) =
-    letrec-unfold M N
   ↝-to-↝↝ (promise-↑ p q V M N) =
     promise-↑ p q V M N
   ↝-to-↝↝ (↓-return V W) =
@@ -528,7 +515,6 @@ run-finality-↝↝ R (let-↑ p V M N) =
   run-↑-⊥ (run-invert-let R)
 run-finality-↝↝ R (let-promise p M₁ M₂ N) =
   run-let-promise-⊥ R
-run-finality-↝↝ (awaiting ()) (letrec-unfold M N)
 run-finality-↝↝ (promise (awaiting ())) (promise-↑ p q V M N)
 run-finality-↝↝ (awaiting (interrupt ())) (↓-return V W)
 run-finality-↝↝ (awaiting (interrupt ())) (↓-↑ p V W M)

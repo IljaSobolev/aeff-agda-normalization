@@ -61,8 +61,6 @@ mutual
     return (V-rename f V)
   M-rename f (let= M `in N) =
     let= M-rename f M `in M-rename (wk₂ f) N
-  M-rename f (letrec M `in N) =
-    letrec M-rename (wk₂ (wk₂ f)) M `in M-rename (wk₂ f) N
   M-rename f (V · W) =
     V-rename f V · V-rename f W
   M-rename f (↑ op p V M) =

@@ -105,8 +105,6 @@ progress (let= M `in N) with progress M
   inj₂ (comp (awaiting (let-in R)))
 ... | inj₂ (signal {_} {_} {_} {_} {p} {V} {M'} R) =
   inj₁ (_ , let-↑ p V M' N)
-progress (letrec M `in N) =
-  inj₁ (_ , letrec-unfold M N)
 progress ((` x) · W) with ⇒-not-in-ctx x
 ... | ()
 progress (ƛ M · W) =
