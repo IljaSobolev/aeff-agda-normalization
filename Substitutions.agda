@@ -1,7 +1,7 @@
 open import AEff
 open import EffectAnnotations
 open import Renamings
-open import Types hiding (``)
+open import Types
 
 open import Relation.Binary.PropositionalEquality hiding ([_])
 

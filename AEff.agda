@@ -50,7 +50,7 @@ mutual
           
     ``_  : (c : Σ-base) →
           --------------
-          Γ ⊢V⦂ ``(ar-base c)
+          Γ ⊢V⦂ ```(ar-base c)
           
     ƛ   : {X : VType}
           {C : CType} →
@@ -101,7 +101,7 @@ mutual
                        {i : I} →
                        (op : Σₛ) →
                        op ∈ₒ o →
-                       Γ ⊢V⦂ ``(payload op) →
+                       Γ ⊢V⦂ ```(payload op) →
                        Γ ⊢M⦂ X ! (o , i) →
                        ----------------------
                        Γ ⊢M⦂ X ! (o , i)
@@ -110,7 +110,7 @@ mutual
                        {o : O}
                        {i : I}
                        (op : Σₛ) →
-                       Γ ⊢V⦂ ``(payload op) →
+                       Γ ⊢V⦂ ```(payload op) →
                        Γ ⊢M⦂ X ! (o , i) →
                        ----------------------
                        Γ ⊢M⦂ X ! op ↓ₑ (o , i)
@@ -120,7 +120,7 @@ mutual
                        {i i' : I} → 
                        (op : Σₛ) →
                        lkpᵢ op i ≡ just (o' , i') →
-                       Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i') →
+                       Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i') →
                        Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i) →
                        ------------------------------------------
                        Γ ⊢M⦂ Y ! (o , i)
@@ -167,7 +167,7 @@ data _⊢P⦂_ (Γ : Ctx) : {o : O} → PType o → Set where
             {PP : PType o}
             (op : Σₛ) →
             op ∈ₒ o →
-            Γ ⊢V⦂ ``(payload op) →
+            Γ ⊢V⦂ ```(payload op) →
             Γ ⊢P⦂ PP →
             ----------------------
             Γ ⊢P⦂ PP
@@ -175,7 +175,7 @@ data _⊢P⦂_ (Γ : Ctx) : {o : O} → PType o → Set where
   ↓       : {o : O}
             {PP : PType o}
             (op : Σₛ) →
-            Γ ⊢V⦂ ``(payload op) →
+            Γ ⊢V⦂ ```(payload op) →
             Γ ⊢P⦂ PP →
             ----------------------
             Γ ⊢P⦂ op ↓ₚ PP

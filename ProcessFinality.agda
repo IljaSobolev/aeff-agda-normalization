@@ -47,7 +47,7 @@ data _[_]↝↝_ {Γ : Ctx} : {o o' : O} {PP : PType o} {QQ : PType o'} → Γ �
            {QQ : PType o'}
            {op : Σₛ} → 
            (p : op ∈ₒ o) →
-           (V : Γ ⊢V⦂ `` (payload op)) →
+           (V : Γ ⊢V⦂ ```(payload op)) →
            (P : Γ ⊢P⦂ PP) →
            (Q : Γ ⊢P⦂ QQ) →
            ------------------------------------------
@@ -60,7 +60,7 @@ data _[_]↝↝_ {Γ : Ctx} : {o o' : O} {PP : PType o} {QQ : PType o'} → Γ �
            {QQ : PType o'}
            {op : Σₛ} → 
            (p : op ∈ₒ o') →
-           (V : Γ ⊢V⦂ `` (payload op)) →
+           (V : Γ ⊢V⦂ ```(payload op)) →
            (P : Γ ⊢P⦂ PP) →
            (Q : Γ ⊢P⦂ QQ) →
            ------------------------------------------
@@ -74,7 +74,7 @@ data _[_]↝↝_ {Γ : Ctx} : {o o' : O} {PP : PType o} {QQ : PType o'} → Γ �
           {o : O}
           {i : I}
           {op : Σₛ} → 
-          (V : Γ ⊢V⦂ `` (payload op)) → 
+          (V : Γ ⊢V⦂ ```(payload op)) → 
           (M : Γ ⊢M⦂ X ! (o , i)) →
           -----------------------------
           ↓ op V (run M)
@@ -85,7 +85,7 @@ data _[_]↝↝_ {Γ : Ctx} : {o o' : O} {PP : PType o} {QQ : PType o'} → Γ �
           {PP : PType o}
           {QQ : PType o'}
           {op : Σₛ}
-          (V : Γ ⊢V⦂ `` (payload op)) →
+          (V : Γ ⊢V⦂ ```(payload op)) →
           (P : Γ ⊢P⦂ PP) →
           (Q : Γ ⊢P⦂ QQ) →
           -----------------------------
@@ -98,8 +98,8 @@ data _[_]↝↝_ {Γ : Ctx} : {o o' : O} {PP : PType o} {QQ : PType o'} → Γ �
           {op : Σₛ}
           {op' : Σₛ} →
           (p : op' ∈ₒ o) →
-          (V : Γ ⊢V⦂ ``(payload op)) →
-          (W : Γ ⊢V⦂ ``(payload op')) →
+          (V : Γ ⊢V⦂ ```(payload op)) →
+          (W : Γ ⊢V⦂ ```(payload op')) →
           (P : Γ ⊢P⦂ PP) →
           -----------------------------------
           ↓ op V (↑ op' p W P)
@@ -113,7 +113,7 @@ data _[_]↝↝_ {Γ : Ctx} : {o o' : O} {PP : PType o} {QQ : PType o'} → Γ �
           {i : I} → 
           {op : Σₛ} → 
           (p : op ∈ₒ o) →
-          (V : Γ ⊢V⦂ `` (payload op)) →
+          (V : Γ ⊢V⦂ ```(payload op)) →
           (M : Γ ⊢M⦂ X ! (o , i)) →
           -----------------------------
           run (↑ op p V M)
@@ -155,7 +155,7 @@ data _[_]↝↝_ {Γ : Ctx} : {o o' : O} {PP : PType o} {QQ : PType o'} → Γ �
               {PP' : PType o'}
               {op : Σₛ}
               {p : op ∈ₒ o} →
-              {V : Γ ⊢V⦂ ``(payload op)}
+              {V : Γ ⊢V⦂ ```(payload op)}
               {P : Γ ⊢P⦂ PP}
               {P' : Γ ⊢P⦂ PP'}
               {r : PP ⇝ PP'} → 
@@ -169,7 +169,7 @@ data _[_]↝↝_ {Γ : Ctx} : {o o' : O} {PP : PType o} {QQ : PType o'} → Γ �
               {PP : PType o}
               {PP' : PType o'}
               {op : Σₛ}
-              {V : Γ ⊢V⦂ ``(payload op)}
+              {V : Γ ⊢V⦂ ```(payload op)}
               {P : Γ ⊢P⦂ PP}
               {P' : Γ ⊢P⦂ PP'}
               {r : PP ⇝ PP'} →

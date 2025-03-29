@@ -56,7 +56,7 @@ data ProcResult⟨_⟩ : {o : O} {PP : PType o} → [] ⊢P⦂ PP → Set where
            {PP : PType o}
            {op : Σₛ}
            {p : op ∈ₒ o}
-           {V : [] ⊢V⦂ ``(payload op)}
+           {V : [] ⊢V⦂ ```(payload op)}
            {P : [] ⊢P⦂ PP} →
            ProcResult⟨ P ⟩ →
            ---------------------------

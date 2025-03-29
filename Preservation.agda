@@ -42,7 +42,7 @@ data _⊢E[_]⦂_ (Γ : Ctx) : (Δ : BCtx) → CType → Set where
                      {i : I} →
                      (op : Σₛ) →
                      op ∈ₒ o →
-                     Γ ⊢V⦂ ``(payload op) →
+                     Γ ⊢V⦂ ```(payload op) →
                      Γ ⊢E[ Δ ]⦂ X ! (o , i) →
                      ------------------------
                      Γ ⊢E[ Δ ]⦂ X ! (o , i)
@@ -52,7 +52,7 @@ data _⊢E[_]⦂_ (Γ : Ctx) : (Δ : BCtx) → CType → Set where
                      {o : O}
                      {i : I}
                      (op : Σₛ) →
-                     Γ ⊢V⦂ ``(payload op) →
+                     Γ ⊢V⦂ ```(payload op) →
                      Γ ⊢E[ Δ ]⦂ X ! (o , i) →
                      ---------------------------
                      Γ ⊢E[ Δ ]⦂ X ! op ↓ₑ (o , i)
@@ -63,7 +63,7 @@ data _⊢E[_]⦂_ (Γ : Ctx) : (Δ : BCtx) → CType → Set where
                      {i i' : I} → 
                      (op : Σₛ) →
                      lkpᵢ op i ≡ just (o' , i') →
-                     Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i') →
+                     Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i') →
                      Γ ∷ ⟨ X ⟩ ⊢E[ Δ ]⦂ Y ! (o , i) →
                      ------------------------------------------
                      Γ ⊢E[ X ∷ₗ Δ ]⦂ Y ! (o , i)
@@ -128,13 +128,13 @@ coerce p q E [ M ] =
 
 -- STRENGTHENING OF GROUND VALUES WRT BOUND PROMISES
 
-strengthen-var : {Γ : Ctx} → (Δ : BCtx) → {A : BType} → `` A ∈ Γ ⋈ Δ → `` A ∈ Γ
+strengthen-var : {Γ : Ctx} → (Δ : BCtx) → {A : BType} → ``` A ∈ Γ ⋈ Δ → ``` A ∈ Γ
 strengthen-var [] x = x
 strengthen-var (y ∷ₗ Δ) x with strengthen-var Δ x
 ... | Tl p = p
 
 
-strengthen-val : {Γ : Ctx} {Δ : BCtx} {A : BType} → Γ ⋈ Δ ⊢V⦂ `` A → Γ ⊢V⦂ `` A
+strengthen-val : {Γ : Ctx} {Δ : BCtx} {A : BType} → Γ ⋈ Δ ⊢V⦂ ``` A → Γ ⊢V⦂ ``` A
 strengthen-val {_} {Δ} (` x) =
   ` strengthen-var Δ x
 strengthen-val (``_ c) =
@@ -142,7 +142,7 @@ strengthen-val (``_ c) =
 
 strengthen-val-[] : {Γ : Ctx}
                     {A : BType} → 
-                    (V : Γ ⋈ [] ⊢V⦂ `` A) →
+                    (V : Γ ⋈ [] ⊢V⦂ ``` A) →
                     --------------------
                     strengthen-val {Δ = []} V ≡ V
 
@@ -187,7 +187,7 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
                     {i : I}
                     {op : Σₛ} →
                     (p : op ∈ₒ o) →
-                    (V : Γ ⊢V⦂ ``(payload op)) →
+                    (V : Γ ⊢V⦂ ```(payload op)) →
                     (M : Γ ⊢M⦂ X ! (o , i)) →
                     (N : Γ ∷ X ⊢M⦂ Y ! (o , i)) →
                     -----------------------------
@@ -200,7 +200,7 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
                     {i i' : I}
                     {op : Σₛ} →
                     (p : lkpᵢ op i ≡ just (o' , i')) →
-                    (M₁ : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
+                    (M₁ : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
                     (M₂ : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
                     (N : Γ ∷ Y ⊢M⦂ Z ! (o , i)) →
                     ---------------------------------------------------------------------------
@@ -223,8 +223,8 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
                     {op op' : Σₛ} →
                     (p : lkpᵢ op i ≡ just (o' , i')) →
                     (q : op' ∈ₒ o) →
-                    (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``(payload op')) → 
-                    (M : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
+                    (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ```(payload op')) → 
+                    (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
                     (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
                     --------------------------------------------
                     (promise op ∣ p ↦ M `in (↑ op' q V N))
@@ -235,7 +235,7 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
                     {o : O}
                     {i : I}
                     {op : Σₛ} →
-                    (V : Γ ⊢V⦂ ``(payload op)) →
+                    (V : Γ ⊢V⦂ ```(payload op)) →
                     (W : Γ ⊢V⦂ X) →
                     ----------------------------------------------------------------
                     ↓ {o = o} {i = i} op V (return W)
@@ -248,8 +248,8 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
                     {op : Σₛ}
                     {op' : Σₛ} →
                     (p : op' ∈ₒ o) →
-                    (V : Γ ⊢V⦂ ``(payload op)) →
-                    (W : Γ ⊢V⦂ ``(payload op')) →
+                    (V : Γ ⊢V⦂ ```(payload op)) →
+                    (W : Γ ⊢V⦂ ```(payload op')) →
                     (M : Γ ⊢M⦂ X ! (o , i)) →
                     -------------------------------
                     ↓ op V (↑ op' p W M)
@@ -261,8 +261,8 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
                     {i i' : I}
                     {op : Σₛ} →
                     (p : lkpᵢ op i ≡ just (o' , i')) →
-                    (V : Γ ⊢V⦂ ``(payload op)) → 
-                    (M : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
+                    (V : Γ ⊢V⦂ ```(payload op)) → 
+                    (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
                     (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
                     ---------------------------------------------------------------------------------------
                     ↓ op V (promise op ∣ p ↦ M `in N )
@@ -276,8 +276,8 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
                     {op op' : Σₛ} →
                     (p : ¬ op ≡ op') →
                     (q : lkpᵢ op' i ≡ just (o' , i')) →
-                    (V : Γ ⊢V⦂ ``(payload op)) → 
-                    (M : Γ ∷ ``(payload op') ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
+                    (V : Γ ⊢V⦂ ```(payload op)) → 
+                    (M : Γ ∷ ```(payload op') ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
                     (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
                     ------------------------------------------------------------------------------------------
                     ↓ op V (promise op' ∣ q ↦ M `in N )
@@ -329,7 +329,7 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
                     {q : i ⊑ᵢ i'}
                     {op : Σₛ} → 
                     (r : op ∈ₒ o) →
-                    (V : Γ ⊢V⦂ ``(payload op)) →
+                    (V : Γ ⊢V⦂ ```(payload op)) →
                     (M : Γ ⊢M⦂ X ! (o , i)) →
                     -------------------------------
                     coerce p q (↑ op r V M)
@@ -343,7 +343,7 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
                     {q : i ⊑ᵢ i'}
                     {op : Σₛ} →
                     (r : lkpᵢ op i ≡ just (o'' , i''))
-                    (M : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o'' , i'')) →
+                    (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o'' , i'')) →
                     (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
                     ------------------------------------------------------------------
                     coerce p q (promise op ∣ r ↦ M `in N)

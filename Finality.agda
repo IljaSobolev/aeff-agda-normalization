@@ -56,7 +56,7 @@ mutual
                       {i : I}
                       {op : Σₛ} →
                       (p : op ∈ₒ o) →
-                      (V : Γ ⊢V⦂ ``(payload op)) →
+                      (V : Γ ⊢V⦂ ```(payload op)) →
                       (M : Γ ⊢M⦂ X ! (o , i)) →
                       (N : Γ ∷ X ⊢M⦂ Y ! (o , i)) →
                       -----------------------------
@@ -69,7 +69,7 @@ mutual
                       {i i' : I}
                       {op : Σₛ} →
                       (p : lkpᵢ op i ≡ just (o' , i')) →
-                      (M₁ : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
+                      (M₁ : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
                       (M₂ : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
                       (N : Γ ∷ Y ⊢M⦂ Z ! (o , i)) →
                       ---------------------------------------------------------------------------
@@ -92,8 +92,8 @@ mutual
                       {op op' : Σₛ} →
                       (p : lkpᵢ op i ≡ just (o' , i')) →
                       (q : op' ∈ₒ o) →
-                      (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``(payload op')) → 
-                      (M : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
+                      (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ```(payload op')) → 
+                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
                       --------------------------------------------
                       (promise op ∣ p ↦ M `in (↑ op' q V N))
@@ -104,7 +104,7 @@ mutual
                       {o : O}
                       {i : I}
                       {op : Σₛ} →
-                      (V : Γ ⊢V⦂ ``(payload op)) →
+                      (V : Γ ⊢V⦂ ```(payload op)) →
                       (W : Γ ⊢V⦂ X) →
                       ----------------------------------------------------------------
                       ↓ {o = o} {i = i} op V (return W)
@@ -117,8 +117,8 @@ mutual
                       {op : Σₛ}
                       {op' : Σₛ} →
                       (p : op' ∈ₒ o) →
-                      (V : Γ ⊢V⦂ ``(payload op)) →
-                      (W : Γ ⊢V⦂ ``(payload op')) →
+                      (V : Γ ⊢V⦂ ```(payload op)) →
+                      (W : Γ ⊢V⦂ ```(payload op')) →
                       (M : Γ ⊢M⦂ X ! (o , i)) →
                       -------------------------------
                       ↓ op V (↑ op' p W M)
@@ -131,8 +131,8 @@ mutual
                       {i i' : I}
                       {op : Σₛ} →
                       (p : lkpᵢ op i ≡ just (o' , i')) →
-                      (V : Γ ⊢V⦂ ``(payload op)) → 
-                      (M : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
+                      (V : Γ ⊢V⦂ ```(payload op)) → 
+                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
                       ---------------------------------------------------------------------------------------
                       ↓ op V (promise op ∣ p ↦ M `in N )
@@ -146,8 +146,8 @@ mutual
                       {op op' : Σₛ} →
                       (p : ¬ op ≡ op') →
                       (q : lkpᵢ op' i ≡ just (o' , i')) →
-                      (V : Γ ⊢V⦂ ``(payload op)) → 
-                      (M : Γ ∷ ``(payload op') ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
+                      (V : Γ ⊢V⦂ ```(payload op)) → 
+                      (M : Γ ∷ ```(payload op') ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
                       ------------------------------------------------------------------------------------------
                       ↓ op V (promise op' ∣ q ↦ M `in N )
@@ -188,7 +188,7 @@ mutual
                        {i : I}
                        {op : Σₛ}
                        {p : op ∈ₒ o}
-                       {V : Γ ⊢V⦂ ``(payload op)}
+                       {V : Γ ⊢V⦂ ```(payload op)}
                        {M N : Γ ⊢M⦂ X ! (o , i)} →
                        M ↝↝ N →
                        ---------------------------
@@ -200,7 +200,7 @@ mutual
                        {o : O}
                        {i : I}
                        {op : Σₛ}
-                       {V : Γ ⊢V⦂ ``(payload op)}
+                       {V : Γ ⊢V⦂ ```(payload op)}
                        {M N : Γ ⊢M⦂ X ! (o , i)} →
                        M ↝↝ N →
                        ---------------------------
@@ -213,7 +213,7 @@ mutual
                       {i i' : I}
                       {op : Σₛ} →
                       {r : lkpᵢ op i ≡ just (o' , i')}
-                      {M : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')} →
+                      {M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')} →
                       {N N' : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)} →
                       N ↝↝ N' →
                       ------------------------------------------------
@@ -251,7 +251,7 @@ mutual
                       {q : i ⊑ᵢ i'}
                       {op : Σₛ} → 
                       (r : op ∈ₒ o) →
-                      (V : Γ ⊢V⦂ ``(payload op)) →
+                      (V : Γ ⊢V⦂ ```(payload op)) →
                       (M : Γ ⊢M⦂ X ! (o , i)) →
                       -------------------------------
                       coerce p q (↑ op r V M)
@@ -265,7 +265,7 @@ mutual
                       {q : i ⊑ᵢ i'}
                       {op : Σₛ} →
                       (r : lkpᵢ op i ≡ just (o'' , i''))
-                      (M : Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o'' , i'')) →
+                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o'' , i'')) →
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
                       ------------------------------------------------------------------
                       coerce p q (promise op ∣ r ↦ M `in N)
@@ -411,7 +411,7 @@ run-invert-↓ : {Γ : Ctx}
                {o : O}
                {i : I}
                {op : Σₛ}
-               {V : ⟨⟨ Γ ⟩⟩ ⊢V⦂ ``(payload op)}
+               {V : ⟨⟨ Γ ⟩⟩ ⊢V⦂ ```(payload op)}
                {M : ⟨⟨ Γ ⟩⟩ ⊢M⦂ X ! (o , i)} →
                RunResult⟨ Γ ∣ ↓ op V M ⟩ → 
                -------------------------------
@@ -433,7 +433,7 @@ run-invert-promise : {Γ : Ctx}
                      {i i' : I}
                      {op : Σₛ}
                      {p : lkpᵢ op i ≡ just (o' , i')}
-                     {M : (⟨⟨ Γ ⟩⟩ ∷ `` (payload op)) ⊢M⦂ (⟨ X ⟩ ! (o' , i'))}
+                     {M : (⟨⟨ Γ ⟩⟩ ∷ ```(payload op)) ⊢M⦂ (⟨ X ⟩ ! (o' , i'))}
                      {N : (⟨⟨ Γ ⟩⟩ ∷ ⟨ X ⟩) ⊢M⦂ (Y ! (o , i))} → 
                      RunResult⟨ Γ ∣ (promise op ∣ p ↦ M `in N) ⟩ →
                      --------------------------------------------------------
@@ -476,7 +476,7 @@ run-↑-⊥ : {Γ : Ctx}
           {i : I}
           {op : Σₛ}
           {p : op ∈ₒ o}
-          {V : ⟨⟨ Γ ⟩⟩ ⊢V⦂ ``(payload op)}
+          {V : ⟨⟨ Γ ⟩⟩ ⊢V⦂ ```(payload op)}
           {M : ⟨⟨ Γ ⟩⟩ ⊢M⦂ (X ! (o , i))} → 
           RunResult⟨ Γ ∣ ↑ op p V M ⟩ →
           --------------------------------
@@ -504,7 +504,7 @@ run-let-promise-⊥ : {Γ : Ctx}
                     {i i' : I}
                     {op : Σₛ}
                     {p : lkpᵢ op i ≡ just (o' , i')}
-                    {M₁ : (⟨⟨ Γ ⟩⟩ ∷ `` (payload op)) ⊢M⦂ (⟨ X ⟩ ! (o' , i'))}
+                    {M₁ : (⟨⟨ Γ ⟩⟩ ∷ ```(payload op)) ⊢M⦂ (⟨ X ⟩ ! (o' , i'))}
                     {M₂ : (⟨⟨ Γ ⟩⟩ ∷ ⟨ X ⟩) ⊢M⦂ (Y ! (o , i))}
                     {N  : (⟨⟨ Γ ⟩⟩ ∷ Y) ⊢M⦂ (Z ! (o , i))} →
                     RunResult⟨ Γ ∣ let= promise op ∣ p ↦ M₁ `in M₂ `in N ⟩ →

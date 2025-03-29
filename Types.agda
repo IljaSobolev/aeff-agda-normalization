@@ -22,7 +22,7 @@ GType = BType
 mutual
 
   data VType : Set where
-    ``  : GType → VType
+    ```  : GType → VType
     _⇒_ : VType → CType → VType
     ⟨_⟩ : VType → VType
 

@@ -41,7 +41,7 @@ data RunResult⟨_∣_⟩ (Γ : Ctx) : {C : CType} → ⟨⟨ Γ ⟩⟩ ⊢M⦂ 
              {i i' : I}
              {op : Σₛ}
              {p : lkpᵢ op i ≡ just (o' , i')}
-             {M : ⟨⟨ Γ ⟩⟩ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')}
+             {M : ⟨⟨ Γ ⟩⟩ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')}
              {N : ⟨⟨ Γ ⟩⟩ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)} →
              RunResult⟨ Γ ∷ X ∣ N ⟩ →
              ----------------------------------------------------
@@ -68,7 +68,7 @@ data CompResult⟨_∣_⟩ (Γ : Ctx) : {C : CType} → ⟨⟨ Γ ⟩⟩ ⊢M⦂
            {i : I}
            {op : Σₛ}
            {p : op ∈ₒ o}
-           {V : ⟨⟨ Γ ⟩⟩ ⊢V⦂ ``(payload op)}
+           {V : ⟨⟨ Γ ⟩⟩ ⊢V⦂ ```(payload op)}
            {M : ⟨⟨ Γ ⟩⟩ ⊢M⦂ X ! (o , i)} →
            CompResult⟨ Γ ∣ M ⟩ →
            --------------------------------

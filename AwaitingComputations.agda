@@ -35,7 +35,7 @@ data _⧗_ {Γ : Ctx} {X : VType} (x : ⟨ X ⟩ ∈ Γ) : {C : CType} → Γ �
               {o : O}
               {i : I}
               {op : Σₛ}
-              {V : Γ ⊢V⦂ ``(payload op)}
+              {V : Γ ⊢V⦂ ```(payload op)}
               {M : Γ ⊢M⦂ X ! (o , i)} →
               x ⧗ M →
               -------------------------
