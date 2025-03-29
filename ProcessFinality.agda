@@ -7,6 +7,7 @@ open import Data.Unit
 
 open import AEff
 open import AwaitingComputations
+open import EffectAnnotations
 open import Finality
 open import Preservation
 open import ProcessPreservation
@@ -25,261 +26,335 @@ module ProcessFinality where
 -- SMALL-STEP OPERATIONAL SEMANTICS FOR WELL-TYPED PROCESSES
 -- WITH INLINED EVALUATION CONTEXT RULES
 
-infix 10 _↝↝P_
+infix 10 _[_]↝↝_
 
-data _↝↝P_ {Γ : Ctx} : {PP : PType} → Γ ⊢P⦂ PP → Γ ⊢P⦂ PP → Set where
+data _[_]↝↝_ {Γ : Ctx} : {o o' : O} {PP : PType o} {QQ : PType o'} → Γ ⊢P⦂ PP → PP ⇝ QQ → Γ ⊢P⦂ QQ → Set where
 
   -- RUNNING INDIVIDUAL COMPUTATIONS
 
-  run   : {X : Type}
-          {M N : Γ ⊢M⦂ X} → 
+  run   : {X : VType}
+          {o : O}
+          {i : I}
+          {M N : Γ ⊢M⦂ X ! (o , i)} → 
           M ↝↝ N →
           ---------------------------
-          (run M) ↝↝P (run N)
+          (run M) [ id ]↝↝ (run N)
 
   -- BROADCAST RULES
 
-  ↑-∥ₗ   : {PP : PType}
-           {QQ : PType}
+  ↑-∥ₗ   : {o o' : O}
+           {PP : PType o}
+           {QQ : PType o'}
            {op : Σₛ} → 
+           (p : op ∈ₒ o) →
            (V : Γ ⊢V⦂ `` (payload op)) →
            (P : Γ ⊢P⦂ PP) →
            (Q : Γ ⊢P⦂ QQ) →
            ------------------------------------------
-           ((↑ op V P) ∥ Q)
-           ↝↝P
-           ↑ op V (P ∥ ↓ op V Q)
+           ((↑ op p V P) ∥ Q)
+           [ par ⇝-refl (⇝-↓ₚ {op = op}) ]↝↝
+           ↑ op (∪ₒ-inl op p) V (P ∥ ↓ op V Q)
 
-  ↑-∥ᵣ   : {PP : PType}
-           {QQ : PType}
+  ↑-∥ᵣ   : {o o' : O}
+           {PP : PType o}
+           {QQ : PType o'}
            {op : Σₛ} → 
+           (p : op ∈ₒ o') →
            (V : Γ ⊢V⦂ `` (payload op)) →
            (P : Γ ⊢P⦂ PP) →
            (Q : Γ ⊢P⦂ QQ) →
            ------------------------------------------
-           (P ∥ (↑ op V Q))
-           ↝↝P
-           ↑ op V (↓ op V P ∥ Q)
+           (P ∥ (↑ op p V Q))
+           [ par (⇝-↓ₚ {op = op}) ⇝-refl ]↝↝
+           ↑ op (∪ₒ-inr op p) V (↓ op V P ∥ Q)
 
   -- INTERRUPT PROPAGATION RULES
 
-  ↓-run : {X : Type}
+  ↓-run : {X : VType}
+          {o : O}
+          {i : I}
           {op : Σₛ} → 
           (V : Γ ⊢V⦂ `` (payload op)) → 
-          (M : Γ ⊢M⦂ X) →
+          (M : Γ ⊢M⦂ X ! (o , i)) →
           -----------------------------
           ↓ op V (run M)
-          ↝↝P
+          [ id ]↝↝
           run (↓ op V M)
 
-  ↓-∥   : {PP : PType}
-          {QQ : PType}
+  ↓-∥   : {o o' : O}
+          {PP : PType o}
+          {QQ : PType o'}
           {op : Σₛ}
           (V : Γ ⊢V⦂ `` (payload op)) →
           (P : Γ ⊢P⦂ PP) →
           (Q : Γ ⊢P⦂ QQ) →
           -----------------------------
           ↓ op V (P ∥ Q)
-          ↝↝P
+          [ ⇝-refl ]↝↝
           ((↓ op V P) ∥ (↓ op V Q))
 
-  ↓-↑   : {PP : PType}
+  ↓-↑   : {o : O}
+          {PP : PType o}
           {op : Σₛ}
           {op' : Σₛ} →
+          (p : op' ∈ₒ o) →
           (V : Γ ⊢V⦂ ``(payload op)) →
           (W : Γ ⊢V⦂ ``(payload op')) →
           (P : Γ ⊢P⦂ PP) →
           -----------------------------------
-          ↓ op V (↑ op' W P)
-          ↝↝P
-          ↑ op' W (↓ op V P)
+          ↓ op V (↑ op' p W P)
+          [ ⇝-refl ]↝↝
+          ↑ op' (↓ₚₚ-⊑ₒ PP op' p) W (↓ op V P)
 
   -- SIGNAL HOISTING RULE
 
-  ↑     : {X : Type}
-          {op : Σₛ}
-          (V : Γ ⊢V⦂ `` (payload op))
-          (M : Γ ⊢M⦂ X) →
+  ↑     : {X : VType}
+          {o : O}
+          {i : I} → 
+          {op : Σₛ} → 
+          (p : op ∈ₒ o) →
+          (V : Γ ⊢V⦂ `` (payload op)) →
+          (M : Γ ⊢M⦂ X ! (o , i)) →
           -----------------------------
-          run (↑ op V M)
-          ↝↝P
-          ↑ op V (run M)
+          run (↑ op p V M)
+          [ id ]↝↝
+          ↑ op p V (run M)
 
   -- EVALUATION CONTEXT RULES
 
-  context-∥ₗ : {PP : PType}
-               {QQ : PType}
+  context-∥ₗ : {o o' o'' : O}
+               {PP : PType o}
+               {PP' : PType o''}
+               {QQ : PType o'}
                {P : Γ ⊢P⦂ PP}
-               {P' : Γ ⊢P⦂ PP}
-               {Q : Γ ⊢P⦂ QQ} →
-               P ↝↝P P' → 
+               {P' : Γ ⊢P⦂ PP'}
+               {Q : Γ ⊢P⦂ QQ}
+               {p : PP ⇝ PP'} → 
+               P [ p ]↝↝ P' → 
                ------------------
                P ∥ Q
-               ↝↝P
+               [ par p ⇝-refl ]↝↝
                P' ∥ Q
 
-  context-∥ᵣ : {PP : PType}
-               {QQ : PType}
+  context-∥ᵣ : {o o' o'' : O}
+               {PP : PType o}
+               {QQ : PType o'}
+               {QQ' : PType o''}
                {P : Γ ⊢P⦂ PP}
                {Q : Γ ⊢P⦂ QQ}
-               {Q' : Γ ⊢P⦂ QQ} →
-               Q ↝↝P Q' → 
+               {Q' : Γ ⊢P⦂ QQ'}
+               {r : QQ ⇝ QQ'} → 
+               Q [ r ]↝↝ Q' → 
                ------------------
                P ∥ Q
-               ↝↝P
+               [ par ⇝-refl r ]↝↝
                P ∥ Q'
 
-  context-↑ : {PP : PType}
+  context-↑ : {o o' : O}
+              {PP : PType o}
+              {PP' : PType o'}
               {op : Σₛ}
+              {p : op ∈ₒ o} →
               {V : Γ ⊢V⦂ ``(payload op)}
               {P : Γ ⊢P⦂ PP}
-              {P' : Γ ⊢P⦂ PP} →
-              P ↝↝P P' →
+              {P' : Γ ⊢P⦂ PP'}
+              {r : PP ⇝ PP'} → 
+              P [ r ]↝↝ P' →
               --------------------------
-              ↑ op V P
-              ↝↝P
-              ↑ op V P'
+              ↑ op p V P
+              [ r ]↝↝
+              ↑ op (⇝-⊑ₒ r op p) V P'
 
-  context-↓ : {PP : PType}
+  context-↓ : {o o' : O}
+              {PP : PType o}
+              {PP' : PType o'}
               {op : Σₛ}
               {V : Γ ⊢V⦂ ``(payload op)}
               {P : Γ ⊢P⦂ PP}
-              {P' : Γ ⊢P⦂ PP} →
-              P ↝↝P P' →
+              {P' : Γ ⊢P⦂ PP'}
+              {r : PP ⇝ PP'} →
+              P [ r ]↝↝ P' →
               ----------------------
               ↓ op V P
-              ↝↝P
+              [ ⇝-↓ₚ-cong r ]↝↝
               ↓ op V P'
 
 
 -- ONE-TO-ONE CORRESPONDENCE BETWEEN THE TWO SETS OF REDUCTION RULES
 
-[]↝↝P-to-[]↝P : {Γ : Ctx}
-                {PP : PType}
-                {P : Γ ⊢P⦂ PP}
-                {Q : Γ ⊢P⦂ PP} →
-                P ↝↝P Q →
-                -----------------
-                P ↝P Q
+[]↝↝-to-[]↝ : {Γ : Ctx}
+              {o o' : O}
+              {PP : PType o}
+              {QQ : PType o'}
+              {P : Γ ⊢P⦂ PP}
+              {Q : Γ ⊢P⦂ QQ}
+              {r : PP ⇝ QQ} → 
+              P [ r ]↝↝ Q →
+              -----------------
+              P [ r ]↝ Q
 
-[]↝↝P-to-[]↝P (run r) =
+[]↝↝-to-[]↝ (run r) =
   run (↝↝-to-↝ r)
-[]↝↝P-to-[]↝P (↑-∥ₗ V P Q) =
-  ↑-∥ₗ V P Q
-[]↝↝P-to-[]↝P (↑-∥ᵣ V P Q) =
-  ↑-∥ᵣ V P Q
-[]↝↝P-to-[]↝P (↓-run V M) =
+[]↝↝-to-[]↝ (↑-∥ₗ p V P Q) =
+  ↑-∥ₗ p V P Q
+[]↝↝-to-[]↝ (↑-∥ᵣ p V P Q) =
+  ↑-∥ᵣ p V P Q
+[]↝↝-to-[]↝ (↓-run V M) =
   ↓-run V M
-[]↝↝P-to-[]↝P (↓-∥ V P Q) =
+[]↝↝-to-[]↝ (↓-∥ V P Q) =
   ↓-∥ V P Q
-[]↝↝P-to-[]↝P (↓-↑ V W P) =
-  ↓-↑ V W P
-[]↝↝P-to-[]↝P (↑ V M) =
-  ↑ V M
-[]↝↝P-to-[]↝P (context-∥ₗ r) =
-  context (_ ∥ₗ _) ([]↝↝P-to-[]↝P r)
-[]↝↝P-to-[]↝P (context-∥ᵣ r) =
-  context (_ ∥ᵣ _) ([]↝↝P-to-[]↝P r)
-[]↝↝P-to-[]↝P (context-↑ r) =
-  context (↑ _ _ _) ([]↝↝P-to-[]↝P r)
-[]↝↝P-to-[]↝P (context-↓ r) =
-  context (↓ _ _ _) ([]↝↝P-to-[]↝P r)
+[]↝↝-to-[]↝ (↓-↑ p V W P) =
+  ↓-↑ p V W P
+[]↝↝-to-[]↝ (↑ p V M) =
+  ↑ p V M
+[]↝↝-to-[]↝ (context-∥ₗ r) =
+  context (_ ∥ₗ _) ([]↝↝-to-[]↝ r)
+[]↝↝-to-[]↝ (context-∥ᵣ r) =
+  context (_ ∥ᵣ _) ([]↝↝-to-[]↝ r)
+[]↝↝-to-[]↝ (context-↑ r) =
+  context (↑ _ _ _ _) ([]↝↝-to-[]↝ r)
+[]↝↝-to-[]↝ (context-↓ r) =
+  context (↓ _ _ _) ([]↝↝-to-[]↝ r)
+
+
+≡-app₂ : {X : Set}
+         {Y Z : X → Set}
+         {f g : (x : X) → Y x → Z x} →
+         f ≡ g →
+         (x : X) →
+         (y : Y x) → 
+         -----------------------------
+         f x y ≡ g x y
+        
+≡-app₂ refl x y =
+  refl
+
+
+[]↝-context-to-[]↝↝-aux : {Γ : Ctx}
+                          {o o' : O}
+                          {op : Σₛ}
+                          {p : op ∈ₒ o}
+                          {PP : PType o}
+                          {QQ : PType o'} → 
+                          (F : Γ ⊢F⦂ PP) →
+                          (r : proj₂ (hole-ty-f F) ⇝ QQ) →
+                          ----------------------------------------------------------
+                          ⇝-⊑ₒ (proj₂ (proj₂ (⇝-f-⇝ F r))) op p ≡ ⇝-f-∈ₒ F r op p
+
+[]↝-context-to-[]↝↝-aux {Γ} {o} {o'} {op} {p} F r =
+  ≡-app₂ (⊑ₒ-irrelevant (⇝-⊑ₒ (proj₂ (proj₂ (⇝-f-⇝ F r)))) (⇝-f-∈ₒ F r)) op p
 
 
 mutual
 
-  []↝P-context-to-[]↝↝P : {Γ : Ctx}
-                          {PP : PType}
-                          (F : Γ ⊢F⦂ PP)
-                          {P : Γ ⊢P⦂ (hole-ty-f F)}
-                          {Q : Γ ⊢P⦂ (hole-ty-f F)} →
-                          P ↝P Q →
-                          -----------------------------------------------------------------------------
-                          F [ P ]f
-                          ↝↝P
-                          F [ Q ]f
+  []↝-context-to-[]↝↝ : {Γ : Ctx}
+                        {o o' : O}
+                        {PP : PType o}
+                        {QQ : PType o'} →
+                        (F : Γ ⊢F⦂ PP) → 
+                        {P : Γ ⊢P⦂ proj₂ (hole-ty-f F)}
+                        {Q : Γ ⊢P⦂ QQ}
+                        {r : proj₂ (hole-ty-f F) ⇝ QQ} → 
+                        P [ r ]↝ Q →
+                        -----------------------------------------------------------------------------
+                        F [ P ]f
+                        [ proj₂ (proj₂ (⇝-f-⇝ F r)) ]↝↝
+                        (⇝-f F r) [ subst-i PType (λ o QQ → Γ ⊢P⦂ QQ) (⇝-f-tyₒ F r) (⇝-f-ty F r) Q ]f
 
-  []↝P-context-to-[]↝↝P [-] r =
-    []↝P-to-[]↝↝P r
-  []↝P-context-to-[]↝↝P (F ∥ₗ Q) r =
-    context-∥ₗ ([]↝P-context-to-[]↝↝P F r)
-  []↝P-context-to-[]↝↝P (P ∥ᵣ F) r =
-    context-∥ᵣ ([]↝P-context-to-[]↝↝P F r)
-  []↝P-context-to-[]↝↝P (↑ op V F) r = 
-    context-↑ ([]↝P-context-to-[]↝↝P F r)
-  []↝P-context-to-[]↝↝P (↓ op V F) r =
-    context-↓ ([]↝P-context-to-[]↝↝P F r)
+  []↝-context-to-[]↝↝ [-] r =
+    []↝-to-[]↝↝ r
+  []↝-context-to-[]↝↝ (F ∥ₗ Q) r =
+    context-∥ₗ ([]↝-context-to-[]↝↝ F r)
+  []↝-context-to-[]↝↝ (P ∥ᵣ F) r =
+    context-∥ᵣ ([]↝-context-to-[]↝↝ F r)
+  []↝-context-to-[]↝↝ {Γ} {o} {o'} {PP} {QQ} (↑ op p V F) {P} {Q} {r'} r
+    rewrite sym ([]↝-context-to-[]↝↝-aux {op = op} {p = p} F r') =
+      context-↑ ([]↝-context-to-[]↝↝ F r)
+  []↝-context-to-[]↝↝ (↓ op V F) r =
+    context-↓ ([]↝-context-to-[]↝↝ F r)
 
 
-  []↝P-to-[]↝↝P : {Γ : Ctx}
-                  {PP : PType}
-                  {P : Γ ⊢P⦂ PP}
-                  {Q : Γ ⊢P⦂ PP} →
-                  P ↝P Q →
-                  -----------------
-                  P ↝↝P Q
+  []↝-to-[]↝↝ : {Γ : Ctx}
+                {o o' : O}
+                {PP : PType o}
+                {QQ : PType o'}
+                {P : Γ ⊢P⦂ PP}
+                {Q : Γ ⊢P⦂ QQ}
+                {r : PP ⇝ QQ} → 
+                P [ r ]↝ Q →
+                -----------------
+                P [ r ]↝↝ Q
 
-  []↝P-to-[]↝↝P (run r) =
+  []↝-to-[]↝↝ (run r) =
     run (↝-to-↝↝ r)
-  []↝P-to-[]↝↝P (↑-∥ₗ V P Q) =
-    ↑-∥ₗ V P Q
-  []↝P-to-[]↝↝P (↑-∥ᵣ V P Q) =
-    ↑-∥ᵣ V P Q
-  []↝P-to-[]↝↝P (↓-run V M) =
+  []↝-to-[]↝↝ (↑-∥ₗ p V P Q) =
+    ↑-∥ₗ p V P Q
+  []↝-to-[]↝↝ (↑-∥ᵣ p V P Q) =
+    ↑-∥ᵣ p V P Q
+  []↝-to-[]↝↝ (↓-run V M) =
     ↓-run V M
-  []↝P-to-[]↝↝P (↓-∥ V P Q) =
+  []↝-to-[]↝↝ (↓-∥ V P Q) =
     ↓-∥ V P Q
-  []↝P-to-[]↝↝P (↓-↑ V W P) =
-    ↓-↑ V W P
-  []↝P-to-[]↝↝P (↑ V M) =
-    ↑ V M
-  []↝P-to-[]↝↝P (context F r) =
-    []↝P-context-to-[]↝↝P _ r
+  []↝-to-[]↝↝ (↓-↑ p V W P) =
+    ↓-↑ p V W P
+  []↝-to-[]↝↝ (↑ p V M) =
+    ↑ p V M
+  []↝-to-[]↝↝ (context F r) =
+    []↝-context-to-[]↝↝ _ r
 
 
 -- FINALITY OF RESULT FORMS
 
-par-finality-↝↝P : {PP : PType}
+par-finality-↝↝ : {o o' : O}
+                  {PP : PType o}
+                  {QQ : PType o'}
                   {P : [] ⊢P⦂ PP} → 
-                  {Q : [] ⊢P⦂ PP} → 
+                  {Q : [] ⊢P⦂ QQ} → 
                   ParResult⟨ P ⟩ →
-                  P ↝↝P Q →
+                  (r : PP ⇝ QQ) →
+                  P [ r ]↝↝ Q →
                   -----------------
                   ⊥
 
-par-finality-↝↝P (run R) (run r) =
+par-finality-↝↝ (run R) .id (run r) =
   run-finality-↝↝ R r 
-par-finality-↝↝P (run R) (↑ V M) =
+par-finality-↝↝ (run R) .id (↑ p V M) =
   run-↑-⊥ R
-par-finality-↝↝P (par R S) (context-∥ₗ r') =
-  par-finality-↝↝P R r'
-par-finality-↝↝P (par R S) (context-∥ᵣ r') =
-  par-finality-↝↝P S r'
+par-finality-↝↝ (par R S) .(par _ ⇝-refl) (context-∥ₗ r') =
+  par-finality-↝↝ R _ r'
+par-finality-↝↝ (par R S) .(par ⇝-refl _) (context-∥ᵣ r') =
+  par-finality-↝↝ S _ r'
 
 
-proc-finality-↝↝P : {PP : PType}
+proc-finality-↝↝ : {o o' : O}
+                  {PP : PType o}
+                  {QQ : PType o'}
                   {P : [] ⊢P⦂ PP} → 
-                  {Q : [] ⊢P⦂ PP} → 
+                  {Q : [] ⊢P⦂ QQ} → 
                   ProcResult⟨ P ⟩ →
-                  P ↝↝P Q →
+                  (r : PP ⇝ QQ) →
+                  P [ r ]↝↝ Q →
                   -----------------
                   ⊥
 
-proc-finality-↝↝P (proc R) r' =
-  par-finality-↝↝P R r'
-proc-finality-↝↝P (signal R) (context-↑ r') =
-  proc-finality-↝↝P R r'
+proc-finality-↝↝ (proc R) r r' =
+  par-finality-↝↝ R r r'
+proc-finality-↝↝ (signal R) r (context-↑ r') =
+  proc-finality-↝↝ R r r'
 
 
 {- LEMMA 4.2 -}
 
-proc-finality : {PP : PType}
+proc-finality : {o o' : O}
+                {PP : PType o}
+                {QQ : PType o'}
                 {P : [] ⊢P⦂ PP} → 
-                {Q : [] ⊢P⦂ PP} → 
+                {Q : [] ⊢P⦂ QQ} → 
                 ProcResult⟨ P ⟩ →
-                P ↝P Q →
+                (r : PP ⇝ QQ) →
+                P [ r ]↝ Q →
                 -----------------
                 ⊥
 
-proc-finality R r' =
-  proc-finality-↝↝P R ([]↝P-to-[]↝↝P r')
+proc-finality R r r' =
+  proc-finality-↝↝ R r ([]↝-to-[]↝↝ r')

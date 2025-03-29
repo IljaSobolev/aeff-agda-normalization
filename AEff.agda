@@ -6,16 +6,12 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 
+open import EffectAnnotations
 open import Types
 
 module AEff where
 
 -- ARITY ASSIGNMENT TO SIGNATURES OF SIGNALS, INTERRUPTS, AND BASE CONSTANTS
-
-postulate Σₛ : Set                 -- signal and interrupt names
-
--- signal and interrupt names have decidable equality
-postulate decₛ : (op op' : Σₛ) → Dec (op ≡ op')
 
 postulate payload : Σₛ → GType     -- payload type assignment for signal and interrupt names
 
@@ -34,20 +30,20 @@ data SnocList (A : Set) : Set where
 
 -- CONTEXTS AND VARIABLES IN THEM (I.E., DE BRUIJN INDICES)
 
-Ctx = SnocList Type
+Ctx = SnocList VType
 
-data _∈_ (X : Type) : Ctx → Set where
+data _∈_ (X : VType) : Ctx → Set where
   Hd : {Γ : Ctx} → X ∈ (Γ ∷ X)
-  Tl : {Γ : Ctx} {Y : Type} → X ∈ Γ → X ∈ (Γ ∷ Y)
+  Tl : {Γ : Ctx} {Y : VType} → X ∈ Γ → X ∈ (Γ ∷ Y)
 
 
 -- DERIVATIONS OF WELL-TYPED TERMS
 
 mutual
 
-  data _⊢V⦂_ (Γ : Ctx) : Type → Set where
+  data _⊢V⦂_ (Γ : Ctx) : VType → Set where
   
-    `_  : {X : Type} →
+    `_  : {X : VType} →
           X ∈ Γ →
           -------------
           Γ ⊢V⦂ X
@@ -56,104 +52,130 @@ mutual
           --------------
           Γ ⊢V⦂ ``(ar-base c)
           
-    ƛ   : {X : Type}
-          {C : Type} →
+    ƛ   : {X : VType}
+          {C : CType} →
           Γ ∷ X ⊢M⦂ C → 
           -------------
           Γ ⊢V⦂ X ⇒ C
 
-    ⟨_⟩ : {X : Type} →
+    ⟨_⟩ : {X : VType} →
           Γ ⊢V⦂ X →
           -------------
           Γ ⊢V⦂ ⟨ X ⟩
-
-    -- a default value of promise type, representing a promise that would never be fulfilled
-    -- helps with normalisation proof
-
-    ★   : {X : Type} →
-          -------------
-          Γ ⊢V⦂ ⟨ X ⟩
-          
           
   infix 40 _·_
 
-  data _⊢M⦂_ (Γ : Ctx) : Type → Set where
+  data _⊢M⦂_ (Γ : Ctx) : CType → Set where
 
-    return          : {X : Type} →
-                      Γ ⊢V⦂ X →
-                      -----------------
-                      Γ ⊢M⦂ X
+    return           : {X : VType}
+                       {o : O}
+                       {i : I} →
+                       Γ ⊢V⦂ X →
+                       -----------------
+                       Γ ⊢M⦂ X ! (o , i)
 
-    let=_`in_       : {X Y : Type} →
-                      Γ ⊢M⦂ X →
-                      Γ ∷ X ⊢M⦂ Y →
-                      -----------------------
-                      Γ ⊢M⦂ Y
+    let=_`in_        : {X Y : VType}
+                       {o : O}
+                       {i : I} → 
+                       Γ ⊢M⦂ X ! (o , i) →
+                       Γ ∷ X ⊢M⦂ Y ! (o , i) →
+                       -----------------------
+                       Γ ⊢M⦂ Y ! (o , i)
 
-    _·_             : {X : Type}
-                      {C : Type} → 
-                      Γ ⊢V⦂ X ⇒ C →
-                      Γ ⊢V⦂ X →
-                      -------------
-                      Γ ⊢M⦂ C
+    letrec_`in_      : {X : VType}
+                       {C D : CType} →
+                       Γ ∷ (X ⇒ C) ∷ X ⊢M⦂ C →
+                       Γ ∷ (X ⇒ C) ⊢M⦂ D →
+                       -----------------------
+                       Γ ⊢M⦂ D
 
-    ↑               : {X : Type}
-                      (op : Σₛ) →
-                      Γ ⊢V⦂ ``(payload op) →
-                      Γ ⊢M⦂ X →
-                      ----------------------
-                      Γ ⊢M⦂ X
+    _·_              : {X : VType}
+                       {C : CType} → 
+                       Γ ⊢V⦂ X ⇒ C →
+                       Γ ⊢V⦂ X →
+                       -------------
+                       Γ ⊢M⦂ C
 
-    ↓               : {X : Type}
-                      (op : Σₛ) →
-                      Γ ⊢V⦂ ``(payload op) →
-                      Γ ⊢M⦂ X →
-                      ----------------------
-                      Γ ⊢M⦂ X
-
-    promise_↦_`in_ : {X Y : Type}
+    ↑                : {X : VType}
+                       {o : O}
+                       {i : I} →
                        (op : Σₛ) →
-                       Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ →
-                       Γ ∷ ⟨ X ⟩ ⊢M⦂ Y →
+                       op ∈ₒ o →
+                       Γ ⊢V⦂ ``(payload op) →
+                       Γ ⊢M⦂ X ! (o , i) →
+                       ----------------------
+                       Γ ⊢M⦂ X ! (o , i)
+
+    ↓                : {X : VType}
+                       {o : O}
+                       {i : I}
+                       (op : Σₛ) →
+                       Γ ⊢V⦂ ``(payload op) →
+                       Γ ⊢M⦂ X ! (o , i) →
+                       ----------------------
+                       Γ ⊢M⦂ X ! op ↓ₑ (o , i)
+
+    promise_∣_↦_`in_ : {X Y : VType}
+                       {o o' : O}
+                       {i i' : I} → 
+                       (op : Σₛ) →
+                       lkpᵢ op i ≡ just (o' , i') →
+                       Γ ∷ ``(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i') →
+                       Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i) →
                        ------------------------------------------
-                       Γ ⊢M⦂ Y
+                       Γ ⊢M⦂ Y ! (o , i)
 
-    await_until_    : {X : Type}
-                      {C : Type} → 
-                      Γ ⊢V⦂ ⟨ X ⟩ →
-                      Γ ∷ X ⊢M⦂ C →
-                      --------------
-                      Γ ⊢M⦂ C
+    await_until_     : {X : VType}
+                       {C : CType} → 
+                       Γ ⊢V⦂ ⟨ X ⟩ →
+                       Γ ∷ X ⊢M⦂ C →
+                       --------------
+                       Γ ⊢M⦂ C
 
+    coerce           : {X : VType}
+                       {o o' : O}
+                       {i i' : I} →
+                       o ⊑ₒ o' →
+                       i ⊑ᵢ i' → 
+                       Γ ⊢M⦂ X ! (o , i) →
+                       -------------------
+                       Γ ⊢M⦂ X ! (o' , i')
+                        
 
 -- DERIVATIONS OF WELL-TYPED PROCESSES
 
 infix 10 _⊢P⦂_
 
-data _⊢P⦂_ (Γ : Ctx) : PType → Set where
+data _⊢P⦂_ (Γ : Ctx) : {o : O} → PType o → Set where
 
-  run     : {X : Type} →
-            Γ ⊢M⦂ X →
+  run     : {X : VType}
+            {o : O}
+            {i : I} →
+            Γ ⊢M⦂ X ! (o , i) →
             -------------------
-            Γ ⊢P⦂ ``` X
+            Γ ⊢P⦂ X ‼ o , i
 
-  _∥_     : {PP : PType}
-            {QQ : PType} →
+  _∥_     : {o o' : O}
+            {PP : PType o} →
+            {QQ : PType o'} → 
             Γ ⊢P⦂ PP →
             Γ ⊢P⦂ QQ →
             --------------
             Γ ⊢P⦂ (PP ∥ QQ)
 
-  ↑       : {PP : PType}
+  ↑       : {o : O} →
+            {PP : PType o}
             (op : Σₛ) →
+            op ∈ₒ o →
             Γ ⊢V⦂ ``(payload op) →
             Γ ⊢P⦂ PP →
             ----------------------
             Γ ⊢P⦂ PP
 
-  ↓       : {PP : PType}
+  ↓       : {o : O}
+            {PP : PType o}
             (op : Σₛ) →
             Γ ⊢V⦂ ``(payload op) →
             Γ ⊢P⦂ PP →
             ----------------------
-            Γ ⊢P⦂ PP
+            Γ ⊢P⦂ op ↓ₚ PP
