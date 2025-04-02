@@ -16,6 +16,8 @@ open import Relation.Nullary.Negation
 import Relation.Binary.PropositionalEquality as Eq
 open Eq hiding ([_])
 
+module Simulation where
+
 -- injection of AEff into AEffB and a proof of SN using this injection
 
 -- based on https://plfa.github.io/Bisimulation/
