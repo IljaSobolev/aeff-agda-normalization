@@ -124,6 +124,12 @@ mutual
                       --------------
                       Γ ⊢M⦂ C
 
+    coerce          : {X : Type} →
+                      Γ ⊢M⦂ X →
+                      ------------
+                      Γ ⊢M⦂ X
+
+
 
 -- SET OF RENAMINGS BETWEEN CONTEXTS
 
@@ -190,6 +196,8 @@ mutual
     promise op ↦ M-rename (wk₂ f) M `in M-rename (wk₂ f) N
   M-rename f (await V until M) =
     await (V-rename f V) until (M-rename (wk₂ f) M)
+  M-rename f (coerce M) =
+    coerce (M-rename f M)
 
 
 -- SET OF SUBSTITUTIONS BETWEEN CONTEXTS
@@ -249,6 +257,8 @@ mutual
     promise op ↦ (M [ lift s ]m) `in (N [ lift s ]m)
   (await V until M) [ s ]m =
     await (V [ s ]v) until (M [ lift s ]m)
+  (coerce M) [ s ]m =
+    coerce (M [ s ]m)
 
 
 -- BINDING CONTEXTS
@@ -359,7 +369,7 @@ data _↝↝_ {Γ : Ctx} : {C : Type} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set 
                     ---------------------------------------------------------------------------------------
                     ↓ op V (promise op ↦ M `in N )
                     ↝↝
-                    (let= (M [ id-subst [ V ]s ]m) `in
+                    (let= (coerce (M [ id-subst [ V ]s ]m)) `in
                       ↓ op (V-rename wk₁ V) ((M-rename (comp-ren exchange wk₁) N) [ id-subst [ ` Hd ]s ]m))
 
   ↓-promise-op'   : {X Y : Type}
@@ -371,7 +381,7 @@ data _↝↝_ {Γ : Ctx} : {C : Type} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set 
                     ------------------------------------------------------------------------------------------
                     ↓ op V (promise op' ↦ M `in N )
                     ↝↝
-                    promise op' ↦ M `in (↓ op (V-rename wk₁ V) N)
+                    promise op' ↦ (coerce M) `in (↓ op (V-rename wk₁ V) N)
 
   await-promise   : {X : Type}
                     {C : Type} → 
@@ -422,3 +432,34 @@ data _↝↝_ {Γ : Ctx} : {C : Type} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set 
                     promise op ↦ M `in N
                     ↝↝
                     promise op ↦ M `in N'
+
+  context-coerce  : {X : Type}
+                    {M N : Γ ⊢M⦂ X} →
+                    M ↝↝ N →
+                    ---------------------------
+                    coerce M
+                    ↝↝
+                    coerce N
+
+  coerce-return   : {X : Type}
+                    (V : Γ ⊢V⦂ X) →
+                    --------------------------------
+                    coerce (return V) ↝↝ return V
+
+  coerce-↑        : {X : Type}
+                    {op : Σₛ} →
+                    (V : Γ ⊢V⦂ ```(payload op)) →
+                    (M : Γ ⊢M⦂ X) →
+                    -------------------------------
+                    coerce (↑ op V M)
+                    ↝↝
+                    ↑ op V (coerce M)
+
+  coerce-promise  : {X Y : Type}
+                    {op : Σₛ} →
+                    (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩) →
+                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y) →
+                    --------------------------------------
+                    coerce (promise op ↦ M `in N)
+                    ↝↝
+                    promise op ↦ (coerce M) `in (coerce N)

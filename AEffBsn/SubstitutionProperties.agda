@@ -108,6 +108,7 @@ cong-sub-m {M = ↑ op V N} f = cong₂ (↑ op) (cong-sub-v {V = V} f) (cong-su
 cong-sub-m {M = ↓ op V N} f = cong₂ (↓ op) (cong-sub-v {V = V} f) (cong-sub-m f)
 cong-sub-m {M = promise op ↦ M `in N} f = cong₂ (promise op ↦_`in_) (cong-sub-m (cong-lift f)) (cong-sub-m (cong-lift f))
 cong-sub-m {M = await V until N} f = cong₂ await_until_ (cong-sub-v {V = V} f) (cong-sub-m (cong-lift f))
+cong-sub-m {M = coerce M} f = cong coerce (cong-sub-m f)
 
 cong-cons : {Γ Γ' : Ctx} {X Y : Type} {s s' : Sub Γ Γ'} {V W : Γ' ⊢V⦂ X} →
             ({Z : Type} {x : Z ∈ Γ} → s x ≡ s' x) →
@@ -166,6 +167,7 @@ rename-subst-ren-m {M = ↓ op V M} = cong₂ (↓ op) rename-subst-ren-v rename
 rename-subst-ren-m {M = promise op ↦ M `in N}
   = cong₂ (promise op ↦_`in_) (trans rename-subst-ren-m (cong-sub-m ren-wk₂)) (trans rename-subst-ren-m (cong-sub-m ren-wk₂))
 rename-subst-ren-m {M = await V until M} = cong₂ await_until_ rename-subst-ren-v (trans rename-subst-ren-m (cong-sub-m ren-wk₂))
+rename-subst-ren-m {M = coerce M} = cong coerce rename-subst-ren-m
 
 lift-cons-shift : {Γ Γ' : Ctx} {X Y : Type} {s : Sub Γ Γ'} (x : X ∈ Γ ∷ Y)
                 → (lift s) x ≡ (` Hd • (s ⨟ ↑↑)) x
@@ -245,6 +247,7 @@ sub-id-m {M = ↑ op V M} = cong₂ (↑ op) sub-id-v sub-id-m
 sub-id-m {M = ↓ op V M} = cong₂ (↓ op) sub-id-v sub-id-m
 sub-id-m {M = promise op ↦ M `in N} = cong₂ (promise op ↦_`in_) (trans (cong-sub-m lift-ids) sub-id-m) (trans (cong-sub-m lift-ids) sub-id-m)
 sub-id-m {M = await V until M} = cong₂ await_until_ sub-id-v (trans (cong-sub-m lift-ids) sub-id-m)
+sub-id-m {M = coerce M} = cong coerce sub-id-m
 
 sub-idR : {Γ Γ' : Ctx} {s : Sub Γ Γ'} {X : Type} (x : X ∈ Γ)
        → (s ⨟ id-subst) x ≡ s x
@@ -277,6 +280,7 @@ cong-rename-m {M = ↑ op V M} f = cong₂ (↑ op) (cong-rename-v f) (cong-rena
 cong-rename-m {M = ↓ op V M} f = cong₂ (↓ op) (cong-rename-v f) (cong-rename-m f)
 cong-rename-m {M = promise op ↦ M `in N} f = cong₂ (promise op ↦_`in_) (cong-rename-m (cong-wk₂ f)) (cong-rename-m (cong-wk₂ f))
 cong-rename-m {M = await V until M} f = cong₂ await_until_ (cong-rename-v f) (cong-rename-m (cong-wk₂ f))
+cong-rename-m {M = coerce M} f = cong coerce (cong-rename-m f)
 
 compose-rename-v : {Γ Γ' Γ'' : Ctx} {X : Type} {V : Γ ⊢V⦂ X} {r : Ren Γ' Γ''} {r' : Ren Γ Γ'}
   → V-rename r (V-rename r' V) ≡ V-rename (r ∘ r') V
@@ -296,6 +300,7 @@ compose-rename-m {M = ↑ op V M} = cong₂ (↑ op) compose-rename-v compose-re
 compose-rename-m {M = ↓ op V M} = cong₂ (↓ op) compose-rename-v compose-rename-m
 compose-rename-m {M = promise op ↦ M `in N} = cong₂ (promise op ↦_`in_) (trans compose-rename-m (cong-rename-m compose-wk₂)) (trans compose-rename-m (cong-rename-m compose-wk₂))
 compose-rename-m {M = await V until M} = cong₂ await_until_ compose-rename-v (trans compose-rename-m (cong-rename-m compose-wk₂))
+compose-rename-m {M = coerce M} = cong coerce compose-rename-m
 
 -- since this is a typed calculus, the proof of the
 -- commute-subst-rename functions from PLFA does not work,
@@ -346,6 +351,7 @@ commute-subst-rename-m {M = ↑ op V M} H = cong₂ (↑ op) (commute-subst-rena
 commute-subst-rename-m {M = ↓ op V M} H = cong₂ (↓ op) (commute-subst-rename-v {V = V} H) (commute-subst-rename-m H)
 commute-subst-rename-m {M = promise op ↦ M `in N} H = cong₂ (promise op ↦_`in_) (commute-subst-rename-lift H) (commute-subst-rename-lift H)
 commute-subst-rename-m {M = await V until M} H = cong₂ await_until_ (commute-subst-rename-v {V = V} H) (commute-subst-rename-lift H)
+commute-subst-rename-m {M = coerce M} H = cong coerce (commute-subst-rename-m H)
 
 lift-seq : {Γ Γ' Γ'' : Ctx} {X Y : Type} {s : Sub Γ Γ'} {s' : Sub Γ' Γ''} (x : Y ∈ (Γ ∷ X))
   → (lift s ⨟ lift s') x ≡ lift (s ⨟ s') x
@@ -383,6 +389,7 @@ sub-sub-m (↑ op V M) = cong₂ (↑ op) (sub-sub-v V) (sub-sub-m M)
 sub-sub-m (↓ op V M) = cong₂ (↓ op) (sub-sub-v V) (sub-sub-m M)
 sub-sub-m (promise op ↦ M `in N) = cong₂ (promise op ↦_`in_) (sub-sub-lift M) (sub-sub-lift N)
 sub-sub-m (await V until M) = cong₂ await_until_ (sub-sub-v V) (sub-sub-lift M)
+sub-sub-m (coerce M) = cong coerce (sub-sub-m M)
 
 ren-ren-v : {Γ Γ' Γ'' : Ctx} {X : Type} {rn : Ren Γ Γ'} {rn' : Ren Γ' Γ''} (V : Γ ⊢V⦂ X)
             → V-rename rn' (V-rename rn V) ≡ V-rename (rn' ∘ rn) V
@@ -537,6 +544,10 @@ sub-↝↝ s (context-let r) = context-let (sub-↝↝ s r)
 sub-↝↝ s (context-↑ r) = context-↑ (sub-↝↝ s r)
 sub-↝↝ s (context-↓ r) = context-↓ (sub-↝↝ s r) 
 sub-↝↝ s (context-promise r) = context-promise (sub-↝↝ (lift s) r)
+sub-↝↝ s (context-coerce r) = context-coerce (sub-↝↝ s r)
+sub-↝↝ s (coerce-return V) = coerce-return (V [ s ]v)
+sub-↝↝ s (coerce-↑ V M) = coerce-↑ (V [ s ]v) (M [ s ]m)
+sub-↝↝ s (coerce-promise M N) = coerce-promise (M [ lift s ]m) (N [ lift s ]m)
 
 -- as a corollary, renaming preserves reductions
 

@@ -96,6 +96,14 @@ add-context-promise : {Γ : Ctx}
                       List (Σ[ L ∈ Γ ⊢M⦂ Y ] promise op ↦ M `in N ↝↝ L)
 add-context-promise xs = mapₗ (λ {(L , r) → promise _ ↦ _ `in L , context-promise r}) xs
 
+add-context-coerce : {Γ : Ctx}
+                     {X : Type}
+                     {N : Γ ⊢M⦂ X} →
+                     List (Σ[ L ∈ Γ ⊢M⦂ X ] N ↝↝ L) →
+                     ---------------------------
+                     List (Σ[ L ∈ Γ ⊢M⦂ X ] coerce N ↝↝ L)
+add-context-coerce xs = mapₗ (λ {(L , r) → coerce L , context-coerce r}) xs
+
 all-reductions : {Γ : Ctx}
                  {X : Type} →
                  (M : Γ ⊢M⦂ X) →
@@ -109,6 +117,7 @@ all-reductions (let= ↑ op V M `in N) = ((_ , let-↑ V M N)) ∷ₗ (add-conte
 all-reductions (let= ↓ op V M `in N) = add-context-let (all-reductions (↓ op V M))
 all-reductions (let= promise op ↦ M `in N `in L) = ((_ , let-promise M N L)) ∷ₗ (add-context-let (all-reductions (promise op ↦ M `in N)))
 all-reductions (let= await V until N `in L) = add-context-let (all-reductions (await V until N))
+all-reductions (let= coerce M `in L) = add-context-let (all-reductions (coerce M))
 all-reductions ((` x) · W) = []
 all-reductions (ƛ M · W) = (_ , apply M W) ∷ₗ []
 all-reductions (↑ op V M) = add-context-↑ (all-reductions M)
@@ -121,6 +130,7 @@ all-reductions {Γ} {X} (↓ op V (promise op' ↦ M `in N)) with rec ← all-re
 ... | yes refl = (_ , ↓-promise-op V M N) ∷ₗ (add-context-↓ rec)
 ... | no    ¬≡ = ((_ , ↓-promise-op' ¬≡ V M N)) ∷ₗ (add-context-↓ rec)
 all-reductions (↓ op V (await V' until M)) = add-context-↓ (all-reductions (await V' until M))
+all-reductions (↓ op V (coerce M)) = add-context-↓ (all-reductions (coerce M))
 all-reductions (promise op ↦ M `in return V) = []
 all-reductions (promise op ↦ M `in (let= N `in L)) = add-context-promise (all-reductions (let= N `in L))
 all-reductions (promise op ↦ M `in (V · W)) = add-context-promise (all-reductions (V · W))
@@ -128,9 +138,18 @@ all-reductions (promise op ↦ M `in ↑ op' V N) = ((_ , promise-↑ V M N)) �
 all-reductions (promise op ↦ M `in ↓ op' V N) = add-context-promise (all-reductions (↓ op' V N))
 all-reductions (promise op ↦ M `in (promise op' ↦ N `in L)) = add-context-promise (all-reductions (promise op' ↦ N `in L))
 all-reductions (promise op ↦ M `in (await V until N)) = add-context-promise (all-reductions (await V until N))
+all-reductions (promise op ↦ M `in (coerce N)) = add-context-promise (all-reductions (coerce N))
 all-reductions (await ` x until M) = []
 all-reductions (await ⟨ V ⟩ until M) = ((_ , await-promise V M)) ∷ₗ []
 all-reductions (await ★ until M) = []
+all-reductions (coerce (return V)) = (_ , coerce-return V) ∷ₗ []
+all-reductions (coerce (let= M `in N)) = add-context-coerce (all-reductions (let= M `in N))
+all-reductions (coerce (V · W)) = add-context-coerce (all-reductions (V · W))
+all-reductions (coerce (↑ op V M)) = (_ , coerce-↑ V M) ∷ₗ (add-context-coerce (all-reductions (↑ op V M)))
+all-reductions (coerce (↓ op V M)) = add-context-coerce (all-reductions (↓ op V M))
+all-reductions (coerce (promise op ↦ M `in N)) = (_ , coerce-promise M N) ∷ₗ (add-context-coerce (all-reductions (promise op ↦ M `in N)))
+all-reductions (coerce (await V until M)) = add-context-coerce (all-reductions (await V until M))
+all-reductions (coerce (coerce M)) = add-context-coerce (all-reductions (coerce M))
 
 -- inclusion relation for general lists
 
@@ -165,6 +184,7 @@ all-reductions-complete {M = let= ↓ op V M `in N} (context-let r) = f-∈ (λ 
 all-reductions-complete {M = let= promise op ↦ M `in L `in N} (let-promise .M .L .N) = Hd
 all-reductions-complete {M = let= promise op ↦ M `in L `in N} (context-let r) = Tl (f-∈ (λ {(L , r) → (let= L `in _) , context-let r}) (all-reductions-complete r))
 all-reductions-complete {M = let= await V until M `in N} (context-let r) = f-∈ (λ {(L , r) → (let= L `in _) , context-let r}) (all-reductions-complete r)
+all-reductions-complete {M = let= coerce M `in N} (context-let r) = f-∈ (λ {(L , r) → (let= L `in _) , context-let r}) (all-reductions-complete r)
 all-reductions-complete {M = ƛ M · W} (apply .M .W) = Hd
 all-reductions-complete {M = ↑ op V M} (context-↑ r) = f-∈ (λ {(L , r) → ↑ _ _ L , context-↑ r}) (all-reductions-complete r)
 all-reductions-complete {M = ↓ op V (return V')} (↓-return .V .V') = Hd
@@ -181,6 +201,7 @@ all-reductions-complete {M = ↓ op V (promise op' ↦ M `in N)} (↓-promise-op
 all-reductions-complete {M = ↓ op V (promise op' ↦ M `in N)} (↓-promise-op' p .V .M .N) | no ¬≡ = Hd
 all-reductions-complete {M = ↓ op V (promise op' ↦ M `in N)} (context-↓ r) | no ¬≡ = Tl (f-∈ (λ {(L , r) → ↓ _ _ L , context-↓ r}) (all-reductions-complete r))
 all-reductions-complete {M = ↓ op V (await V' until M)} (context-↓ r) = f-∈ (λ {(L , r) → ↓ _ _ L , context-↓ r}) (all-reductions-complete r)
+all-reductions-complete {M = ↓ op V (coerce M)} (context-↓ r) = f-∈ (λ {(L , r) → ↓ _ _ L , context-↓ r}) (all-reductions-complete r)
 all-reductions-complete {M = promise op ↦ M `in return V} (context-promise r) = f-∈ (λ {(L , r) → promise _ ↦ _ `in L , context-promise r}) (all-reductions-complete r)
 all-reductions-complete {M = promise op ↦ M `in (let= N `in L)} (context-promise r) = f-∈ (λ {(L , r) → promise _ ↦ _ `in L , context-promise r}) (all-reductions-complete r)
 all-reductions-complete {M = promise op ↦ M `in (V · W)} (context-promise r) = f-∈ (λ {(L , r) → promise _ ↦ _ `in L , context-promise r}) (all-reductions-complete r)
@@ -189,7 +210,18 @@ all-reductions-complete {M = promise op ↦ M `in ↑ op' V N} (context-promise 
 all-reductions-complete {M = promise op ↦ M `in ↓ op' V N} (context-promise r) = f-∈ (λ {(L , r) → promise _ ↦ _ `in L , context-promise r}) (all-reductions-complete r)
 all-reductions-complete {M = promise op ↦ M `in (promise op' ↦ N `in L)} (context-promise r) = f-∈ (λ {(L , r) → promise _ ↦ _ `in L , context-promise r}) (all-reductions-complete r)
 all-reductions-complete {M = promise op ↦ M `in (await V until N)} (context-promise r) = f-∈ (λ {(L , r) → promise _ ↦ _ `in L , context-promise r}) (all-reductions-complete r)
+all-reductions-complete {M = promise op ↦ M `in (coerce N)} (context-promise r) = f-∈ (λ {(L , r) → promise _ ↦ _ `in L , context-promise r}) (all-reductions-complete r)
 all-reductions-complete {M = await ⟨ V ⟩ until M} (await-promise .V .M) = Hd
+all-reductions-complete {M = coerce (return V)} (coerce-return .V) = Hd
+all-reductions-complete {M = coerce (let= M `in N)} (context-coerce r) = f-∈ (λ { (L , r) → coerce L , context-coerce r }) (all-reductions-complete r)
+all-reductions-complete {M = coerce (V · W)} (context-coerce r) = f-∈ (λ { (L , r) → coerce L , context-coerce r }) (all-reductions-complete r)
+all-reductions-complete {M = coerce (↑ op V M)} (context-coerce r) = Tl (f-∈ (λ { (L , r) → coerce L , context-coerce r }) (all-reductions-complete r))
+all-reductions-complete {M = coerce (↑ op V M)} (coerce-↑ .V .M) = Hd
+all-reductions-complete {M = coerce (↓ op V M)} (context-coerce r) = f-∈ (λ { (L , r) → coerce L , context-coerce r }) (all-reductions-complete r)
+all-reductions-complete {M = coerce (promise op ↦ M `in N)} (context-coerce r) = Tl (f-∈ (λ { (L , r) → coerce L , context-coerce r }) (all-reductions-complete r))
+all-reductions-complete {M = coerce (promise op ↦ M `in N)} (coerce-promise .M .N) = Hd
+all-reductions-complete {M = coerce (await V until M)} (context-coerce r) = f-∈ (λ { (L , r) → coerce L , context-coerce r }) (all-reductions-complete r)
+all-reductions-complete {M = coerce (coerce M)} (context-coerce r) = f-∈ (λ { (L , r) → coerce L , context-coerce r }) (all-reductions-complete r)
 
 f-∈-aux : {A B : Set}
           {x : A}

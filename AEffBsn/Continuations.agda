@@ -25,6 +25,10 @@ data _⊢T⦂_⊸_ (Γ : Ctx) : Type → Type → Set where
           ------------------
           Γ ⊢T⦂ X ⊸ X
 
+  T-coerce : {X : Type} →
+             -----------
+             Γ ⊢T⦂ X ⊸ X
+
 -- continuations, the reflexive-transitive closure of term abstractions
 
 data _⊢K⦂_⊸_ (Γ : Ctx) : Type → Type → Set where
@@ -67,6 +71,7 @@ _aT_ : {Γ : Ctx}
       Γ ⊢M⦂ Y
 T-let N aT M = let= M `in N
 T-op op V aT M = ↓ op V M
+T-coerce aT M = coerce M
 
 _aK_ : {Γ : Ctx}
        {X Y : Type} →
@@ -174,19 +179,33 @@ K'-↝ : {Γ : Ctx}
        (K aK' M' ≡ L'
        ×
        (T aT M) ↝↝ M')
-K'-↝ id _ (T-let _) r = _ , refl , r
-K'-↝ id _ (T-op _ _) r = _ , refl , r
+K'-↝ id _ T r = _ , refl , r
 K'-↝ (T-let _ T∘ id) M (T-let _) (context-let r) = _ , refl , r
 K'-↝ (T-let _ T∘ id) M (T-op _ _) (context-let r) = _ , refl , r
+K'-↝ (T-let _ T∘ id) M T-coerce (context-let r) = _ , refl , r
 K'-↝ (T-let _ T∘ K'@(T-let _ T∘ _)) M T (context-let r) with K'-↝ K' M T r
 ... | _ , refl , r' = _ , refl , r'
 K'-↝ (T-let _ T∘ K'@(T-op _ _ T∘ _)) M T (context-let r) with K'-↝ K' M T r
 ... | _ , refl , r' = _ , refl , r'
+K'-↝ (T-let _ T∘ K'@(T-coerce T∘ _)) M T (context-let r) with K'-↝ K' M T r
+... | _ , refl , r' = _ , refl , r'
 K'-↝ (T-op _ _ T∘ id) _ (T-let _) (context-↓ r) = _ , refl , r
 K'-↝ (T-op _ _ T∘ id) _ (T-op _ _) (context-↓ r) = _ , refl , r
+K'-↝ (T-op _ _ T∘ id) _ T-coerce (context-↓ r) = _ , refl , r
 K'-↝ (T-op _ _ T∘ K'@(T-let _ T∘ _)) M T (context-↓ r) with K'-↝ K' M T r
 ... | _ , refl , r' = _ , refl , r'
 K'-↝ (T-op _ _ T∘ K'@(T-op _ _ T∘ _)) M T (context-↓ r) with K'-↝ K' M T r
+... | _ , refl , r' = _ , refl , r'
+K'-↝ (T-op _ _ T∘ K'@(T-coerce T∘ _)) M T (context-↓ r) with K'-↝ K' M T r
+... | _ , refl , r' = _ , refl , r'
+K'-↝ (T-coerce T∘ id) M (T-let _) (context-coerce r) = _ , refl , r
+K'-↝ (T-coerce T∘ id) M (T-op _ _) (context-coerce r) = _ , refl , r
+K'-↝ (T-coerce T∘ id) M T-coerce (context-coerce r) = _ , refl , r
+K'-↝ (T-coerce T∘ K'@(T-let N T∘ _)) M T (context-coerce r) with K'-↝ K' M T r
+... | _ , refl , r' = _ , refl , r'
+K'-↝ (T-coerce T∘ K'@(T-op _ _ T∘ _)) M T (context-coerce r) with K'-↝ K' M T r
+... | _ , refl , r' = _ , refl , r'
+K'-↝ (T-coerce T∘ K'@(T-coerce T∘ _)) M T (context-coerce r) with K'-↝ K' M T r
 ... | _ , refl , r' = _ , refl , r'
 
 -- the same lemma about K, using the equivalence of K and K'
@@ -239,6 +258,7 @@ aK-↝↝ : {Γ : Ctx}
 aK-↝↝ id r = r
 aK-↝↝ (K ∘T T-let N) r = aK-↝↝ K (context-let r)
 aK-↝↝ (K ∘T T-op op x) r = aK-↝↝ K (context-↓ r)
+aK-↝↝ (K ∘T T-coerce) r = aK-↝↝ K (context-coerce r)
 
 `aK→aK : {Γ : Ctx}
          {X Y : Type}

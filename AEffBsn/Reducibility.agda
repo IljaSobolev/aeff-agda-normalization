@@ -69,6 +69,7 @@ append-let : {Γ : Ctx}
 append-let K N V app-sn (`id (let-return .V .N)) = app-sn
 append-let K N V app-sn (`aK {T = T-let N'} (context-let (let-return .V .N))) = app-sn
 append-let K N V app-sn (`aK {T = T-op op' V'} (context-↓ (let-return .V .N))) = app-sn
+append-let K N V app-sn (`aK {T = T-coerce} (context-coerce (let-return .V .N))) = app-sn
 
 kred-let : {Γ : Ctx}
            {X Y Z : Type}  
@@ -93,6 +94,30 @@ append-↓ : {Γ : Ctx}
 append-↓ K op W V app-sn (`id (↓-return .W .V)) = app-sn
 append-↓ K op W V app-sn (`aK {T = T-let N'} (context-let (↓-return .W .V))) = app-sn
 append-↓ K op W V app-sn (`aK {T = T-op op' V'} (context-↓ (↓-return .W .V))) = app-sn
+append-↓ K op W V app-sn (`aK {T = T-coerce} (context-coerce (↓-return .W .V))) = app-sn
+
+append-coerce : {Γ : Ctx}
+                {X Y : Type}
+                (K : Γ ⊢K⦂ X ⊸ Y) →
+                (V : Γ ⊢V⦂ X) →
+                {L' : Γ ⊢M⦂ Y} →
+                SN (K aK (return V)) →
+                K `aK (coerce (return V)) `↝↝ L' →
+                ------------------------------------
+                SN L'
+append-coerce K V app-sn (`id (coerce-return .V)) = app-sn
+append-coerce K V app-sn (`aK {T = T-let N'} (context-let (coerce-return .V))) = app-sn
+append-coerce K V app-sn (`aK {T = T-op op' V'} (context-↓ (coerce-return .V))) = app-sn
+append-coerce K V app-sn (`aK {T = T-coerce} (context-coerce (coerce-return .V))) = app-sn
+
+cred-coerce : {Γ : Ctx}
+              {X : Type}
+              (M : Γ ⊢M⦂ X) →
+              CRed X M →
+              -----------------------------
+              CRed X (coerce M)
+cred-coerce M CRedM K KRedK
+  = CRedM (K ∘T T-coerce) (λ V VRedV → sn (λ r' → append-coerce K V (KRedK V VRedV) (aK→`aK r')))
 
 append-↑ : {Γ : Ctx}
            {X Y : Type}  
@@ -113,6 +138,10 @@ append-↑ K op W M (sn f) (`aK {T = T-let N'} (context-let (context-↑ r)))
 append-↑ (K ∘T T-op op' V') op W M app-sn (`aK {T = T-op op' V'} (↓-↑ .V' .W .M))
   = sn (λ r' → append-↑ K op W (↓ op' V' M) app-sn (aK→`aK r'))
 append-↑ K op W M (sn f) (`aK {T = T-op op' V'} (context-↓ (context-↑ r)))
+  = sn (λ r' → append-↑ K op W _ (f (aK-↝↝ K r)) (aK→`aK r'))
+append-↑ (K ∘T T-coerce) op W M app-sn (`aK {T = T-coerce} (coerce-↑ _ _))
+  = sn (λ r' → append-↑ K op W (coerce M) app-sn (aK→`aK r'))
+append-↑ K op W M (sn f) (`aK {T = T-coerce} (context-coerce (context-↑ r)))
   = sn (λ r' → append-↑ K op W _ (f (aK-↝↝ K r)) (aK→`aK r'))
 
 append-↑-sn : {Γ : Ctx}
@@ -139,6 +168,7 @@ append-await : {Γ : Ctx}
 append-await id N app-sn (`id (await-promise _ _)) = app-sn
 append-await (K ∘T T-let N') N app-sn (`aK (context-let (await-promise _ _))) = app-sn
 append-await (K ∘T T-op op V) N app-sn (`aK (context-↓ (await-promise _ _))) = app-sn
+append-await (K ∘T T-coerce) N app-sn (`aK (context-coerce (await-promise _ _))) = app-sn
 
 sn-K-↑' : {Γ : Ctx}
           {X Y : Type}
@@ -152,6 +182,7 @@ sn-K-↑' : {Γ : Ctx}
 sn-K-↑' {K = id} s = s
 sn-K-↑' {K = K ∘T T-let N} (sn f) = sn-K-↑' {K = K} (f (aK-↝↝ K (let-↑ _ _ N)))
 sn-K-↑' {K = K ∘T T-op op' W} (sn f) = sn-K-↑' {K = K} (f (aK-↝↝ K (↓-↑ _ _ _)))
+sn-K-↑' {K = K ∘T T-coerce} (sn f) = sn-K-↑' {K = K} (f (aK-↝↝ K (coerce-↑ _ _)))
 
 sn-K-↑ : {Γ : Ctx}
          {X Y : Type}
@@ -165,6 +196,7 @@ sn-K-↑ : {Γ : Ctx}
 sn-K-↑ {K = id} (sn f) = sn (λ z → sn-K-↑ {K = id} (f (context-↑ z)))
 sn-K-↑ {K = K ∘T T-let N} (sn f) = sn-↑-e (sn-K-↑' {K = K} (f (aK-↝↝ K (let-↑ _ _ _))))
 sn-K-↑ {K = K ∘T T-op op W} (sn f) = sn-↑-e (sn-K-↑' {K = K} (f (aK-↝↝ K (↓-↑ _ _ _))))
+sn-K-↑ {K = K ∘T T-coerce} (sn f) = sn-↑-e (sn-K-↑' {K = K} (f (aK-↝↝ K (coerce-↑ _ _))))
 
 sni-K-↑' : {Γ : Ctx}
            {X Y : Type}
@@ -179,6 +211,7 @@ sni-K-↑' : {Γ : Ctx}
 sni-K-↑' {K = id} s = s
 sni-K-↑' {K = K ∘T T-let N} (sni f) = sni-K-↑' {K = K} (sni-suc (f (aK-↝↝ K (let-↑ _ _ _))))
 sni-K-↑' {K = K ∘T T-op op' W} (sni f) = sni-K-↑' {K = K} (sni-suc (f (aK-↝↝ K (↓-↑ _ _ _))))
+sni-K-↑' {K = K ∘T T-coerce} (sni f) = sni-K-↑' {K = K} (sni-suc (f (aK-↝↝ K (coerce-↑ _ _))))
 
 sni-K-↑ : {Γ : Ctx}
           {X Y : Type}
@@ -193,6 +226,7 @@ sni-K-↑ : {Γ : Ctx}
 sni-K-↑ {K = id} (sni f) = sni (λ z → sni-K-↑ {K = id} (f (context-↑ z)))
 sni-K-↑ {K = K ∘T T-let N} (sni f) = sni-↑-e (sni-K-↑' {K = K} (sni-suc (f (aK-↝↝ K (let-↑ _ _ _)))))
 sni-K-↑ {K = K ∘T T-op op W} (sni f) = sni-↑-e (sni-K-↑' {K = K} (sni-suc (f (aK-↝↝ K (↓-↑ _ _ _)))))
+sni-K-↑ {K = K ∘T T-coerce} (sni f) = sni-↑-e (sni-K-↑' {K = K} (sni-suc (f (aK-↝↝ K (coerce-↑ _ _)))))
 
 rename-lemma-v : {Γ : Ctx}
                  {X Y : Type}
@@ -278,13 +312,13 @@ append-promise K'@(K ∘T T-let N') op M N f g (sni h) (`aK {T = T-let N'} (cont
       (λ VRedV → (sn-decr (f VRedV)) (aK-↝↝ (K ∘T _) (sub-↝↝ (id-subst [ _ ]s) r)) )
        g (h (aK-↝↝ (K ∘T _) (sub-↝↝ (id-subst [ ★ ]s) r))) (aK→`aK r'))
 append-promise K'@(K ∘T T-op op' V') op M N f g app-sni (`aK {T = T-op op' V'} (↓-promise-op .V' .M .N))
-  = ((g {V'}) (K ∘T T-let (↓ op' (V-rename wk₁ V') (M-rename (comp-ren exchange wk₁) N [ id-subst [ ` Hd ]s ]m)))
+  = ((cred-coerce (M [ id-subst [ V' ]s ]m) g) (K ∘T T-let (↓ op' (V-rename wk₁ V') (M-rename (comp-ren exchange wk₁) N [ id-subst [ ` Hd ]s ]m)))
       (kred-let K (↓ op' (V-rename wk₁ V') (M-rename (comp-ren exchange wk₁) N [ id-subst [ ` Hd ]s ]m))
         (λ VRedV → subst₂ (λ z w → SN (K aK ↓ op' z w)) rename-lemma-v (cong (λ u → u [ id-subst [ _ ]s ]m) rename-lemma-m') (f VRedV))))
 append-promise K'@(K ∘T T-op op' V') op M N f g app-sni (`aK {T = T-op op' V'} (↓-promise-op' p .V' .M .N))
-  = sn (λ r' → append-promise K op M _
+  = sn (λ r' → append-promise K op (coerce M) _
       (λ {V} VRedV → subst (λ z → SN (K aK ↓ op' z _)) rename-lemma-v (f VRedV))
-      g (subst (λ z → SNi _ (K aK ↓ op' z (N [ id-subst [ ★ ]s ]m))) rename-lemma-v app-sni) (aK→`aK r'))
+      (cred-coerce (M [ id-subst [ _ ]s ]m) g) (subst (λ z → SNi _ (K aK ↓ op' z (N [ id-subst [ ★ ]s ]m))) rename-lemma-v app-sni) (aK→`aK r'))
 append-promise K'@(K ∘T T-op op' V') op M N f g (sni h) (`aK {T = T-op op' V'} (context-↓ (promise-↑ {op' = op''} V .M N₁)))
   = append-↑-sn K' op'' (strengthen-val V) (promise op ↦ M `in N₁)
       (sn (λ r' → append-promise K' op M N₁ (λ VRedV → sn-K-↑ {K = K'} (f VRedV)) g (sni-K-↑ {K = K ∘T _} (sni h)) (aK→`aK r')))
@@ -292,6 +326,15 @@ append-promise K'@(K ∘T T-op op' V') op M N f g (sni h) (`aK {T = T-op op' V'}
   = sn (λ r' → append-promise K' op M _
       (λ VRedV → (sn-decr (f VRedV)) (aK-↝↝ (K ∘T _) (sub-↝↝ (id-subst [ _ ]s) r)))
       g (h (aK-↝↝ (K ∘T _) (sub-↝↝ (id-subst [ ★ ]s) r))) (aK→`aK r'))
+append-promise K'@(K ∘T T-coerce) op M N f g (sni h) (`aK (context-coerce (promise-↑ {op' = op'} V .M _)))
+  = append-↑-sn K' op' (strengthen-val V) (promise op ↦ M `in _)
+      (sn (λ r' → append-promise K' op M _ (λ VRedV → sn-K-↑ {K = K'} (f VRedV)) g (sni-K-↑ {K = K ∘T _} (sni h)) (aK→`aK r')))
+append-promise K'@(K ∘T T-coerce) op M N f g (sni h) (`aK (context-coerce (context-promise r)))
+  = sn (λ r' → append-promise K' op M _
+      (λ VRedV → (sn-decr (f VRedV)) (aK-↝↝ (K ∘T _) (sub-↝↝ (id-subst [ _ ]s) r)) )
+       g (h (aK-↝↝ (K ∘T _) (sub-↝↝ (id-subst [ ★ ]s) r))) (aK→`aK r'))
+append-promise K'@(K ∘T T-coerce) op M N f g (sni h) (`aK (coerce-promise .M .N))
+  = sn (λ r' → append-promise K op (coerce M) (coerce N) f (cred-coerce (M [ id-subst [ _ ]s ]m) g) (sni h) (aK→`aK r'))
 
 cred-await : {Γ : Ctx}
              {X Y : Type}
@@ -315,6 +358,7 @@ var-app-sn : {Γ : Ctx}
              SN L'
 var-app-sn (`aK {T = T-let N} (context-let ()))
 var-app-sn (`aK {T = T-op op V} (context-↓ ()))
+var-app-sn (`aK {T = T-coerce} (context-coerce ()))
 
 var-await-sn : {Γ : Ctx}
                {X Y Z : Type}
@@ -327,6 +371,7 @@ var-await-sn : {Γ : Ctx}
                SN L'
 var-await-sn (`aK {T = T-let N} (context-let ()))
 var-await-sn (`aK {T = T-op op V} (context-↓ ()))
+var-await-sn (`aK {T = T-coerce} (context-coerce ()))
 
 ★-await-sn : {Γ : Ctx}
              {X Y Z : Type}
@@ -338,6 +383,7 @@ var-await-sn (`aK {T = T-op op V} (context-↓ ()))
              SN L'
 ★-await-sn (`aK {T = T-let N} (context-let ()))
 ★-await-sn (`aK {T = T-op op V} (context-↓ ()))
+★-await-sn (`aK {T = T-coerce} (context-coerce ()))
 
 vred-var : {Γ : Ctx}
            {X : Type}
@@ -366,6 +412,7 @@ lam-abs-sn : {Γ : Ctx}
 lam-abs-sn s (`id (apply _ _)) = s
 lam-abs-sn s (`aK {T = T-let N} (context-let (apply _ _))) = s
 lam-abs-sn s (`aK {T = T-op op V} (context-↓ (apply _ _))) = s
+lam-abs-sn s (`aK {T = T-coerce} (context-coerce (apply _ _))) = s
 
 vred-abs : {Γ : Ctx}
            {X Y : Type}
@@ -487,6 +534,8 @@ fundamental-m (await V until M) s sred
   = cred-await (V [ s ]v) (M [ lift s ]m)
       (fundamental-v V s sred)
       (λ VRedW → cred-⨟ sred VRedW M (fundamental-m M _))
+fundamental-m (coerce M) s sred
+  = cred-coerce (M [ s ]m) (fundamental-m M s sred)
 
 cred→sn : {Γ : Ctx}
           {X : Type}  
