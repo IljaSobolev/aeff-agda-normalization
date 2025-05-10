@@ -10,8 +10,6 @@ open import Data.Product
 
 module AEffBsn.Continuations where
 
--- term abstractions
-
 data _⊢T⦂_⊸_ (Γ : Ctx) : Type → Type → Set where
   
   T-let : {X Y : Type}
@@ -29,8 +27,6 @@ data _⊢T⦂_⊸_ (Γ : Ctx) : Type → Type → Set where
              -----------
              Γ ⊢T⦂ X ⊸ X
 
--- continuations, the reflexive-transitive closure of term abstractions
-
 data _⊢K⦂_⊸_ (Γ : Ctx) : Type → Type → Set where
 
   id      : {X : Type} →
@@ -43,9 +39,6 @@ data _⊢K⦂_⊸_ (Γ : Ctx) : Type → Type → Set where
             ------------
             Γ ⊢K⦂ X ⊸ Z
 
--- alternative definition of continuations, similar to evaluation contexts
--- this is used only to prove the lemma K'-↝
-
 data _⊢K'⦂_⊸_ (Γ : Ctx) : Type → Type → Set where
 
   id      : {X : Type} →
@@ -57,8 +50,6 @@ data _⊢K'⦂_⊸_ (Γ : Ctx) : Type → Type → Set where
             Γ ⊢K'⦂ X ⊸ Y →
             ------------
             Γ ⊢K'⦂ X ⊸ Z
-
--- application of term abstractions and continuations to terms
 
 infix 20 _aT_
 infix 20 _aK_
@@ -90,8 +81,6 @@ _aK'_ : {Γ : Ctx}
        Γ ⊢M⦂ Y
 id aK' M = M
 (T T∘ K) aK' M = T aT (K aK' M)
-
--- the two definitions K and K' are equivalent (in the sense that their applications match)
 
 _∘T'_ : {Γ : Ctx}
         {X Y Z : Type} →
@@ -165,8 +154,6 @@ from-app : {Γ : Ctx}
 from-app id M = refl
 from-app (T T∘ K) M rewrite T∘'-app T (from K) M = cong (T aT_) (from-app K M)
 
--- a very useful lemma about how application interacts with reduction
-
 K'-↝ : {Γ : Ctx}
        {X Y Z : Type}
        (K : Γ ⊢K'⦂ Y ⊸ Z)
@@ -208,8 +195,6 @@ K'-↝ (T-coerce T∘ K'@(T-op _ _ T∘ _)) M T (context-coerce r) with K'-↝ K
 K'-↝ (T-coerce T∘ K'@(T-coerce T∘ _)) M T (context-coerce r) with K'-↝ K' M T r
 ... | _ , refl , r' = _ , refl , r'
 
--- the same lemma about K, using the equivalence of K and K'
-
 K-↝ : {Γ : Ctx}
       {X Y Z : Type}
       (K : Γ ⊢K⦂ Y ⊸ Z)
@@ -224,9 +209,6 @@ K-↝ : {Γ : Ctx}
       (T aT M) ↝↝ M')
 K-↝ K M T {L'} r with K'-↝ (to K) M T (subst (_↝↝ L') (to-app K (T aT M)) r)
 ... | M' , refl , r' = M' , to-app K M' , r'
-
--- using K-↝ requires lots of with clauses, which do not work well with induction, so
--- we create another level of indirection
 
 data _`aK_`↝↝_ : {Γ : Ctx} {X Y : Type} (K : Γ ⊢K⦂ X ⊸ Y) (M : Γ ⊢M⦂ X) (N : Γ ⊢M⦂ Y) → Set where
 

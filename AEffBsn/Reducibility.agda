@@ -52,7 +52,6 @@ VRed {Γ} ⟨ X ⟩ V = {Y Z : Type} (K : Γ ⊢K⦂ Y ⊸ Z) (N : Γ ∷ X ⊢M
 CRed {Γ} X M = {Y : Type} (K : Γ ⊢K⦂ X ⊸ Y) → KRed X K → SN (K aK M)
 
 KRed {Γ} X K = (V : Γ ⊢V⦂ X) → VRed X V → SN (K aK (return V))
--- condition KRed2 holds trivially, since payload types are ground types which are base types
 
 ARed {Γ} X {_} {Z} K N = (V : Γ ⊢V⦂ Z) → VRed Z V → SN (K aK (await ⟨ V ⟩ until N))
 

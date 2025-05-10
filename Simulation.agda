@@ -17,17 +17,10 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 
 module Simulation where
 
--- injection of AEff into AEffB and a proof of SN using this injection
-
--- based on https://plfa.github.io/Bisimulation/
-
--- types
-
 data _~-ty-v_ : VType → B.Type → Set
 data _~-ty-m_ : CType → B.Type → Set
 
 data _~-ty-v_ where
-
   ~```  : (x : GType) →
           ------------------------
           (``` x) ~-ty-v (B.``` x)
@@ -45,7 +38,6 @@ data _~-ty-v_ where
           ⟨ X ⟩ ~-ty-v (B.⟨ X† ⟩)
 
 data _~-ty-m_ where
-
   ~!  : {X : VType} {X† : B.Type}
         {o : O}
         {i : I} →
@@ -53,10 +45,7 @@ data _~-ty-m_ where
         -----------------------
         (X ! (o , i)) ~-ty-m X†
 
--- contexts
-
 data _~-ctx_ : Ctx → B.Ctx → Set where
-
   ~[]  : -----------------
          [] ~-ctx B.[]
 
@@ -67,10 +56,7 @@ data _~-ctx_ : Ctx → B.Ctx → Set where
          -----------------------------
          (Γ ∷ X) ~-ctx (Γ† B.∷ X†)
 
--- binding contexts
-
 data _~-bctx_ : BCtx → B.BCtx → Set where
-
   ~[]  : -----------------
          [] ~-bctx []
 
@@ -81,10 +67,7 @@ data _~-bctx_ : BCtx → B.BCtx → Set where
          -----------------------------
          (X ∷ₗ Δ) ~-bctx (X† ∷ₗ Δ†)
 
--- variables in contexts
-
 data _~-∈_ : {Γ : Ctx} {X : VType} {Γ† : B.Ctx} {X† : B.Type} → X ∈ Γ → X† B.∈ Γ† → Set where
-
   ~Hd : {Γ : Ctx} {Γ† : B.Ctx}
         {X : VType} {X† : B.Type} →
         Γ ~-ctx Γ† →
@@ -100,13 +83,10 @@ data _~-∈_ : {Γ : Ctx} {X : VType} {Γ† : B.Ctx} {X† : B.Type} → X ∈ 
         ----------------------------------------------
         (Tl {X} {Γ} {Y} x) ~-∈ (B.Tl {X†} {Γ†} {Y†} x†)
 
--- terms
-
 data _~-tm-v_ {Γ : Ctx} {Γ† : B.Ctx} : {X : VType} {X† : B.Type} → Γ ⊢V⦂ X → Γ† B.⊢V⦂ X† → Set
 data _~-tm-m_ {Γ : Ctx} {Γ† : B.Ctx} : {X : CType} {X† : B.Type} → Γ ⊢M⦂ X → Γ† B.⊢M⦂ X† → Set
   
 data _~-tm-v_ {Γ} {Γ†} where
-
   ~`_  : {X : VType} {X† : B.Type}
          {x : X ∈ Γ} {x† : X† B.∈ Γ†} →
          x ~-∈ x† →
@@ -132,7 +112,6 @@ data _~-tm-v_ {Γ} {Γ†} where
          ⟨ V ⟩ ~-tm-v B.⟨ V† ⟩
 
 data _~-tm-m_ {Γ} {Γ†} where
-
   ~return            : {X : VType} {X† : B.Type}
                        {V : Γ ⊢V⦂ X} {V† : Γ† B.⊢V⦂ X†}
                        {o : O}
@@ -216,10 +195,7 @@ data _~-tm-m_ {Γ} {Γ†} where
                        -------------------
                        (coerce r q M) ~-tm-m (B.coerce M†)
 
--- renamings
-
 data _~-ren_ : {Γ Δ : Ctx} {Γ† Δ† : B.Ctx} → Ren Γ Δ → B.Ren Γ† Δ† → Set where
-
   ~-ren-cons : {Γ Δ : Ctx} {Γ† Δ† : B.Ctx}
                {rn : Ren Γ Δ} {rn† : B.Ren Γ† Δ†} →
                Γ ~-ctx Γ† →
@@ -231,10 +207,7 @@ data _~-ren_ : {Γ Δ : Ctx} {Γ† Δ† : B.Ctx} → Ren Γ Δ → B.Ren Γ†
                -----------------
                rn ~-ren rn†
 
--- substitutions
-
 data _~-sub_ : {Γ Δ : Ctx} {Γ† Δ† : B.Ctx} → Sub Γ Δ → B.Sub Γ† Δ† → Set where
-
   ~-sub-cons : {Γ Δ : Ctx} {Γ† Δ† : B.Ctx}
                {s : Sub Γ Δ} {s† : B.Sub Γ† Δ†} →
                Γ ~-ctx Γ† →
@@ -246,8 +219,6 @@ data _~-sub_ : {Γ Δ : Ctx} {Γ† Δ† : B.Ctx} → Sub Γ Δ → B.Sub Γ†
                -----------------
                s ~-sub s†
 
--- equivalent variables have equivalent contexts
-
 ~-ctx-∈ : {Γ : Ctx} {Γ† : B.Ctx}
           {X : VType} {X† : B.Type} →
           {x : X ∈ Γ} {x† : X† B.∈ Γ†} →
@@ -256,8 +227,6 @@ data _~-sub_ : {Γ Δ : Ctx} {Γ† Δ† : B.Ctx} → Sub Γ Δ → B.Sub Γ†
           Γ ~-ctx Γ†
 ~-ctx-∈ (~Hd ~x ~X) = ~x ~∷ ~X
 ~-ctx-∈ (~Tl ~x ~X) = ~-ctx-∈ ~x ~∷ ~X
-
--- equivalent terms have equivalent contexts
 
 ~-ctx-tm-v : {Γ : Ctx} {Γ† : B.Ctx}
              {X : VType} {X† : B.Type}
@@ -291,8 +260,6 @@ data _~-sub_ : {Γ Δ : Ctx} {Γ† Δ† : B.Ctx} → Sub Γ Δ → B.Sub Γ†
 ... | ~Γ ~∷ _ = ~Γ
 ~-ctx-tm-m (~coerce _ _ ~M) = ~-ctx-tm-m ~M
 
--- equivalent variables have equivalent types
-
 ~-ty-∈ : {Γ : Ctx} {Γ† : B.Ctx}
          {X : VType} {X† : B.Type}
          {x : X ∈ Γ} {x† : X† B.∈ Γ†} →
@@ -301,8 +268,6 @@ data _~-sub_ : {Γ Δ : Ctx} {Γ† Δ† : B.Ctx} → Sub Γ Δ → B.Sub Γ†
          X ~-ty-v X†
 ~-ty-∈ (~Hd _ ~X) = ~X
 ~-ty-∈ (~Tl ~x _) = ~-ty-∈ ~x
-
--- equivalent terms have equivalent types
 
 ~-ty-tm-v : {Γ : Ctx} {Γ† : B.Ctx}
             {X : VType} {X† : B.Type}
@@ -620,7 +585,6 @@ incl-tm-m' {Γ} {X} M with incl-ctx Γ | incl-ty-m X
 ...   | M† , ~M = Γ† , X† , M† , ~M
 
 data Leg {Γ : Ctx} {Γ† : B.Ctx} {X : CType} {X† : B.Type} (M† : Γ† B.⊢M⦂ X†) (N : Γ ⊢M⦂ X) : Set where
-
   leg : {N† : Γ† B.⊢M⦂ X†} →
         N ~-tm-m N† →
         M† B.↝↝ N† →

@@ -6,8 +6,6 @@ open import EffectAnnotations using (Σₛ; decₛ)
 open import AEff using (payload; Σ-base; ar-base)
 open import Types using (BType; dec-bty; GType)
 
--- simplified version of aeff without effect annotations
-
 module AEffBsn.AEffB where
 
 -- VALUE AND COMPUTATION TYPES
@@ -65,9 +63,6 @@ mutual
           Γ ⊢V⦂ X →
           -------------
           Γ ⊢V⦂ ⟨ X ⟩
-
-    -- a default value of promise type, representing a promise that would never be fulfilled
-    -- helps with normalisation proof
 
     ★   : {X : Type} →
           -------------

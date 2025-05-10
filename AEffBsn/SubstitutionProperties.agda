@@ -11,9 +11,6 @@ open import Types using (BType; dec-bty; GType)
 
 module AEffBsn.SubstitutionProperties where
 
--- proof of the substitution lemma
--- almost all of the code and ideas from https://plfa.github.io/Substitution/
-
 ↑↑ : {Γ : Ctx} {X : Type} → Sub Γ (Γ ∷ X)
 ↑↑ x = ` (Tl x)
 
@@ -302,10 +299,6 @@ compose-rename-m {M = promise op ↦ M `in N} = cong₂ (promise op ↦_`in_) (t
 compose-rename-m {M = await V until M} = cong₂ await_until_ compose-rename-v (trans compose-rename-m (cong-rename-m compose-wk₂))
 compose-rename-m {M = coerce M} = cong coerce compose-rename-m
 
--- since this is a typed calculus, the proof of the
--- commute-subst-rename functions from PLFA does not work,
--- instead we prove the following generalizations:
-
 commute-subst-rename-v :  {Γ Γ' Δ Δ' : Ctx} {X : Type} {V : Γ ⊢V⦂ X}
                           {s : Sub Γ Δ} {s' : Sub Γ' Δ'}
                           {rΓ : Ren Γ Γ'} {rΔ : Ren Δ Δ'} →
@@ -509,14 +502,12 @@ strengthen-lemma s (` Tl x) with s x
 ... | `` c = refl
 strengthen-lemma s (`` c) = refl
 
--- finally, the result that substitution preserves reductions
-
 sub-↝↝ : {Γ Γ' : Ctx} {X : Type}
-         {M N : Γ ⊢M⦂ X}
-         (s : Sub Γ Γ') →
-         M ↝↝ N →
-         ----------------------
-         M [ s ]m ↝↝ N [ s ]m
+           {M N : Γ ⊢M⦂ X}
+           (s : Sub Γ Γ') →
+           M ↝↝ N →
+           ----------------------
+           M [ s ]m ↝↝ N [ s ]m
 sub-↝↝ s (apply M V) rewrite sym (substitution-lemma-m {s = s} {N = M} {V = V}) = apply (M [ lift s ]m) (V [ s ]v)
 sub-↝↝ s (let-return V N) rewrite sym (substitution-lemma-m {s = s} {N = N} {V = V}) = let-return (V [ s ]v) (N [ lift s ]m)
 sub-↝↝ s (let-↑ V M N) = let-↑ (V [ s ]v) (M [ s ]m) (N [ lift s ]m)
@@ -548,8 +539,6 @@ sub-↝↝ s (context-coerce r) = context-coerce (sub-↝↝ s r)
 sub-↝↝ s (coerce-return V) = coerce-return (V [ s ]v)
 sub-↝↝ s (coerce-↑ V M) = coerce-↑ (V [ s ]v) (M [ s ]m)
 sub-↝↝ s (coerce-promise M N) = coerce-promise (M [ lift s ]m) (N [ lift s ]m)
-
--- as a corollary, renaming preserves reductions
 
 ren-↝↝ : {Γ Γ' : Ctx} {X : Type}
          {M N : Γ ⊢M⦂ X}
