@@ -1,11 +1,10 @@
-# Agda formalisation of the AEff language
+# Definition and proof of strong normalisation for the AEff language
 
-**Note:** For the Agda formalisation of a newer version of AEff (extended with reinstallable stateful interrupt handlers, 
-higher-order payloads for signals and interrupts, and dynamic process creation), see [here](https://github.com/danelahman/higher-order-aeff-agda).
-
-- The formalisation has been tested with Agda version 2.6.1 and standard library version 1.3.
+- The formalisation has been tested with Agda version 2.7.0 and standard library version 2.1.
 
 - The unicode symbols used in the source code have tested to display correctly with the DejaVu Sans Mono font.
+
+#### Definition of the AEff language
 
 - `EffectAnnotations.agda` - effect annotations for signals and interrupt handlers
 
@@ -31,9 +30,18 @@ higher-order payloads for signals and interrupts, and dynamic process creation),
 
 - `ProcessFinality.agda` - proof that the result forms of processes are final, i.e., they do not reduce further
 
-## Acknowledgements
+#### Proof of strong normalisation for the AEff language
 
-<table>
-      <tr><td>This project has received funding from the European Union’s Horizon 2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement No 834146.</td><td><img src="https://danel.ahman.ee/images/eu_flag.jpg"></td></tr>
-      <tr><td>This material is based upon work supported by the Air Force Office of Scientific Research under awards number FA9550-17-1-0326 and FA9550-21-1-0024.</td><td></td></tr>
-</table>
+- `AEffBsn/` - definition of the simplified language (called AEffB here) without effect annotations and with star and proof of strong normalisation for it
+
+    - `AEffBsn/AEffB.agda` - definition of AEffB: types, values, computations, renamings, substitutions and small-step operational semantics
+    
+    - `AEffBsn/SubstitutionProperties.agda` - proof of a number of substitution properties to be used elsewhere in the proof
+
+    - `AEffBsn/StrongNormalisation.agda` - definition of strong normalisation with and without the bound on the length of reduction sequences, and proof that both definitions are equivalent
+
+    - `AEffBsn/Continuations.agda` - definition of term-abstractions, continuations and their application to computations, and proof about how application interacts with reductions
+
+    - `AEffBsn/Reducibility.agda` - definition of reducibility, proof that reducibility implies strong normalisation, proof of the fundamental theorem of logical relations, and the result that the calculus is strongly normalising
+
+- `Simulation.agda` - proof that AEffBsn is a conservative extension of AEff which is then used to prove that AEff is strongly normalising
