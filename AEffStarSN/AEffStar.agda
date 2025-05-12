@@ -6,7 +6,7 @@ open import EffectAnnotations using (Σₛ; decₛ)
 open import AEff using (payload; Σ-base; ar-base)
 open import Types using (BType; dec-bty; GType)
 
-module AEffBsn.AEffB where
+module AEffStarSN.AEffStar where
 
 -- VALUE AND COMPUTATION TYPES
 

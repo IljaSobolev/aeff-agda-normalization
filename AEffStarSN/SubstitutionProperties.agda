@@ -1,4 +1,4 @@
-open import AEffBsn.AEffB
+open import AEffStarSN.AEffStar
 
 open import Data.List hiding ([_]) renaming (_∷_ to _∷ₗ_)
 open import Relation.Binary.PropositionalEquality as Eq
@@ -9,7 +9,7 @@ open import EffectAnnotations using (Σₛ)
 open import AEff using (payload; Σ-base; ar-base)
 open import Types using (BType; dec-bty; GType)
 
-module AEffBsn.SubstitutionProperties where
+module AEffStarSN.SubstitutionProperties where
 
 ↑↑ : {Γ : Ctx} {X : Type} → Sub Γ (Γ ∷ X)
 ↑↑ x = ` (Tl x)

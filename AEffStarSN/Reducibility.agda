@@ -1,7 +1,7 @@
-open import AEffBsn.AEffB
-open import AEffBsn.SubstitutionProperties
-open import AEffBsn.StrongNormalisation
-open import AEffBsn.Continuations
+open import AEffStarSN.AEffStar
+open import AEffStarSN.SubstitutionProperties
+open import AEffStarSN.StrongNormalisation
+open import AEffStarSN.Continuations
 
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Unit using (⊤; tt)
@@ -16,7 +16,7 @@ open import EffectAnnotations using (Σₛ; decₛ)
 open import AEff using (payload; Σ-base; ar-base)
 open import Types using (BType; dec-bty; GType)
 
-module AEffBsn.Reducibility where
+module AEffStarSN.Reducibility where
 
 VRed : {Γ : Ctx}
        (X : Type) →

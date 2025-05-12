@@ -1,5 +1,5 @@
-open import AEffBsn.AEffB
-open import AEffBsn.SubstitutionProperties
+open import AEffStarSN.AEffStar
+open import AEffStarSN.SubstitutionProperties
 
 open import EffectAnnotations using (Σₛ; decₛ)
 open import AEff using (payload; Σ-base; ar-base)
@@ -17,7 +17,7 @@ open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Data.List renaming (_∷_ to _∷ₗ_; map to mapₗ)
 
-module AEffBsn.StrongNormalisation where
+module AEffStarSN.StrongNormalisation where
 
 data SN : {Γ : Ctx} {X : Type} → Γ ⊢M⦂ X → Set where
   sn : {Γ : Ctx}

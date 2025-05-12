@@ -1,6 +1,6 @@
-import AEffBsn.AEffB as B
-open import AEffBsn.StrongNormalisation renaming (SN to SN')
-open import AEffBsn.Reducibility renaming (all-terms-sn to all-terms-sn')
+import AEffStarSN.AEffStar as B
+open import AEffStarSN.StrongNormalisation renaming (SN to SN')
+open import AEffStarSN.Reducibility renaming (all-terms-sn to all-terms-sn')
 
 open import Types
 open import AEff

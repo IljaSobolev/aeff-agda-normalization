@@ -1,4 +1,4 @@
-open import AEffBsn.AEffB
+open import AEffStarSN.AEffStar
 
 open import EffectAnnotations using (Σₛ; decₛ)
 open import AEff using (payload; Σ-base; ar-base)
@@ -8,7 +8,7 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; subst)
 open import Data.Product
 
-module AEffBsn.Continuations where
+module AEffStarSN.Continuations where
 
 data _⊢T⦂_⊸_ (Γ : Ctx) : Type → Type → Set where
   
