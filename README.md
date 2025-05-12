@@ -1,4 +1,4 @@
-# Definition and proof of strong normalisation for the AEff language
+# Proof of strong normalisation for the AEff language
 
 - The formalisation has been tested with Agda version 2.7.0 and standard library version 2.1.
 
@@ -32,16 +32,16 @@
 
 #### Proof of strong normalisation for the AEff language
 
-- `AEffBsn/` - definition of the simplified language (called AEffB here) without effect annotations and with star and proof of strong normalisation for it
+- `AEffStar/` - definition of the simplified language without effect annotations and with the promise-typed constant ★ and proof of strong normalisation for it
 
-    - `AEffBsn/AEffB.agda` - definition of AEffB: types, values, computations, renamings, substitutions and small-step operational semantics
+    - `AEffStar/AEffStar.agda` - definition of AEffStar: types, values, computations, renamings, substitutions and small-step operational semantics
     
-    - `AEffBsn/SubstitutionProperties.agda` - proof of a number of substitution properties to be used elsewhere in the proof
+    - `AEffStar/SubstitutionProperties.agda` - proof of a number of substitution properties to be used elsewhere in the proof
 
-    - `AEffBsn/StrongNormalisation.agda` - definition of strong normalisation with and without the bound on the length of reduction sequences, and proof that both definitions are equivalent
+    - `AEffStar/StrongNormalisation.agda` - definition of strong normalisation with and without the bound on the length of reduction sequences, and proof that both definitions are equivalent
 
-    - `AEffBsn/Continuations.agda` - definition of term-abstractions, continuations and their application to computations, and proof about how application interacts with reductions
+    - `AEffStar/Continuations.agda` - definition of term-abstractions, continuations and their application to computations, and proof about how application interacts with reductions
 
-    - `AEffBsn/Reducibility.agda` - definition of reducibility, proof that reducibility implies strong normalisation, proof of the fundamental theorem of logical relations, and the result that the calculus is strongly normalising
+    - `AEffStar/Reducibility.agda` - definition of reducibility, proof that reducibility implies strong normalisation, proof of the fundamental theorem of logical relations, and the result that the calculus is strongly normalising
 
 - `Simulation.agda` - proof that AEffBsn is a conservative extension of AEff which is then used to prove that AEff is strongly normalising
