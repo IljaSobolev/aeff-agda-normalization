@@ -11,6 +11,9 @@ open import Types using (BType; dec-bty; GType)
 
 module AEffStarSN.SubstitutionProperties where
 
+-- the code in this file is based on Programming Language Foundations in Agda
+-- https://plfa.inf.ed.ac.uk/20.07/Substitution/
+
 ↑↑ : {Γ : Ctx} {X : Type} → Sub Γ (Γ ∷ X)
 ↑↑ x = ` (Tl x)
 
