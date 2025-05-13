@@ -36,15 +36,6 @@ data SNi : {Γ : Ctx} {X : Type} → ℕ → Γ ⊢M⦂ X → Set where
         --------------------------------
         SNi (suc m) M
 
-sni→sn : {Γ : Ctx}
-         {X : Type}
-         {m : ℕ}
-         {M : Γ ⊢M⦂ X} →
-         SNi m M →
-         ------------
-         SN M
-sni→sn (sni f) = sn (λ r → sni→sn (f r))
-
 add-context-let : {Γ : Ctx}
                   {X Y : Type}
                   {N : Γ ∷ X ⊢M⦂ Y} →
@@ -300,17 +291,6 @@ sn-↑-e : {Γ : Ctx}
          SN M
 sn-↑-e (sn f) = sn (λ {r → sn-↑-e (f (context-↑ r))})
 
-sni-↑-i : {Γ : Ctx}
-          {X : Type}
-          {m : ℕ}
-          {op : Σₛ}
-          {V : Γ ⊢V⦂ ```(payload op)}
-          {M : Γ ⊢M⦂ X} →
-          SNi m M →
-          -------------------------
-          SNi m (↑ op V M)
-sni-↑-i (sni f) = sni (λ {(context-↑ r) → sni-↑-i (f r)})
-
 sni-↑-e : {Γ : Ctx}
           {X : Type}
           {m : ℕ}
@@ -321,21 +301,3 @@ sni-↑-e : {Γ : Ctx}
           -------------------------
           SNi m M
 sni-↑-e (sni f) = sni (λ {r → sni-↑-e (f (context-↑ r))})
-
-sn-sub-e : {Γ Γ' : Ctx}
-           {X : Type}
-           {s : Sub Γ Γ'}
-           {N : Γ ⊢M⦂ X} →
-           SN (N [ s ]m) →
-           ---------------
-           SN N
-sn-sub-e (sn f) = sn (λ r' → sn-sub-e (f (sub-↝↝ _ r')))
-
-sn-ren-e : {Γ Γ' : Ctx}
-           {X : Type}
-           {M : Γ ⊢M⦂ X} →
-           {rn : Ren Γ Γ'} →
-           SN (M-rename rn M) →
-           ------------------
-           SN M
-sn-ren-e (sn f) = sn (λ r' → sn-ren-e (f (ren-↝↝ _  r')))

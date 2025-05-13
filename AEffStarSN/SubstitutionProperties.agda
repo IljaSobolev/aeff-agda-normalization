@@ -539,14 +539,3 @@ sub-↝↝ s (context-coerce r) = context-coerce (sub-↝↝ s r)
 sub-↝↝ s (coerce-return V) = coerce-return (V [ s ]v)
 sub-↝↝ s (coerce-↑ V M) = coerce-↑ (V [ s ]v) (M [ s ]m)
 sub-↝↝ s (coerce-promise M N) = coerce-promise (M [ lift s ]m) (N [ lift s ]m)
-
-ren-↝↝ : {Γ Γ' : Ctx} {X : Type}
-         {M N : Γ ⊢M⦂ X}
-         (rn : Ren Γ Γ') →
-         M ↝↝ N →
-         ----------------------
-         M-rename rn M ↝↝ M-rename rn N
-ren-↝↝ {M = M} {N = N} rn r
-  rewrite rename-subst-ren-m {r = rn} {M = M}
-  | rename-subst-ren-m {r = rn} {M = N}
-  = sub-↝↝ (λ x → ` rn x) r
