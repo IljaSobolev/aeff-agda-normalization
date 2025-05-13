@@ -663,6 +663,8 @@ sn'→sn : {Γ : Ctx} {Γ† : B.Ctx}
 sn'→sn ~M (sn f) r with sim r ~M
 ... | leg ~N r' = sn (sn'→sn ~N (f r'))
 
+{- COROLLARY 3.18 -}
+
 all-terms-sn : {Γ : Ctx} {X : CType} (M : Γ ⊢M⦂ X) → SN M
 all-terms-sn M with incl-tm-m' M
 ... | _ , _ , M† , ~M = sn (sn'→sn ~M (all-terms-sn' M†))

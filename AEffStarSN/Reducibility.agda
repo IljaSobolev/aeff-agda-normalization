@@ -55,6 +55,60 @@ KRed {Γ} X K = (V : Γ ⊢V⦂ X) → VRed X V → SN (K aK (return V))
 
 ARed {Γ} X {_} {Z} K N = (V : Γ ⊢V⦂ Z) → VRed Z V → SN (K aK (await ⟨ V ⟩ until N))
 
+lam-abs-sn : {Γ : Ctx}
+             {X Y Z : Type}
+             {K : Γ ⊢K⦂ X ⊸ Y}
+             {V : Γ ⊢V⦂ Z}
+             {M : Γ ∷ Z ⊢M⦂ X} →
+             {L' : Γ ⊢M⦂ Y} →
+             SN (K aK (M [ id-subst [ V ]s ]m)) →
+             K `aK (ƛ M) · V `↝↝ L' →
+             ------------------------
+             SN L'
+lam-abs-sn s (`id (apply _ _)) = s
+lam-abs-sn s (`aK {T = T-let N} (context-let (apply _ _))) = s
+lam-abs-sn s (`aK {T = T-op op V} (context-↓ (apply _ _))) = s
+lam-abs-sn s (`aK {T = T-coerce} (context-coerce (apply _ _))) = s
+
+{- LEMMA 2.6 -}
+
+vred-abs : {Γ : Ctx}
+           {X Y : Type}
+           {M : Γ ∷ X ⊢M⦂ Y} →
+           ({V : Γ ⊢V⦂ X} → VRed X V → CRed Y (M [ id-subst [ V ]s ]m)) →
+           ------------------
+           VRed (X ⇒ Y) (ƛ M)
+vred-abs f V VRedV K KRedK = sn (λ r' → lam-abs-sn {K = K} (f VRedV K KRedK) (aK→`aK r'))
+
+{- THEOREM 3.1 -}
+
+cred→sn : {Γ : Ctx}
+          {X : Type}  
+          {M : Γ ⊢M⦂ X} →
+          CRed X M →
+          ------------
+          SN M
+cred→sn CRedM = CRedM id (λ V VRedV → sn (λ ()))
+
+★-await-sn : {Γ : Ctx}
+             {X Y Z : Type}
+             {K : Γ ⊢K⦂ X ⊸ Y}
+             {N : Γ ∷ Z ⊢M⦂ X}
+             {L' : Γ ⊢M⦂ Y} →
+             K `aK (await ★ until N) `↝↝ L' →
+             ----------------------------------
+             SN L'
+★-await-sn (`aK {T = T-let N} (context-let ()))
+★-await-sn (`aK {T = T-op op V} (context-↓ ()))
+★-await-sn (`aK {T = T-coerce} (context-coerce ()))
+
+{- LEMMA 3.2 -}
+
+vred-★ : {Γ : Ctx}
+         {X : Type} →
+         VRed {Γ} ⟨ X ⟩ ★
+vred-★ K N ARedKN = sn (λ r' → ★-await-sn {K = K} (aK→`aK r'))
+
 append-let : {Γ : Ctx}
              {X Y Z : Type}  
              (K : Γ ⊢K⦂ Y ⊸ Z) →
@@ -70,6 +124,8 @@ append-let K N V app-sn (`aK {T = T-let N'} (context-let (let-return .V .N))) = 
 append-let K N V app-sn (`aK {T = T-op op' V'} (context-↓ (let-return .V .N))) = app-sn
 append-let K N V app-sn (`aK {T = T-coerce} (context-coerce (let-return .V .N))) = app-sn
 
+{- LEMMA 3.4 -}
+
 kred-let : {Γ : Ctx}
            {X Y Z : Type}  
            (K : Γ ⊢K⦂ Y ⊸ Z) →
@@ -78,6 +134,8 @@ kred-let : {Γ : Ctx}
            ---------------------
            KRed X (K ∘T T-let N)
 kred-let K N f V VRedV = sn (λ {r' → append-let K N V (f VRedV) (aK→`aK r')})
+
+{- LEMMA 3.5 -}
 
 append-↓ : {Γ : Ctx}
            {X Y : Type}  
@@ -108,6 +166,32 @@ append-coerce K V app-sn (`id (coerce-return .V)) = app-sn
 append-coerce K V app-sn (`aK {T = T-let N'} (context-let (coerce-return .V))) = app-sn
 append-coerce K V app-sn (`aK {T = T-op op' V'} (context-↓ (coerce-return .V))) = app-sn
 append-coerce K V app-sn (`aK {T = T-coerce} (context-coerce (coerce-return .V))) = app-sn
+
+{- LEMMA 3.6 -}
+
+cred-let : {Γ : Ctx}
+           {X Y : Type}  
+           (M : Γ ⊢M⦂ X)
+           (N : Γ ∷ X ⊢M⦂ Y) →
+           CRed X M →
+           ({V : Γ ⊢V⦂ X} → VRed X V → CRed Y (N [ id-subst [ V ]s ]m)) →
+           -----------------------------
+           CRed Y (let= M `in N)
+cred-let M N CRedM f K KRedK
+  = CRedM (K ∘T T-let N) (λ V VRedV → sn (λ r → append-let K N V (f VRedV K KRedK) (aK→`aK r)))
+
+{- LEMMA 3.7 -}
+
+cred-↓ : {Γ : Ctx}
+         {X : Type}  
+         (M : Γ ⊢M⦂ X)
+         (op : Σₛ) →
+         (W : Γ ⊢V⦂ ```(payload op)) →
+         CRed X M →
+         -----------------------------
+         CRed X (↓ op W M)
+cred-↓ M op W CRedM K KRedK
+  = CRedM (K ∘T T-op op W) (λ V VRedV → sn (λ r' → append-↓ K op W V (KRedK V VRedV) (aK→`aK r')))
 
 cred-coerce : {Γ : Ctx}
               {X : Type}
@@ -143,6 +227,8 @@ append-↑ (K ∘T T-coerce) op W M app-sn (`aK {T = T-coerce} (coerce-↑ _ _))
 append-↑ K op W M (sn f) (`aK {T = T-coerce} (context-coerce (context-↑ r)))
   = sn (λ r' → append-↑ K op W _ (f (aK-↝↝ K r)) (aK→`aK r'))
 
+{- LEMMA 3.8 -}
+
 append-↑-sn : {Γ : Ctx}
               {X Y : Type}  
               (K : Γ ⊢K⦂ X ⊸ Y)
@@ -153,21 +239,6 @@ append-↑-sn : {Γ : Ctx}
               -------------------------
               SN (K aK (↑ op W M))
 append-↑-sn K op W M app-sn = sn (λ r → append-↑ K op W M app-sn (aK→`aK r))
-
-append-await : {Γ : Ctx}
-               {X Y Z : Type}  
-               (K : Γ ⊢K⦂ Y ⊸ Z)
-               {W : Γ ⊢V⦂ X}
-               (N : Γ ∷ X ⊢M⦂ Y)
-               {L' : Γ ⊢M⦂ Z} →
-               SN (K aK (N [ id-subst [ W ]s ]m)) →
-               K `aK (await ⟨ W ⟩ until N) `↝↝ L' →
-               ---------------------------
-               SN L'
-append-await id N app-sn (`id (await-promise _ _)) = app-sn
-append-await (K ∘T T-let N') N app-sn (`aK (context-let (await-promise _ _))) = app-sn
-append-await (K ∘T T-op op V) N app-sn (`aK (context-↓ (await-promise _ _))) = app-sn
-append-await (K ∘T T-coerce) N app-sn (`aK (context-coerce (await-promise _ _))) = app-sn
 
 sn-K-↑' : {Γ : Ctx}
           {X Y : Type}
@@ -211,6 +282,8 @@ sni-K-↑' {K = id} s = s
 sni-K-↑' {K = K ∘T T-let N} (sni f) = sni-K-↑' {K = K} (sni-suc (f (aK-↝↝ K (let-↑ _ _ _))))
 sni-K-↑' {K = K ∘T T-op op' W} (sni f) = sni-K-↑' {K = K} (sni-suc (f (aK-↝↝ K (↓-↑ _ _ _))))
 sni-K-↑' {K = K ∘T T-coerce} (sni f) = sni-K-↑' {K = K} (sni-suc (f (aK-↝↝ K (coerce-↑ _ _))))
+
+{- LEMMA 3.9 -}
 
 sni-K-↑ : {Γ : Ctx}
           {X Y : Type}
@@ -280,6 +353,8 @@ rename-lemma-m' {M = M} = sym (
   ∎
   )
 
+{- LEMMA 3.10 -}
+
 append-promise : {Γ : Ctx}
                  {X Y Z : Type}  
                  {m : ℕ}
@@ -335,6 +410,51 @@ append-promise K'@(K ∘T T-coerce) op M N f g (sni h) (`aK (context-coerce (con
 append-promise K'@(K ∘T T-coerce) op M N f g (sni h) (`aK (coerce-promise .M .N))
   = sn (λ r' → append-promise K op (coerce M) (coerce N) f (cred-coerce (M [ id-subst [ _ ]s ]m) g) (sni h) (aK→`aK r'))
 
+{- LEMMA 3.11 -}
+
+append-await : {Γ : Ctx}
+               {X Y Z : Type}  
+               (K : Γ ⊢K⦂ Y ⊸ Z)
+               {W : Γ ⊢V⦂ X}
+               (N : Γ ∷ X ⊢M⦂ Y)
+               {L' : Γ ⊢M⦂ Z} →
+               SN (K aK (N [ id-subst [ W ]s ]m)) →
+               K `aK (await ⟨ W ⟩ until N) `↝↝ L' →
+               ---------------------------
+               SN L'
+append-await id N app-sn (`id (await-promise _ _)) = app-sn
+append-await (K ∘T T-let N') N app-sn (`aK (context-let (await-promise _ _))) = app-sn
+append-await (K ∘T T-op op V) N app-sn (`aK (context-↓ (await-promise _ _))) = app-sn
+append-await (K ∘T T-coerce) N app-sn (`aK (context-coerce (await-promise _ _))) = app-sn
+
+{- LEMMA 3.12 -}
+
+cred-↑ : {Γ : Ctx}
+         {X : Type}  
+         (M : Γ ⊢M⦂ X)    
+         (op : Σₛ) → 
+         (W : Γ ⊢V⦂ ```(payload op)) →
+         CRed X M →
+         -----------------------------   
+         CRed X (↑ op W M)                        
+cred-↑ M op W CRedM K KRedK = sn (λ r → append-↑ K op W M (CRedM K KRedK) (aK→`aK r))
+
+{- LEMMA 3.13 -}
+
+cred-promise : {Γ : Ctx}
+               {X Y : Type}
+               {op : Σₛ}
+               {M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩}
+               {N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y} →
+               ({V : Γ ⊢V⦂ ⟨ X ⟩} → VRed ⟨ X ⟩ V → CRed Y (N [ id-subst [ V ]s ]m)) →
+               ({W : Γ ⊢V⦂ ```(payload op)} → CRed ⟨ X ⟩ (M [ id-subst [ W ]s ]m)) →
+               -----------------------------
+               CRed Y (promise op ↦ M `in N)
+cred-promise {op = op} {M = M} {N = N} f g K KRedK
+  = sn (λ r' → append-promise K op M N (λ {W} VRedW → f VRedW K KRedK) g (sn→sni (f vred-★ K KRedK)) (aK→`aK r'))
+
+{- LEMMA 3.14 -}
+
 cred-await : {Γ : Ctx}
              {X Y : Type}
              (V : Γ ⊢V⦂ ⟨ X ⟩)
@@ -372,99 +492,6 @@ var-await-sn (`aK {T = T-let N} (context-let ()))
 var-await-sn (`aK {T = T-op op V} (context-↓ ()))
 var-await-sn (`aK {T = T-coerce} (context-coerce ()))
 
-★-await-sn : {Γ : Ctx}
-             {X Y Z : Type}
-             {K : Γ ⊢K⦂ X ⊸ Y}
-             {N : Γ ∷ Z ⊢M⦂ X}
-             {L' : Γ ⊢M⦂ Y} →
-             K `aK (await ★ until N) `↝↝ L' →
-             ----------------------------------
-             SN L'
-★-await-sn (`aK {T = T-let N} (context-let ()))
-★-await-sn (`aK {T = T-op op V} (context-↓ ()))
-★-await-sn (`aK {T = T-coerce} (context-coerce ()))
-
-vred-var : {Γ : Ctx}
-           {X : Type}
-           (x : X ∈ Γ) →
-           -------------
-           VRed X (` x)
-vred-var {X = ``` c} x = tt
-vred-var {X = X ⇒ Y} x V VRedV K KRedK = sn (λ r' → var-app-sn {K = K} (aK→`aK r'))
-vred-var {X = ⟨ X ⟩} x K N ARedKN = sn (λ r' → var-await-sn {K = K} (aK→`aK r'))
-
-vred-★ : {Γ : Ctx}
-         {X : Type} →
-         VRed {Γ} ⟨ X ⟩ ★
-vred-★ K N ARedKN = sn (λ r' → ★-await-sn {K = K} (aK→`aK r'))
-
-lam-abs-sn : {Γ : Ctx}
-             {X Y Z : Type}
-             {K : Γ ⊢K⦂ X ⊸ Y}
-             {V : Γ ⊢V⦂ Z}
-             {M : Γ ∷ Z ⊢M⦂ X} →
-             {L' : Γ ⊢M⦂ Y} →
-             SN (K aK (M [ id-subst [ V ]s ]m)) →
-             K `aK (ƛ M) · V `↝↝ L' →
-             ------------------------
-             SN L'
-lam-abs-sn s (`id (apply _ _)) = s
-lam-abs-sn s (`aK {T = T-let N} (context-let (apply _ _))) = s
-lam-abs-sn s (`aK {T = T-op op V} (context-↓ (apply _ _))) = s
-lam-abs-sn s (`aK {T = T-coerce} (context-coerce (apply _ _))) = s
-
-vred-abs : {Γ : Ctx}
-           {X Y : Type}
-           {M : Γ ∷ X ⊢M⦂ Y} →
-           ({V : Γ ⊢V⦂ X} → VRed X V → CRed Y (M [ id-subst [ V ]s ]m)) →
-           ------------------
-           VRed (X ⇒ Y) (ƛ M)
-vred-abs f V VRedV K KRedK = sn (λ r' → lam-abs-sn {K = K} (f VRedV K KRedK) (aK→`aK r'))
-
-cred-promise : {Γ : Ctx}
-               {X Y : Type}
-               {op : Σₛ}
-               {M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩}
-               {N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y} →
-               ({V : Γ ⊢V⦂ ⟨ X ⟩} → VRed ⟨ X ⟩ V → CRed Y (N [ id-subst [ V ]s ]m)) →
-               ({W : Γ ⊢V⦂ ```(payload op)} → CRed ⟨ X ⟩ (M [ id-subst [ W ]s ]m)) →
-               -----------------------------
-               CRed Y (promise op ↦ M `in N)
-cred-promise {op = op} {M = M} {N = N} f g K KRedK
-  = sn (λ r' → append-promise K op M N (λ {W} VRedW → f VRedW K KRedK) g (sn→sni (f vred-★ K KRedK)) (aK→`aK r'))
-
-cred-let : {Γ : Ctx}
-           {X Y : Type}  
-           (M : Γ ⊢M⦂ X)
-           (N : Γ ∷ X ⊢M⦂ Y) →
-           CRed X M →
-           ({V : Γ ⊢V⦂ X} → VRed X V → CRed Y (N [ id-subst [ V ]s ]m)) →
-           -----------------------------
-           CRed Y (let= M `in N)
-cred-let M N CRedM f K KRedK
-  = CRedM (K ∘T T-let N) (λ V VRedV → sn (λ r → append-let K N V (f VRedV K KRedK) (aK→`aK r)))
-
-cred-↓ : {Γ : Ctx}
-         {X : Type}  
-         (M : Γ ⊢M⦂ X)
-         (op : Σₛ) →
-         (W : Γ ⊢V⦂ ```(payload op)) →
-         CRed X M →
-         -----------------------------
-         CRed X (↓ op W M)
-cred-↓ M op W CRedM K KRedK
-  = CRedM (K ∘T T-op op W) (λ V VRedV → sn (λ r' → append-↓ K op W V (KRedK V VRedV) (aK→`aK r')))
-
-cred-↑ : {Γ : Ctx}
-         {X : Type}  
-         (M : Γ ⊢M⦂ X)    
-         (op : Σₛ) → 
-         (W : Γ ⊢V⦂ ```(payload op)) →
-         CRed X M →
-         -----------------------------   
-         CRed X (↑ op W M)                        
-cred-↑ M op W CRedM K KRedK = sn (λ r → append-↑ K op W M (CRedM K KRedK) (aK→`aK r))
-
 SubRed : {Γ Γ' : Ctx} (s : Sub Γ Γ') → Set
 SubRed {Γ} s = {X : Type} (x : X ∈ Γ) → VRed X (s x)
 
@@ -491,6 +518,8 @@ cred-⨟ : {Γ Γ' : Ctx}
          CRed Y ((N [ lift s ]m) [ id-subst [ V ]s ]m)
 cred-⨟ {s = s} sred {V} VRedV N f K KRedK
   rewrite sub-sub-m {s = lift s} {s' = id-subst [ V ]s} N = f (subred-⨟ sred VRedV) K KRedK
+
+{- THEOREM 3.15 -}
 
 fundamental-v : {Γ Γ' : Ctx}
                 {X : Type}
@@ -536,13 +565,16 @@ fundamental-m (await V until M) s sred
 fundamental-m (coerce M) s sred
   = cred-coerce (M [ s ]m) (fundamental-m M s sred)
 
-cred→sn : {Γ : Ctx}
-          {X : Type}  
-          {M : Γ ⊢M⦂ X} →
-          CRed X M →
-          ------------
-          SN M
-cred→sn CRedM = CRedM id (λ V VRedV → sn (λ ()))
+{- LEMMA 3.16 -}
+
+vred-var : {Γ : Ctx}
+           {X : Type}
+           (x : X ∈ Γ) →
+           -------------
+           VRed X (` x)
+vred-var {X = ``` c} x = tt
+vred-var {X = X ⇒ Y} x V VRedV K KRedK = sn (λ r' → var-app-sn {K = K} (aK→`aK r'))
+vred-var {X = ⟨ X ⟩} x K N ARedKN = sn (λ r' → var-await-sn {K = K} (aK→`aK r'))
 
 all-terms-red : {Γ : Ctx}
                 {X : Type}
@@ -550,6 +582,8 @@ all-terms-red : {Γ : Ctx}
                 --------------
                 CRed X M
 all-terms-red M rewrite sym (sub-id-m {M = M}) = fundamental-m M id-subst vred-var
+
+{- THEOREM 3.17 -}
 
 all-terms-sn : {Γ : Ctx}
                {X : Type}
