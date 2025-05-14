@@ -44,4 +44,4 @@
 
     - `AEffStar/Reducibility.agda` - definition of reducibility, proof that reducibility implies strong normalisation, proof of the fundamental theorem of logical relations, and the result that the calculus is strongly normalising
 
-- `Simulation.agda` - proof that AEffBsn is a conservative extension of AEff which is then used to prove that AEff is strongly normalising
+- `Simulation.agda` - proof that AEffStarSN is a conservative extension of AEff which is then used to prove that AEff is strongly normalising
