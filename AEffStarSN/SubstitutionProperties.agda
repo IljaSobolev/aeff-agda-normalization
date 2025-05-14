@@ -1,3 +1,7 @@
+-- the code in this file is adapted from Programming Language Foundations in Agda, available under the CC BY 4.0 license
+-- https://plfa.inf.ed.ac.uk/20.07/Substitution/
+-- https://creativecommons.org/licenses/by/4.0/deed.en
+
 open import AEffStarSN.AEffStar
 
 open import Data.List hiding ([_]) renaming (_∷_ to _∷ₗ_)
@@ -10,9 +14,6 @@ open import AEff using (payload; Σ-base; ar-base)
 open import Types using (BType; dec-bty; GType)
 
 module AEffStarSN.SubstitutionProperties where
-
--- the code in this file is based on Programming Language Foundations in Agda
--- https://plfa.inf.ed.ac.uk/20.07/Substitution/
 
 ↑↑ : {Γ : Ctx} {X : Type} → Sub Γ (Γ ∷ X)
 ↑↑ x = ` (Tl x)
