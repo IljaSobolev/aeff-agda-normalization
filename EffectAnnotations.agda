@@ -188,6 +188,28 @@ data _⊑ᵢ_ (i i' : I) : Set where
           Σ[ o' ∈ O ] Σ[ i''' ∈ I ] (lkpᵢ op i' ≡ just (o' , i''') × o ⊑ₒ o' × i'' ⊑ᵢ i''')) →
         i ⊑ᵢ i'
         
+-- PRODUCT ORDER SUBTYPING RELATION
+
+_⊑_ : O × I → Maybe (O × I) → Set
+x       ⊑ nothing        = ⊥
+(o , i) ⊑ just (o' , i') = (o ⊑ₒ o') × (i ⊑ᵢ i')
+
+
+⊑-just : {o : O} {i : I} {oi : Maybe (O × I)} →
+         (o , i) ⊑ oi →
+         ---------------------------------------------
+         Σ[ o' ∈ O ] Σ[ i' ∈ I ] (oi ≡ just (o' , i'))
+         
+⊑-just {oi = just (o' , i')} p = o' , i' , refl
+
+
+⊑-proj : {o o' : O} {i i' : I} {oi : Maybe (O × I)} →
+         (o , i) ⊑ oi →
+         oi ≡ just (o' , i') →
+         --------------------------------------------
+         o ⊑ₒ o' × i ⊑ᵢ i'
+         
+⊑-proj {oi = just (o'' , i'')} p refl = p
 
 -- SUBTYPING RELATIONS ARE PREORDERS
 
@@ -251,6 +273,24 @@ data _⊑ᵢ_ (i i' : I) : Set where
                     
     ⊑ᵢ-trans-aux o j op (o' , j' , r' , s , t) =
       ⊑ᵢ-trans-aux' o j op o' j' r' s t (q op r')
+
+
+⊑-refl : {o : O} {i : I} →
+         ----------------------
+         (o , i) ⊑ just (o , i)
+
+⊑-refl = (⊑ₒ-refl , ⊑ᵢ-refl)
+
+
+⊑-trans : {oi : O × I} {oi' : Maybe (O × I)} {oi'' : O × I} {oi''' : Maybe (O × I)} →
+          oi ⊑ oi' →
+          oi' ≡ just oi'' →
+          oi'' ⊑ oi''' →
+          ------------------------------
+          oi ⊑ oi'''
+
+⊑-trans {(o , i)} {_} {(o'' , i'')} {just (o''' , i''')} (pₒ , pᵢ) refl (rₒ , rᵢ) =
+  (⊑ₒ-trans pₒ rₒ , ⊑ᵢ-trans pᵢ rᵢ)
 
 
 -- SUBTYPING RELATIONS ARE PROOF-IRRELEVANT
@@ -652,6 +692,16 @@ lkpᵢ-↓ₑ-neq {omap o} {.o'''} {imap i} {imap .i'''} {op} {op'} p q |
   just (o'' , imap i'') | no ¬r | just (o''' , imap i''') | just (o'''' , imap i'''') | refl =
     (o''' ∪ₒ o'''') , (imap i''') ∪ᵢ (imap i'''') , refl , ∪ₒ-inl , ∪ᵢ-inl
 
+lkpᵢ-↓ₑ-neq-⊑ : {o o' : O}
+              {i i' : I} {op op' : Σₛ} →
+              ¬ op ≡ op' →
+              (o' , i') ⊑ lkpᵢ op' i  →
+              --------------------------------------------
+              (o' , i') ⊑ lkpᵢ op' (proj₂ (op ↓ₑ (o , i)))
+
+lkpᵢ-↓ₑ-neq-⊑ {o = o} {i = i} p q with ⊑-just q 
+... | o'' , i'' , r with lkpᵢ-↓ₑ-neq {o = o} {i = i} p r
+... | o''' , i''' , s , t , u rewrite s =  ⊑-trans q r (t , u)
 
 -- NEXT DEFINED EFFECT ANNOTATION UNDER SUBTYPING EFFECT ANNOTATIONS
 

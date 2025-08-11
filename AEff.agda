@@ -112,7 +112,7 @@ mutual
                        {o o' : O}
                        {i i' : I} → 
                        (op : Σₛ) →
-                       lkpᵢ op i ≡ just (o' , i') →
+                       (o' , i') ⊑ lkpᵢ op i →
                        Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i') →
                        Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i) →
                        ------------------------------------------
