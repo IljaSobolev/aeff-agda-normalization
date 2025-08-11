@@ -1,8 +1,7 @@
 import AEffStarSN.AEffStar
 import AEffStarSN.SubstitutionProperties
-import AEffStarSN.StrongNormalisation
 import AEffStarSN.Continuations
-import AEffStarSN.Reducibility
+import AEffStarSN.SN
 
 import AEff
 import AwaitingComputations
