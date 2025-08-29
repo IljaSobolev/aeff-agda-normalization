@@ -8,6 +8,7 @@ module AEffStarSN.AEffStar where
 
 variable
   A : BType
+  op op' : Σₛ
 
 -- VALUE AND COMPUTATION TYPES
 
@@ -39,6 +40,9 @@ variable
 data _∈_ (X : Type) : Ctx → Set where
   Hd : X ∈ (Γ ∷ X)
   Tl : X ∈ Γ → X ∈ (Γ ∷ Y)
+
+variable
+  x : X ∈ Γ
 
 -- DERIVATIONS OF WELL-TYPED TERMS
 
@@ -106,17 +110,12 @@ data _⊢T⦂_⊸_ Γ X where
 
 variable
   V V' : Γ ⊢V⦂ X
-  M M' : Γ ⊢M⦂ X
-  N N' : Γ ⊢M⦂ X
+  M M' N N' L L' : Γ ⊢M⦂ X
   T T' : Γ ⊢T⦂ X ⊸ Y
 
 pattern let=_`in_ M N = Tl N aT M
 pattern ↓ op V M = T↓ op V aT M
 pattern coerce M = Tc aT M
-
-variable
-  op op' : Σₛ
-  Vᵒᵖ : Γ ⊢V⦂ ```(payload op)
 
 -- SET OF RENAMINGS BETWEEN CONTEXTS
 
@@ -325,9 +324,9 @@ data _↝_ : Γ ⊢M⦂ Y → Γ ⊢M⦂ Y → Set where
 
   ↑-discard       : (V : Γ ⊢V⦂ ```(payload op)) →
                     --------
-                    ↑ op V N
+                    ↑ op V M
                     ↝
-                    N
+                    M
 
   -- INLINED EVALUATION CONTEXT RULES
 
@@ -337,9 +336,7 @@ data _↝_ : Γ ⊢M⦂ Y → Γ ⊢M⦂ Y → Set where
                     ↝
                     ↑ op V N'
 
-  context-promise : {M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩}
-                    {N N' : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y} →
-                    N ↝ N' →
+  context-promise : N ↝ N' →
                     -----
                     promise op ↦ M `in N
                     ↝

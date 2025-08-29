@@ -16,10 +16,7 @@ data _⊢K⦂_⊸_ (Γ : Ctx) (X : Type) : Type → Set where
 
 infix 20 _aK_
 
-_aK_ : Γ ⊢K⦂ X ⊸ Y →
-       Γ ⊢M⦂ X →
-       ------
-       Γ ⊢M⦂ Y
+_aK_ : Γ ⊢K⦂ X ⊸ Y → Γ ⊢M⦂ X → Γ ⊢M⦂ Y
 id aK M = M
 (K ∘ T) aK M = K aK (T aT M)
 
@@ -29,7 +26,7 @@ data _`aK_`↝_ : Γ ⊢K⦂ X ⊸ Y → Γ ⊢M⦂ X → Γ ⊢M⦂ Y → Set w
         -------------
         id `aK M `↝ M'
 
-  `aK : (K : Γ ⊢K⦂ Y ⊸ Z)→
+  `aK : (K : Γ ⊢K⦂ Y ⊸ Z) →
         T aT M ↝ N →
         -------------------------
         (K ∘ T) `aK M `↝ (K aK N)

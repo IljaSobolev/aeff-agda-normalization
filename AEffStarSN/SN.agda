@@ -56,7 +56,7 @@ ARed {Γ} {Y} {Z} {X} K N =
 CRedSub : Γ ∷ X ⊢M⦂ Y → Set
 CRedSub {Γ} {X} M = {V : Γ ⊢V⦂ X} → VRed V → CRed (M [ ids [ V ]s ]m)
 
-vred-ƛ  : {M : Γ ∷ X ⊢M⦂ Y} → CRedSub M → VRed (ƛ M)
+vred-ƛ  : CRedSub M → VRed (ƛ M)
 vred-ƛ f rV K rK r with aK→`aK K r
 ... | `id (apply _ _) = sn'→sn (f rV K rK)
 ... | `aK _ (context-T _ (apply _ _)) = sn'→sn (f rV K rK)
@@ -64,8 +64,7 @@ vred-ƛ f rV K rK r with aK→`aK K r
 cred→sn : CRed M → SN' M
 cred→sn rM = rM id tt
 
-sn-★-await : {N : Γ ∷ X ⊢M⦂ Y}
-             (K : Γ ⊢K⦂ Y ⊸ Z) →
+sn-★-await : (K : Γ ⊢K⦂ Y ⊸ Z) →
              ----------------
              SN' (K aK (await ★ until N))
 sn-★-await K r with aK→`aK K r
@@ -74,10 +73,10 @@ sn-★-await K r with aK→`aK K r
 vred-★ : VRed {Γ} {⟨ X ⟩} ★
 vred-★ K _ _ = sn-★-await K
 
-cred-let : {N : Γ ∷ X ⊢M⦂ Y} → CRed M → CRedSub N → CRed (let= M `in N)
+cred-let : CRed M → CRedSub N → CRed (let= M `in N)
 cred-let rM rN K rK = rM (K ∘ Tl _) (λ rV → rN rV K rK)
 
-cred-↓ : CRed M → CRed (↓ op Vᵒᵖ M)
+cred-↓ : CRed M → CRed (↓ op V M)
 cred-↓ rM K = rM (K ∘ T↓ _ _)
 
 cred-coerce : CRed M → CRed (coerce M)
@@ -92,7 +91,7 @@ cred-return rV K rK r with aK→`aK K r
 sn-↑ : (K : Γ ⊢K⦂ X ⊸ Y) →
        SN (K aK M) →
        --------------
-       SN' (K aK (↑ op Vᵒᵖ M))
+       SN' (K aK (↑ op V M))
 sn-↑ K (sn f) r with aK→`aK K r
 ... | `id (↑-discard _) = sn f
 ... | `id (context-↑ r) = sn'→sn (sn-↑ id (f r))
@@ -100,24 +99,20 @@ sn-↑ K (sn f) r with aK→`aK K r
 ... | `aK _ (context-T _ (↑-discard _)) = sn f
 ... | `aK _ (context-T _ (context-↑ r)) = sn'→sn (sn-↑ K (f (context-K K r)))
 
-kred-comm-t : {T : Γ ⊢T⦂ Y ⊸ Z} {N : Γ ∷ X ⊢M⦂ Y}
-              (K : Γ ⊢K⦂ Z ⊸ U) →
+kred-comm-t : (K : Γ ⊢K⦂ Z ⊸ U) →
               KRed (K ∘ T ∘ Tl N) →
               -------------------
               KRed (K ∘ Tl (T-rename wk₁ T aT N))
 kred-comm-t {T = T} K rK {V} rewrite ⌊ eq₁ (⊢T T) V ⌋t = rK
 
-kred-↝ : {M N : Γ ∷ X ⊢M⦂ Y} →
-         M ↝ N →
+kred-↝ : M ↝ N →
          (K : Γ ⊢K⦂ Y ⊸ Z) →
          KRed (K ∘ Tl M) →
          ---------------
          KRed (K ∘ Tl N)
 kred-↝ r K rK rV = sn→sn' (rK rV (context-K K (sub-↝ _ r)))
 
-sn-promise : {M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩}
-             {N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y}
-             (K : Γ ⊢K⦂ Y ⊸ Z) →
+sn-promise : (K : Γ ⊢K⦂ Y ⊸ Z) →
              KRed (K ∘ Tl N) →
              CRedSub M →
              SN (K aK N [ ids [ ★ ]s ]m) →
@@ -137,8 +132,7 @@ sn-promise K rK rM (sn h) r with aK→`aK K r
 ... | `aK _ (context-T _ (context-promise r)) =
   sn'→sn (sn-promise K (kred-↝ r K rK) rM (h (context-K K (sub-↝ _ r))))
 
-sn-await : {N : Γ ∷ X ⊢M⦂ Y} →
-           (K : Γ ⊢K⦂ Y ⊸ Z) →
+sn-await : (K : Γ ⊢K⦂ Y ⊸ Z) →
            SN (K aK N [ ids [ V ]s ]m) →
            -----------------------
            SN' (K aK (await ⟨ V ⟩ until N))
@@ -147,19 +141,16 @@ sn-await K s r with aK→`aK K r
 ... | `aK K (T-await T _ _) = sn'→sn (sn-await K (subst (λ z → SN (K aK (z aT _))) (sym ⌊ eq₁ _ _ ⌋t) s))
 ... | `aK _ (context-T _ (await-promise _ _)) = s
 
-cred-↑ : CRed M → CRed (↑ op Vᵒᵖ M)                        
+cred-↑ : CRed M → CRed (↑ op V M)                        
 cred-↑ rM K rK = sn-↑ K (sn'→sn (rM K rK))
 
-cred-promise : {M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩}
-               {N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y} →
-               CRedSub N →
+cred-promise : CRedSub N →
                CRedSub M →
                ---------
                CRed (promise op ↦ M `in N)
 cred-promise rN rM K rK = sn-promise K (λ rV → rN rV K rK) rM (sn'→sn (rN vred-★ K rK))
 
-cred-await : {V : Γ ⊢V⦂ ⟨ X ⟩} {N : Γ ∷ X ⊢M⦂ Y} →
-             VRed V →
+cred-await : VRed V →
              CRedSub N →
              ---------
              CRed (await V until N)
@@ -168,8 +159,7 @@ cred-await rV rN K rK = rV K _ (λ rW → sn-await K (sn'→sn (rN rW K rK)))
 SubRed : (s : Sub Γ Γ') → Set
 SubRed {Γ} s = {X : Type} (x : X ∈ Γ) → VRed (s x)
 
-cred-⨟ : {N : Γ ∷ X ⊢M⦂ Y} →
-         SubRed s →
+cred-⨟ : SubRed s →
          ({Γ'' : Ctx} {s' : Sub (Γ ∷ X) Γ''} → SubRed s' → CRed (N [ s' ]m)) →
          -------------------------
          CRedSub (N [ lift s ]m)
@@ -209,9 +199,7 @@ fund-m (await V until M) rs =
 fund-m (coerce M) rs =
   cred-coerce (fund-m M rs)
 
-sn-var-await : {N : Γ ∷ X ⊢M⦂ Y}
-               {x : ⟨ X ⟩ ∈ Γ}
-               (K : Γ ⊢K⦂ Y ⊸ Z) →
+sn-var-await : (K : Γ ⊢K⦂ Y ⊸ Z) →
                ----------------
                SN' (K aK (await ` x until N))
 sn-var-await K r with aK→`aK K r
@@ -224,7 +212,7 @@ vred-var {X = X ⇒ Y} x rV K rK r with aK→`aK K r
 vred-var {X = ⟨ X ⟩} x K _ rA = sn-var-await K
 
 all-terms-red : (M : Γ ⊢M⦂ X) → CRed M
-all-terms-red M rewrite sym ⌊ sub-id {T = ⊢M M} ⌋m = fund-m M vred-var
+all-terms-red M rewrite sym ⌊ sub-id {TT = ⊢M M} ⌋m = fund-m M vred-var
 
 strong-norm : (M : Γ ⊢M⦂ X) → SN M
 strong-norm M = sn'→sn (cred→sn (all-terms-red M))
