@@ -16,49 +16,47 @@ open import Types using (BType)
 
 module AEffStarSN.SubstitutionProperties where
 
-data _⊢_ (Γ : Ctx) (X : Type) : Set where
-  ⊢V : Γ ⊢V⦂ X → Γ ⊢ X
-  ⊢M : Γ ⊢M⦂ X → Γ ⊢ X
-  ⊢T : {Y : Type} → Γ ⊢T⦂ Y ⊸ X → Γ ⊢ X
+data _⊢_ (Γ : Ctx) (Y : Type) : Set where
+  ⊢V : Γ ⊢V⦂ Y → Γ ⊢ Y
+  ⊢M : Γ ⊢M⦂ Y → Γ ⊢ Y
+  ⊢T : Γ ⊢T⦂ X ⊸ Y → Γ ⊢ Y
 
-rename : {X : Type} {Γ Γ' : Ctx} → Ren Γ Γ' → Γ ⊢ X → Γ' ⊢ X
+rename : Ren Γ Γ' → Γ ⊢ X → Γ' ⊢ X
 rename r (⊢V V) = ⊢V (V-rename r V)
 rename r (⊢M M) = ⊢M (M-rename r M)
 rename r (⊢T T) = ⊢T (T-rename r T)
 
 infix 40 _[_]
 
-_[_] : {Γ Γ' : Ctx} {X : Type} → Γ ⊢ X → Sub Γ Γ' → Γ' ⊢ X
+_[_] : Γ ⊢ X → Sub Γ Γ' → Γ' ⊢ X
 ⊢V V [ s ] = ⊢V (V [ s ]v)
 ⊢M M [ s ] = ⊢M (M [ s ]m)
 ⊢T T [ s ] = ⊢T (T [ s ]t)
 
-⌊_⌋v : {Γ : Ctx} {X : Type} {V V' : Γ ⊢V⦂ X} → ⊢V V ≡ ⊢V V' → V ≡ V'
+⌊_⌋v : ⊢V V ≡ ⊢V V' → V ≡ V'
 ⌊ refl ⌋v = refl
 
-⌈_⌉v : {Γ : Ctx} {X : Type} {V V' : Γ ⊢V⦂ X} → V ≡ V' → ⊢V V ≡ ⊢V V'
+⌈_⌉v : V ≡ V' → ⊢V V ≡ ⊢V V'
 ⌈ refl ⌉v = refl
 
-⌊_⌋m : {Γ : Ctx} {X : Type} {M M' : Γ ⊢M⦂ X} → ⊢M M ≡ ⊢M M' → M ≡ M'
+⌊_⌋m : ⊢M M ≡ ⊢M M' → M ≡ M'
 ⌊ refl ⌋m = refl
 
-⌈_⌉m : {Γ : Ctx} {X : Type} {M M' : Γ ⊢M⦂ X} → M ≡ M' → ⊢M M ≡ ⊢M M'
+⌈_⌉m :  M ≡ M' → ⊢M M ≡ ⊢M M'
 ⌈ refl ⌉m = refl
 
-⌊_⌋t : {Γ : Ctx} {X Y : Type} {T T' : Γ ⊢T⦂ Y ⊸ X} → ⊢T T ≡ ⊢T T' → T ≡ T'
+⌊_⌋t : ⊢T T ≡ ⊢T T' → T ≡ T'
 ⌊ refl ⌋t = refl
 
-⌈_⌉t : {Γ : Ctx} {X Y : Type} {T T' : Γ ⊢T⦂ Y ⊸ X} → T ≡ T' → ⊢T T ≡ ⊢T T'
+⌈_⌉t : T ≡ T' → ⊢T T ≡ ⊢T T'
 ⌈ refl ⌉t = refl
 
-cong-ren : {Γ Γ' : Ctx} {X : Type} {T : Γ ⊢ X}
-           {r r' : Ren Γ Γ'} →
+cong-ren : {T : Γ ⊢ X} →
            ({Y : Type} (x : Y ∈ Γ) → r x ≡ r' x) →
            ------------------------
            rename r T ≡ rename r' T
 
-cong-ren-l : {Γ Γ' : Ctx} {X Y : Type} {T : Γ ∷ X ⊢ Y}
-             {r r' : Ren Γ Γ'} →
+cong-ren-l : {T : Γ ∷ X ⊢ Y} →
              ({Y : Type} (x : Y ∈ Γ) → r x ≡ r' x) →
              ------------------------------------
              rename (wk₂ r) T ≡ rename (wk₂ r') T
@@ -81,14 +79,12 @@ cong-ren {T = ⊢T (Tl N)} f = ⌈ cong Tl ⌊ cong-ren-l f ⌋m ⌉t
 cong-ren {T = ⊢T (T↓ op V)} f = ⌈ cong (T↓ op) ⌊ cong-ren f ⌋v ⌉t
 cong-ren {T = ⊢T Tc} f = refl
 
-cong-sub : {Γ Γ' : Ctx} {X : Type} {T : Γ ⊢ X}
-           {s s' : Sub Γ Γ'} →
+cong-sub : {T : Γ ⊢ X} →
            ({Y : Type} (x : Y ∈ Γ) → s x ≡ s' x) →
            ------------------
            T [ s ] ≡ T [ s' ]
 
-cong-sub-l : {Γ Γ' : Ctx} {X Y : Type} {T : Γ ∷ X ⊢ Y}
-             {s s' : Sub Γ Γ'} →
+cong-sub-l : {T : Γ ∷ X ⊢ Y} →
              ({Y : Type} (x : Y ∈ Γ) → s x ≡ s' x) →
              ----------------------------
              T [ lift s ] ≡ T [ lift s' ]
@@ -111,13 +107,9 @@ cong-sub {T = ⊢T (Tl N)} f = ⌈ cong Tl ⌊ cong-sub-l f ⌋m ⌉t
 cong-sub {T = ⊢T (T↓ op V)} f = ⌈ cong (T↓ op) ⌊ cong-sub {T = ⊢V V} f ⌋v ⌉t
 cong-sub {T = ⊢T Tc} f = refl
 
-ren-id : {Γ : Ctx} {X : Type} {T : Γ ⊢ X} →
-         ----------------
-         rename idr T ≡ T
+ren-id : {T : Γ ⊢ X} → rename idr T ≡ T
 
-ren-id-l : {Γ : Ctx} {X Y : Type} {T : Γ ∷ X ⊢ Y} →
-           -----------------------
-           rename (wk₂ idr) T ≡ T
+ren-id-l : {T : Γ ∷ X ⊢ Y} → rename (wk₂ idr) T ≡ T
 ren-id-l = trans (cong-ren (λ {Hd → refl; (Tl x) → refl})) ren-id
 
 ren-id {T = ⊢V (` x)} = refl
@@ -137,13 +129,9 @@ ren-id {T = ⊢T (Tl N)} = ⌈ cong Tl ⌊ ren-id-l ⌋m ⌉t
 ren-id {T = ⊢T (T↓ op V)} = ⌈ cong (T↓ op) ⌊ ren-id ⌋v ⌉t
 ren-id {T = ⊢T Tc} = refl
 
-sub-id : {Γ : Ctx} {X : Type} {T : Γ ⊢ X} →
-         -------------
-         T [ ids ] ≡ T
+sub-id : {T : Γ ⊢ X} → T [ ids ] ≡ T
 
-sub-id-l : {Γ : Ctx} {X Y : Type} {T : Γ ∷ X ⊢ Y} →
-           ------------------
-           T [ lift ids ] ≡ T
+sub-id-l : {T : Γ ∷ X ⊢ Y} → T [ lift ids ] ≡ T
 sub-id-l = trans (cong-sub (λ {Hd → refl; (Tl x) → refl})) sub-id
 
 sub-id {T = ⊢V (` x)} = refl
@@ -163,12 +151,12 @@ sub-id {T = ⊢T (Tl N)} = ⌈ cong Tl ⌊ sub-id-l ⌋m ⌉t
 sub-id {T = ⊢T (T↓ op V)} = ⌈ cong (T↓ op) ⌊ sub-id ⌋v ⌉t
 sub-id {T = ⊢T Tc} = refl
 
-ren-ren : {Γ Γ' Γ'' : Ctx} {X : Type} {T : Γ ⊢ X}
+ren-ren : {T : Γ ⊢ X}
           {r : Ren Γ' Γ''} {r' : Ren Γ Γ'} →
           ------------------------------------------
           rename r (rename r' T) ≡ rename (r ∘ r') T
 
-ren-ren-l : {Γ Γ' Γ'' : Ctx} {X Y : Type} {T : Γ ∷ X ⊢ Y}
+ren-ren-l : {T : Γ ∷ X ⊢ Y}
             {r : Ren Γ' Γ''} {r' : Ren Γ Γ'} →
             ------------------------------------------------------------
             rename (wk₂ r) (rename (wk₂ r') T) ≡ rename (wk₂ (r ∘ r')) T
@@ -191,15 +179,14 @@ ren-ren {T = ⊢T (Tl N)} = ⌈ cong Tl ⌊ ren-ren-l ⌋m ⌉t
 ren-ren {T = ⊢T (T↓ op V)} = ⌈ cong (T↓ op) ⌊ ren-ren ⌋v ⌉t
 ren-ren {T = ⊢T Tc} = refl
 
-sub-ren : {Γ Γ' Δ Δ' : Ctx} {X : Type} {T : Γ ⊢ X}
+sub-ren : {T : Γ ⊢ X}
           {s : Sub Γ Δ} {s' : Sub Γ' Δ'}
           {rΓ : Ren Γ Γ'} {rΔ : Ren Δ Δ'} →
           ({Y : Type} (x : Y ∈ Γ) → s' (rΓ x) ≡ V-rename rΔ (s x)) →
           ------------------------------------------
           rename rΓ T [ s' ] ≡ rename rΔ (T [ s ])
 
-sub-ren-var : {Γ Γ' Δ Δ' : Ctx} {X : Type}
-              {s : Sub Γ Δ } {s' : Sub Γ' Δ'}
+sub-ren-var : {s : Sub Γ Δ } {s' : Sub Γ' Δ'}
               {rΓ : Ren Γ Γ'} {rΔ : Ren Δ Δ'} →
               ({Y : Type} (x : Y ∈ Γ) → s' (rΓ x) ≡ V-rename rΔ (s x)) →
               --------------------------------------------------
@@ -215,7 +202,7 @@ sub-ren-var {s = s} {s'} {rΓ} {rΔ} H x =
     V-rename (wk₂ rΔ) (V-rename Tl (s x))
   ∎
 
-sub-ren-l : {Γ Γ' Δ Δ' : Ctx} {X Y : Type} {T : Γ ∷ X ⊢ Y}
+sub-ren-l : {T : Γ ∷ X ⊢ Y}
             {s : Sub Γ Δ } {s' : Sub Γ' Δ'}
             {rΓ : Ren Γ Γ'} {rΔ : Ren Δ Δ'} →
             ({Y : Type} (x : Y ∈ Γ) → s' (rΓ x) ≡ V-rename rΔ (s x)) →
@@ -240,12 +227,12 @@ sub-ren {T = ⊢T (Tl N)} f = ⌈ cong Tl ⌊ sub-ren-l f ⌋m ⌉t
 sub-ren {T = ⊢T (T↓ op V)} f = ⌈ cong (T↓ op) ⌊ sub-ren {T = ⊢V V} f ⌋v ⌉t
 sub-ren {T = ⊢T Tc} f = refl
 
-sub-sub : {Γ Γ' Γ'' : Ctx} {X : Type} {T : Γ ⊢ X}
+sub-sub : {T : Γ ⊢ X}
           {s : Sub Γ Γ'} {s' : Sub Γ' Γ''} →
           -----------------------------------
           T [ s ] [ s' ] ≡ T [ _[ s' ]v ∘ s ]
 
-sub-sub-l : {Γ Γ' Γ'' : Ctx} {X Y : Type} {T : Γ ∷ X ⊢ Y} 
+sub-sub-l : {T : Γ ∷ X ⊢ Y} 
             {s : Sub Γ Γ'} {s' : Sub Γ' Γ''} →
             ----------------------------------------------------
             T [ lift s ] [ lift s' ] ≡ T [ lift (_[ s' ]v ∘ s) ]
@@ -268,8 +255,7 @@ sub-sub {T = ⊢T (Tl N)} = ⌈ cong Tl ⌊ sub-sub-l ⌋m ⌉t
 sub-sub {T = ⊢T (T↓ op V)} = ⌈ cong (T↓ op) ⌊ sub-sub {T = ⊢V V} ⌋v ⌉t
 sub-sub {T = ⊢T Tc} = refl
 
-eq₁ : {Γ : Ctx} {X Y : Type}
-      (T : Γ ⊢ X) (V : Γ ⊢V⦂ Y) →
+eq₁ : (T : Γ ⊢ X) (V : Γ ⊢V⦂ Y) →
       ---------------------------
       rename wk₁ T [ ids [ V ]s ]
       ≡
@@ -285,9 +271,7 @@ eq₁ T W =
     T
   ∎
 
-eq₂ : {Γ Γ' : Ctx} {X Y : Type}
-      {s : Sub Γ Γ'}
-      (T : Γ ∷ X ⊢ Y) (V : Γ' ⊢V⦂ X) →
+eq₂ : (T : Γ ∷ X ⊢ Y) (V : Γ' ⊢V⦂ X) →
       ---------------------------
       T [ lift s ] [ ids [ V ]s ]
       ≡
@@ -301,9 +285,7 @@ eq₂ {s = s} T V =
     T [ s [ V ]s ]
   ∎
 
-eq₃ : {Γ Γ' : Ctx} {X Y : Type}
-      (s : Sub Γ Γ')
-      (T : Γ ∷ X ⊢ Y) (V : Γ ⊢V⦂ X) →
+eq₃ : (s : Sub Γ Γ') (T : Γ ∷ X ⊢ Y) (V : Γ ⊢V⦂ X) →
       ----------------------
       T [ ids [ V ]s ] [ s ]
       ≡
@@ -319,40 +301,35 @@ eq₃ s T V =
     T [ lift s ] [ ids [ V [ s ]v ]s ]
   ∎
 
-eq₄ : {Γ Γ' : Ctx} {X : Type} (Z : Type)
-      (s : Sub Γ Γ')
-      (T : Γ ⊢ X) →
+eq₄ : (Z : Type) (s : Sub Γ Γ') (T : Γ ⊢ X) →
       ---------------------------------
       rename (wk₁ {X = Z}) T [ lift s ]
       ≡
       rename wk₁ (T [ s ])
 eq₄ _ _ _ = sub-ren (λ {Hd → refl; (Tl x) → refl})
 
-eq₅ : {Γ Γ' : Ctx} {X : Type} {c : BType}
-      (s : Sub Γ Γ')
-      (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` c) →
+eq₅ : (s : Sub Γ Γ') (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A) →
       --------------------------
-      strengthen-val X V [ s ]v
+      strengthen-val V [ s ]v
       ≡
-      strengthen-val X (V [ lift s ]v)
+      strengthen-val (V [ lift s ]v)
 eq₅ s (` Tl x) with s x
 ... | ` y = refl
 ... | `` c = refl
 eq₅ s (`` c) = refl
 
-sub-↝ : {Γ Γ' : Ctx} {X : Type} {M N : Γ ⊢M⦂ X}
-        (s : Sub Γ Γ') →
-        M ↝ N →
+sub-↝ : (s : Sub Γ Γ') →
+        M ↝ M' →
         -------------------
-        M [ s ]m ↝ N [ s ]m
+        M [ s ]m ↝ M' [ s ]m
 sub-↝ s (apply M V) rewrite ⌊ eq₃ s (⊢M M) V ⌋m = apply _ _
 sub-↝ s (let-return V N) rewrite ⌊ eq₃ s (⊢M N) V ⌋m = let-return _ _
 sub-↝ s (T-↑ V T M) = T-↑ _ _ _
-sub-↝ s (T-promise {X} T M N)  rewrite ⌊ eq₄ ⟨ X ⟩ s (⊢T T) ⌋t = T-promise _ _ _
-sub-↝ s (T-await {X} T V M) rewrite ⌊ eq₄ X s (⊢T T) ⌋t = T-await _ _ _
+sub-↝ s (T-promise {X = X} T M N)  rewrite ⌊ eq₄ ⟨ X ⟩ s (⊢T T) ⌋t = T-promise _ _ _
+sub-↝ s (T-await {X = X} T V M) rewrite ⌊ eq₄ X s (⊢T T) ⌋t = T-await _ _ _
 sub-↝ s (promise-↑ V M N) rewrite eq₅ s V = promise-↑ _ _ _
 sub-↝ s (↓-return V W) = ↓-return _ _
-sub-↝ s (↓-promise-op {X} V M N) rewrite ⌊ eq₃ s (⊢M M) V ⌋m | ⌊ eq₄ ⟨ X ⟩ s (⊢T (T↓ _ V)) ⌋t = ↓-promise-op _ _ _
+sub-↝ s (↓-promise-op {X = X} V M N) rewrite ⌊ eq₃ s (⊢M M) V ⌋m | ⌊ eq₄ ⟨ X ⟩ s (⊢T (T↓ _ V)) ⌋t = ↓-promise-op _ _ _
 sub-↝ s (await-promise V M) rewrite ⌊ eq₃ s (⊢M M) V ⌋m = await-promise _ _
 sub-↝ s (↑-discard V) = ↑-discard _
 sub-↝ s (context-↑ r) = context-↑ (sub-↝ s r)

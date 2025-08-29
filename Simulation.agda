@@ -155,7 +155,7 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
 ~-strengthen : {Γ : Ctx} {X : VType} {A : BType}
                (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A) →
                -----------------------
-               emb-tm-v (strengthen-val {Δ = X ∷ₗ []} V) ≡ B.strengthen-val (emb-ty-v X) (emb-tm-v V)
+               emb-tm-v (strengthen-val {Δ = X ∷ₗ []} V) ≡ B.strengthen-val {X = emb-ty-v X} (emb-tm-v V)
 ~-strengthen (` Tl x) = refl
 ~-strengthen (`` c) = refl
 

@@ -9,45 +9,39 @@ data _⊢K⦂_⊸_ (Γ : Ctx) (X : Type) : Type → Set where
   id  : -----------
         Γ ⊢K⦂ X ⊸ X
 
-  _∘_ : {Y Z : Type} →
-        Γ ⊢K⦂ Y ⊸ Z →
+  _∘_ : Γ ⊢K⦂ Y ⊸ Z →
         Γ ⊢T⦂ X ⊸ Y →
         -----------
         Γ ⊢K⦂ X ⊸ Z
 
 infix 20 _aK_
 
-_aK_ : {Γ : Ctx} {X Y : Type} →
-       Γ ⊢K⦂ X ⊸ Y →
+_aK_ : Γ ⊢K⦂ X ⊸ Y →
        Γ ⊢M⦂ X →
        ------
        Γ ⊢M⦂ Y
 id aK M = M
 (K ∘ T) aK M = K aK (T aT M)
 
-data _`aK_`↝_ {Γ : Ctx} {X : Type} : {Y : Type} → Γ ⊢K⦂ X ⊸ Y → Γ ⊢M⦂ X → Γ ⊢M⦂ Y → Set where
+data _`aK_`↝_ : Γ ⊢K⦂ X ⊸ Y → Γ ⊢M⦂ X → Γ ⊢M⦂ Y → Set where
 
-  `id : {M : Γ ⊢M⦂ X} {N : Γ ⊢M⦂ X} →
-        M ↝ N →
+  `id : M ↝ M' →
         -------------
-        id `aK M `↝ N
+        id `aK M `↝ M'
 
-  `aK : {Y Z : Type} {M : Γ ⊢M⦂ X} {N : Γ ⊢M⦂ Y}
-        (K : Γ ⊢K⦂ Y ⊸ Z) {T : Γ ⊢T⦂ X ⊸ Y} →
+  `aK : (K : Γ ⊢K⦂ Y ⊸ Z)→
         T aT M ↝ N →
         -------------------------
         (K ∘ T) `aK M `↝ (K aK N)
 
-context-K : {Γ : Ctx} {X Y : Type} {M N : Γ ⊢M⦂ X}
-            (K : Γ ⊢K⦂ X ⊸ Y) →
-            M ↝ N →
+context-K : (K : Γ ⊢K⦂ X ⊸ Y) →
+            M ↝ M' →
             ---------------
-            K aK M ↝ K aK N
+            K aK M ↝ K aK M'
 context-K id r = r
 context-K (K ∘ T) r = context-K K (context-T T r)
 
-aK→`aK : {Γ : Ctx} {X Y : Type} {M : Γ ⊢M⦂ X} {N : Γ ⊢M⦂ Y}
-         (K : Γ ⊢K⦂ X ⊸ Y) →
+aK→`aK : (K : Γ ⊢K⦂ X ⊸ Y) →
          K aK M ↝ N →
          ----------
          K `aK M `↝ N

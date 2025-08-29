@@ -6,12 +6,18 @@ open import Types using (BType; GType)
 
 module AEffStarSN.AEffStar where
 
+variable
+  A : BType
+
 -- VALUE AND COMPUTATION TYPES
 
 data Type : Set where
   ```  : GType → Type
   _⇒_  : Type → Type → Type
   ⟨_⟩  : Type → Type
+
+variable
+  X Y Z U : Type
 
 infix 30 _⇒_
 
@@ -27,86 +33,66 @@ data SnocList (A : Set) : Set where
 
 Ctx = SnocList Type
 
+variable
+  Γ Γ' Γ'' Δ Δ' : Ctx
+
 data _∈_ (X : Type) : Ctx → Set where
-  Hd : {Γ : Ctx} → X ∈ (Γ ∷ X)
-  Tl : {Γ : Ctx} {Y : Type} → X ∈ Γ → X ∈ (Γ ∷ Y)
+  Hd : X ∈ (Γ ∷ X)
+  Tl : X ∈ Γ → X ∈ (Γ ∷ Y)
 
 -- DERIVATIONS OF WELL-TYPED TERMS
 
 data _⊢V⦂_ (Γ : Ctx) : Type → Set
 
-data _⊢M⦂_ (Γ : Ctx) (C : Type) : Set
+data _⊢M⦂_ (Γ : Ctx) (Y : Type) : Set
 
 data _⊢T⦂_⊸_ (Γ : Ctx) (X : Type) : Type → Set
 
 data _⊢V⦂_ Γ where
+  `_  : X ∈ Γ → Γ ⊢V⦂ X
+  ``_ : (c : Σ-base) → Γ ⊢V⦂ ```(ar-base c)
+  ƛ   : Γ ∷ X ⊢M⦂ Y → Γ ⊢V⦂ X ⇒ Y
+  ⟨_⟩ : Γ ⊢V⦂ X → Γ ⊢V⦂ ⟨ X ⟩
+  ★   : Γ ⊢V⦂ ⟨ X ⟩
 
-  `_  : {X : Type} →
-        X ∈ Γ →
-        -------------
-        Γ ⊢V⦂ X
-        
-  ``_ : (c : Σ-base) →
-        --------------
-        Γ ⊢V⦂ ```(ar-base c)
-        
-  ƛ   : {X C : Type} →
-        Γ ∷ X ⊢M⦂ C → 
-        -------------
-        Γ ⊢V⦂ X ⇒ C
-
-  ⟨_⟩ : {X : Type} →
-        Γ ⊢V⦂ X →
-        -------------
-        Γ ⊢V⦂ ⟨ X ⟩
-
-  ★   : {X : Type} →
-        -------------
-        Γ ⊢V⦂ ⟨ X ⟩
-        
 infix 40 _·_
 
-data _⊢M⦂_ Γ C where
+data _⊢M⦂_ Γ Y where
 
-  return         : Γ ⊢V⦂ C →
+  return         : Γ ⊢V⦂ Y →
                    -------
-                   Γ ⊢M⦂ C
+                   Γ ⊢M⦂ Y
 
-  _·_            : {X : Type} →
-                   Γ ⊢V⦂ X ⇒ C →
+  _·_            : Γ ⊢V⦂ X ⇒ Y →
                    Γ ⊢V⦂ X →
                    -------
-                   Γ ⊢M⦂ C
+                   Γ ⊢M⦂ Y
 
   ↑              : (op : Σₛ) →
                    Γ ⊢V⦂ ```(payload op) →
-                   Γ ⊢M⦂ C →
+                   Γ ⊢M⦂ Y →
                    -------
-                   Γ ⊢M⦂ C
+                   Γ ⊢M⦂ Y
 
-  promise_↦_`in_ : {X : Type}
-                   (op : Σₛ) →
+  promise_↦_`in_ : (op : Σₛ) →
                    Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ →
-                   Γ ∷ ⟨ X ⟩ ⊢M⦂ C →
+                   Γ ∷ ⟨ X ⟩ ⊢M⦂ Y →
                    -------
-                   Γ ⊢M⦂ C
+                   Γ ⊢M⦂ Y
 
-  await_until_   : {X : Type} →
-                   Γ ⊢V⦂ ⟨ X ⟩ →
-                   Γ ∷ X ⊢M⦂ C →
+  await_until_   : Γ ⊢V⦂ ⟨ X ⟩ →
+                   Γ ∷ X ⊢M⦂ Y →
                    -------
-                   Γ ⊢M⦂ C
+                   Γ ⊢M⦂ Y
 
-  _aT_           : {X : Type} →
-                   Γ ⊢T⦂ X ⊸ C →
+  _aT_           : Γ ⊢T⦂ X ⊸ Y →
                    Γ ⊢M⦂ X →
                    -------
-                   Γ ⊢M⦂ C
+                   Γ ⊢M⦂ Y
 
 data _⊢T⦂_⊸_ Γ X where
 
-  Tl : {Y : Type} →
-       Γ ∷ X ⊢M⦂ Y →
+  Tl : Γ ∷ X ⊢M⦂ Y →
        -----------
        Γ ⊢T⦂ X ⊸ Y
 
@@ -118,34 +104,47 @@ data _⊢T⦂_⊸_ Γ X where
   Tc : -----------
        Γ ⊢T⦂ X ⊸ X
 
+variable
+  V V' : Γ ⊢V⦂ X
+  M M' : Γ ⊢M⦂ X
+  N N' : Γ ⊢M⦂ X
+  T T' : Γ ⊢T⦂ X ⊸ Y
+
 pattern let=_`in_ M N = Tl N aT M
 pattern ↓ op V M = T↓ op V aT M
 pattern coerce M = Tc aT M
+
+variable
+  op op' : Σₛ
+  Vᵒᵖ : Γ ⊢V⦂ ```(payload op)
 
 -- SET OF RENAMINGS BETWEEN CONTEXTS
 
 Ren : Ctx → Ctx → Set
 Ren Γ Γ' = {X : Type} → X ∈ Γ → X ∈ Γ'
 
+variable
+  r r' : Ren Γ Γ'
+
 -- IDENTITY, COMPOSITION, AND EXCHANGE RENAMINGS
 
-idr : {Γ : Ctx} → Ren Γ Γ 
+idr : Ren Γ Γ 
 idr {X} x = x
 
 -- WEAKENING OF RENAMINGS
 
-wk₁ : {Γ : Ctx} {X : Type} → Ren Γ (Γ ∷ X)
+wk₁ : Ren Γ (Γ ∷ X)
 wk₁ = Tl
 
-wk₂ : {Γ Γ' : Ctx} {X : Type} → Ren Γ Γ' → Ren (Γ ∷ X) (Γ' ∷ X)
+wk₂ : Ren Γ Γ' → Ren (Γ ∷ X) (Γ' ∷ X)
 wk₂ f Hd = Hd
 wk₂ f (Tl v) = Tl (f v)
 
 -- ACTION OF RENAMING ON WELL-TYPED VALUES AND COMPUTATIONS
 
-V-rename : {X : Type} {Γ Γ' : Ctx} → Ren Γ Γ' → Γ ⊢V⦂ X → Γ' ⊢V⦂ X
-M-rename : {C : Type} {Γ Γ' : Ctx} → Ren Γ Γ' → Γ ⊢M⦂ C → Γ' ⊢M⦂ C
-T-rename : {X Y : Type} {Γ Γ' : Ctx} → Ren Γ Γ' → Γ ⊢T⦂ X ⊸ Y → Γ' ⊢T⦂ X ⊸ Y
+V-rename : Ren Γ Γ' → Γ ⊢V⦂ X → Γ' ⊢V⦂ X
+M-rename : Ren Γ Γ' → Γ ⊢M⦂ X → Γ' ⊢M⦂ X
+T-rename : Ren Γ Γ' → Γ ⊢T⦂ X ⊸ Y → Γ' ⊢T⦂ X ⊸ Y
 
 V-rename f (` x) =
   ` f x
@@ -183,18 +182,21 @@ T-rename f Tc =
 Sub : Ctx → Ctx → Set
 Sub Γ Γ' = {X : Type} → X ∈ Γ → Γ' ⊢V⦂ X
 
+variable
+  s s' : Sub Γ Γ'
+
 -- IDENTITY AND EXTENSION SUBSTITUTIONS
 
-ids : {Γ : Ctx} → Sub Γ Γ
+ids : Sub Γ Γ
 ids x = ` x
 
-_[_]s : {Γ Γ' : Ctx} {X : Type} → Sub Γ Γ' → Γ' ⊢V⦂ X → Sub (Γ ∷ X) Γ'
+_[_]s : Sub Γ Γ' → Γ' ⊢V⦂ X → Sub (Γ ∷ X) Γ'
 (s [ V ]s) Hd = V
 (s [ V ]s) (Tl x) = s x
 
 -- LIFTING SUBSTITUTIONS
 
-lift : {Γ Γ' : Ctx} {X : Type} → Sub Γ Γ' → Sub (Γ ∷ X) (Γ' ∷ X)
+lift : Sub Γ Γ' → Sub (Γ ∷ X) (Γ' ∷ X)
 lift s Hd = ` Hd
 lift s (Tl x) = V-rename Tl (s x)
 
@@ -203,9 +205,9 @@ lift s (Tl x) = V-rename Tl (s x)
 infix 40 _[_]v
 infix 40 _[_]m
 
-_[_]v : {Γ Γ' : Ctx} → {X : Type} → Γ ⊢V⦂ X → Sub Γ Γ' → Γ' ⊢V⦂ X
-_[_]m : {Γ Γ' : Ctx} → {C : Type} → Γ ⊢M⦂ C → Sub Γ Γ' → Γ' ⊢M⦂ C
-_[_]t : {Γ Γ' : Ctx} → {X Y : Type} → Γ ⊢T⦂ X ⊸ Y → Sub Γ Γ' → Γ' ⊢T⦂ X ⊸ Y
+_[_]v : Γ ⊢V⦂ X → Sub Γ Γ' → Γ' ⊢V⦂ X
+_[_]m : Γ ⊢M⦂ X → Sub Γ Γ' → Γ' ⊢M⦂ X
+_[_]t : Γ ⊢T⦂ X ⊸ Y → Sub Γ Γ' → Γ' ⊢T⦂ X ⊸ Y
 
 (` x) [ s ]v =
   s x
@@ -240,38 +242,34 @@ Tc [ s ]t =
 
 -- STRENGTHENING OF GROUND VALUES WRT BOUND PROMISES
 
-strengthen-val : {Γ : Ctx} (X : Type) {A : BType} → Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A → Γ ⊢V⦂ ``` A
-strengthen-val _ (` Tl x) = ` x
-strengthen-val _ (`` c) = `` c
+strengthen-val : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A → Γ ⊢V⦂ ``` A
+strengthen-val (` Tl x) = ` x
+strengthen-val (`` c) = `` c
 
 -- SMALL-STEP OPERATIONAL SEMANTICS FOR WELL-TYPED COMPUTATIONS
 -- WITH INLINED EVALUATION CONTEXT RULES
 
 infix 10 _↝_
 
-data _↝_ {Γ : Ctx} {C : Type} : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
+data _↝_ : Γ ⊢M⦂ Y → Γ ⊢M⦂ Y → Set where
 
   -- COMPUTATIONAL RULES
 
-  apply           : {X : Type}
-                    (M : Γ ∷ X ⊢M⦂ C)
+  apply           : (M : Γ ∷ X ⊢M⦂ Y)
                     (V : Γ ⊢V⦂ X) →
                     ------------
                     ƛ M · V
                     ↝
                     M [ ids [ V ]s ]m
 
-  let-return      : {X : Type}
-                    (V : Γ ⊢V⦂ X)
-                    (N : Γ ∷ X ⊢M⦂ C) →
+  let-return      : (V : Γ ⊢V⦂ X)
+                    (N : Γ ∷ X ⊢M⦂ Y) →
                     ----------------
                     let= return V `in N
                     ↝
                     N [ ids [ V ]s ]m
 
-  T-↑             : {X : Type}
-                    {op : Σₛ}
-                    (T : Γ ⊢T⦂ X ⊸ C)
+  T-↑             : (T : Γ ⊢T⦂ X ⊸ Y)
                     (V : Γ ⊢V⦂ ```(payload op))
                     (M : Γ ⊢M⦂ X) →
                     ------------
@@ -279,18 +277,15 @@ data _↝_ {Γ : Ctx} {C : Type} : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                     ↝
                     ↑ op V (T aT M)
 
-  T-promise       : {X Y : Type}
-                    {op : Σₛ}
-                    (T : Γ ⊢T⦂ Y ⊸ C)
+  T-promise       : (T : Γ ⊢T⦂ Z ⊸ Y)
                     (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩)
-                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y) →
+                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Z) →
                     --------------------------
                     T aT (promise op ↦ M `in N)
                     ↝
                     (promise op ↦ M `in (T-rename wk₁ T aT N))
 
-  T-await         : {X Y : Type}
-                    (T : Γ ⊢T⦂ Y ⊸ C) 
+  T-await         : (T : Γ ⊢T⦂ Y ⊸ Z) 
                     (V : Γ ⊢V⦂ ⟨ X ⟩)
                     (M : Γ ∷ X ⊢M⦂ Y) →
                     ----------------
@@ -298,80 +293,66 @@ data _↝_ {Γ : Ctx} {C : Type} : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                     ↝
                     await V until ((T-rename wk₁ T) aT M)
 
-  promise-↑       : {X : Type}
-                    {op op' : Σₛ}
-                    (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ```(payload op'))
+  promise-↑       : (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ```(payload op'))
                     (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩)
-                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ C) →
+                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y) →
                     --------------------
                     promise op ↦ M `in (↑ op' V N)
                     ↝
-                    ↑ op' (strengthen-val X V) (promise op ↦ M `in N)
+                    ↑ op' (strengthen-val V) (promise op ↦ M `in N)
 
-  ↓-return        : {op : Σₛ}
-                    (V : Γ ⊢V⦂ ```(payload op))
-                    (W : Γ ⊢V⦂ C) →
+  ↓-return        : (V : Γ ⊢V⦂ ```(payload op))
+                    (W : Γ ⊢V⦂ Y) →
                     ------------
                     ↓ op V (return W)
                     ↝
                     return W
 
-  ↓-promise-op    : {X : Type}
-                    {op : Σₛ}
-                    (V : Γ ⊢V⦂ ```(payload op))
+  ↓-promise-op    : (V : Γ ⊢V⦂ ```(payload op))
                     (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩)
-                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ C) →
+                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y) →
                     --------------------
                     ↓ op V (promise op ↦ M `in N)
                     ↝
                     let= coerce (M [ ids [ V ]s ]m) `in (↓ op (V-rename wk₁ V) N)
 
-  await-promise   : {X : Type}
-                    (V : Γ ⊢V⦂ X)
-                    (M : Γ ∷ X ⊢M⦂ C) →
+  await-promise   : (V : Γ ⊢V⦂ X)
+                    (M : Γ ∷ X ⊢M⦂ Y) →
                     ----------------
                     await ⟨ V ⟩ until M
                     ↝
                     M [ ids [ V ]s ]m
 
-  ↑-discard       : {M : Γ ⊢M⦂ C}
-                    {op : Σₛ} (V : Γ ⊢V⦂ ```(payload op)) →
+  ↑-discard       : (V : Γ ⊢V⦂ ```(payload op)) →
                     --------
-                    ↑ op V M
+                    ↑ op V N
                     ↝
-                    M
+                    N
 
   -- INLINED EVALUATION CONTEXT RULES
 
-  context-↑       : {op : Σₛ}
-                    {V : Γ ⊢V⦂ ```(payload op)}
-                    {M N : Γ ⊢M⦂ C} →
-                    M ↝ N →
+  context-↑       : N ↝ N' →
                     -----
-                    ↑ op V M
-                    ↝
                     ↑ op V N
+                    ↝
+                    ↑ op V N'
 
-  context-promise : {X : Type}
-                    {op : Σₛ}
-                    {M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩}
-                    {N N' : Γ ∷ ⟨ X ⟩ ⊢M⦂ C} →
+  context-promise : {M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩}
+                    {N N' : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y} →
                     N ↝ N' →
                     -----
                     promise op ↦ M `in N
                     ↝
                     promise op ↦ M `in N'
 
-  context-T       : {X : Type}
-                    {M N : Γ ⊢M⦂ X}
-                    (T : Γ ⊢T⦂ X ⊸ C) →
-                    M ↝ N →
+  context-T       : (T : Γ ⊢T⦂ X ⊸ Y) →
+                    M ↝ M' →
                     -----
                     T aT M
                     ↝
-                    T aT N
+                    T aT M'
 
-  coerce-return   : (V : Γ ⊢V⦂ C) →
+  coerce-return   : (V : Γ ⊢V⦂ Y) →
                     ------------
                     coerce (return V)
                     ↝
