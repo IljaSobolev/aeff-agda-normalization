@@ -12,6 +12,8 @@ variable
 
 -- VALUE AND COMPUTATION TYPES
 
+infix 30 _⇒_
+
 data Type : Set where
   ```  : GType → Type
   _⇒_  : Type → Type → Type
@@ -19,8 +21,6 @@ data Type : Set where
 
 variable
   X Y Z U : Type
-
-infix 30 _⇒_
 
 -- SNOC LISTS FOR MODELLING CONTEXTS
 
@@ -57,7 +57,6 @@ data _⊢V⦂_ Γ where
   ``_ : (c : Σ-base) → Γ ⊢V⦂ ```(ar-base c)
   ƛ   : Γ ∷ X ⊢M⦂ Y → Γ ⊢V⦂ X ⇒ Y
   ⟨_⟩ : Γ ⊢V⦂ X → Γ ⊢V⦂ ⟨ X ⟩
-  ★   : Γ ⊢V⦂ ⟨ X ⟩
 
 infix 40 _·_
 
@@ -109,7 +108,7 @@ data _⊢T⦂_⊸_ Γ X where
        Γ ⊢T⦂ X ⊸ X
 
 variable
-  V V' : Γ ⊢V⦂ X
+  V V' W W' : Γ ⊢V⦂ X
   M M' N N' L L' : Γ ⊢M⦂ X
   T T' : Γ ⊢T⦂ X ⊸ Y
 
@@ -128,7 +127,7 @@ variable
 -- IDENTITY, COMPOSITION, AND EXCHANGE RENAMINGS
 
 idr : Ren Γ Γ 
-idr {X} x = x
+idr x = x
 
 -- WEAKENING OF RENAMINGS
 
@@ -153,8 +152,6 @@ V-rename f (ƛ M) =
   ƛ (M-rename (wk₂ f) M)
 V-rename f ⟨ V ⟩ =
   ⟨ V-rename f V ⟩
-V-rename f ★ =
-  ★
 
 M-rename f (return V) =
   return (V-rename f V)
@@ -205,7 +202,9 @@ infix 40 _[_]v
 infix 40 _[_]m
 
 _[_]v : Γ ⊢V⦂ X → Sub Γ Γ' → Γ' ⊢V⦂ X
+
 _[_]m : Γ ⊢M⦂ X → Sub Γ Γ' → Γ' ⊢M⦂ X
+
 _[_]t : Γ ⊢T⦂ X ⊸ Y → Sub Γ Γ' → Γ' ⊢T⦂ X ⊸ Y
 
 (` x) [ s ]v =
@@ -216,8 +215,6 @@ _[_]t : Γ ⊢T⦂ X ⊸ Y → Sub Γ Γ' → Γ' ⊢T⦂ X ⊸ Y
   ƛ (M [ lift s ]m)
 ⟨ V ⟩ [ s ]v =
   ⟨ V [ s ]v ⟩
-★ [ s ]v =
-  ★
 
 (return V) [ s ]m =
   return (V [ s ]v)

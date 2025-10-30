@@ -67,7 +67,6 @@ cong-ren {TT = ⊢V (` x)} f = ⌈ cong `_ (f x) ⌉v
 cong-ren {TT = ⊢V (`` c)} f = refl
 cong-ren {TT = ⊢V (ƛ M)} f = ⌈ cong ƛ ⌊ cong-ren-l f ⌋m ⌉v
 cong-ren {TT = ⊢V ⟨ V ⟩} f = ⌈ cong ⟨_⟩ ⌊ cong-ren f ⌋v ⌉v
-cong-ren {TT = ⊢V ★} f = refl
 
 cong-ren {TT = ⊢M (return V)} f = ⌈ cong return ⌊ cong-ren f ⌋v ⌉m
 cong-ren {TT = ⊢M (V · W)} f = ⌈ cong₂ _·_ ⌊ cong-ren f ⌋v ⌊ cong-ren f ⌋v ⌉m
@@ -93,7 +92,6 @@ cong-sub {TT = ⊢V (` x)} f = ⌈ f x ⌉v
 cong-sub {TT = ⊢V (`` c)} f = refl
 cong-sub {TT = ⊢V (ƛ M)} f = ⌈ cong ƛ ⌊ cong-sub-l f ⌋m ⌉v
 cong-sub {TT = ⊢V ⟨ V ⟩} f = ⌈ cong ⟨_⟩ ⌊ cong-sub {TT = ⊢V V} f ⌋v ⌉v
-cong-sub {TT = ⊢V ★} f = refl
 
 cong-sub {TT = ⊢M (return V)} f = ⌈ cong return ⌊ cong-sub {TT = ⊢V V} f ⌋v ⌉m
 cong-sub {TT = ⊢M (V · W)} f = ⌈ cong₂ _·_ ⌊ cong-sub {TT = ⊢V V} f ⌋v ⌊ cong-sub {TT = ⊢V W} f ⌋v ⌉m
@@ -115,7 +113,6 @@ ren-id {TT = ⊢V (` x)} = refl
 ren-id {TT = ⊢V (`` c)} = refl
 ren-id {TT = ⊢V (ƛ M)} = ⌈ cong ƛ ⌊ ren-id-l ⌋m ⌉v
 ren-id {TT = ⊢V ⟨ V ⟩} = ⌈ cong ⟨_⟩ ⌊ ren-id ⌋v ⌉v
-ren-id {TT = ⊢V ★} = refl
 
 ren-id {TT = ⊢M (return V)} = ⌈ cong return ⌊ ren-id ⌋v ⌉m
 ren-id {TT = ⊢M (V · W)} = ⌈ cong₂ _·_ ⌊ ren-id ⌋v ⌊ ren-id ⌋v ⌉m
@@ -137,7 +134,6 @@ sub-id {TT = ⊢V (` x)} = refl
 sub-id {TT = ⊢V (`` c)} = refl
 sub-id {TT = ⊢V (ƛ M)} = ⌈ cong ƛ ⌊ sub-id-l ⌋m ⌉v
 sub-id {TT = ⊢V ⟨ V ⟩} = ⌈ cong ⟨_⟩ ⌊ sub-id ⌋v ⌉v
-sub-id {TT = ⊢V ★} = refl
 
 sub-id {TT = ⊢M (return V)} = ⌈ cong return ⌊ sub-id ⌋v ⌉m
 sub-id {TT = ⊢M (V · W)} = ⌈ cong₂ _·_ ⌊ sub-id ⌋v ⌊ sub-id ⌋v ⌉m
@@ -159,7 +155,6 @@ ren-ren {TT = ⊢V (` x)} = refl
 ren-ren {TT = ⊢V (`` c)} = refl
 ren-ren {TT = ⊢V (ƛ M)} = ⌈ cong ƛ ⌊ ren-ren-l ⌋m ⌉v
 ren-ren {TT = ⊢V ⟨ V ⟩} = ⌈ cong ⟨_⟩ ⌊ ren-ren ⌋v ⌉v
-ren-ren {TT = ⊢V ★} = refl
 
 ren-ren {TT = ⊢M (return V)} = ⌈ cong return ⌊ ren-ren ⌋v ⌉m
 ren-ren {TT = ⊢M (V · W)} = ⌈ cong₂ _·_ ⌊ ren-ren ⌋v ⌊ ren-ren ⌋v ⌉m
@@ -199,7 +194,6 @@ sub-ren {TT = ⊢V (` x)} f = ⌈ f x ⌉v
 sub-ren {TT = ⊢V (`` c)} f = refl
 sub-ren {TT = ⊢V (ƛ M)} f = ⌈ cong ƛ ⌊ sub-ren-l f ⌋m ⌉v
 sub-ren {TT = ⊢V ⟨ V ⟩} f = ⌈ cong ⟨_⟩ ⌊ sub-ren {TT = ⊢V V} f ⌋v ⌉v
-sub-ren {TT = ⊢V ★} f = refl
 
 sub-ren {TT = ⊢M (return V)} f = ⌈ cong return ⌊ sub-ren {TT = ⊢V V} f ⌋v ⌉m
 sub-ren {TT = ⊢M (V · W)} f = ⌈ cong₂ _·_ ⌊ sub-ren {TT = ⊢V V} f ⌋v ⌊ sub-ren {TT = ⊢V W} f ⌋v ⌉m
@@ -212,16 +206,23 @@ sub-ren {TT = ⊢T (Tl N)} f = ⌈ cong Tl ⌊ sub-ren-l f ⌋m ⌉t
 sub-ren {TT = ⊢T (T↓ op V)} f = ⌈ cong (T↓ op) ⌊ sub-ren {TT = ⊢V V} f ⌋v ⌉t
 sub-ren {TT = ⊢T Tc} f = refl
 
+infixr 9 _⨟_
+_⨟_ : Sub Γ Γ' → Sub Γ' Γ'' → Sub Γ Γ''
+s ⨟ s' = _[ s' ]v ∘ s
+
 sub-sub : TT [ s ] [ s' ] ≡ TT [ _[ s' ]v ∘ s ]
 
-sub-sub-l : TT [ lift s ] [ lift s' ] ≡ TT [ lift (_[ s' ]v ∘ s) ]
-sub-sub-l {s = s} = trans sub-sub (cong-sub (λ {Hd → refl; (Tl x) → ⌊ sub-ren {TT = ⊢V (s x)} (λ _ → refl) ⌋v}))
+lift-⨟ : {Y : Type} (x : Y ∈ Γ ∷ X) → (lift s ⨟ lift s') x ≡ lift (s ⨟ s') x 
+lift-⨟ Hd = refl
+lift-⨟ {s = s} (Tl x) = ⌊ sub-ren {TT = ⊢V (s x)} (λ _ → refl) ⌋v
+
+sub-sub-l : TT [ lift s ] [ lift s' ] ≡ TT [ lift (s ⨟ s') ]
+sub-sub-l {s = s} = trans sub-sub (cong-sub lift-⨟)
 
 sub-sub {TT = ⊢V (` x)} = refl
 sub-sub {TT = ⊢V (`` c)} = refl
 sub-sub {TT = ⊢V (ƛ M)} = ⌈ cong ƛ ⌊ sub-sub-l ⌋m ⌉v
 sub-sub {TT = ⊢V ⟨ V ⟩} = ⌈ cong ⟨_⟩ ⌊ sub-sub {TT = ⊢V V} ⌋v ⌉v
-sub-sub {TT = ⊢V ★} = refl
 
 sub-sub {TT = ⊢M (return V)} = ⌈ cong return ⌊ sub-sub {TT = ⊢V V} ⌋v ⌉m
 sub-sub {TT = ⊢M (V · W)} = ⌈ cong₂ _·_ ⌊ sub-sub {TT = ⊢V V} ⌋v ⌊ sub-sub {TT = ⊢V W} ⌋v ⌉m
@@ -315,3 +316,37 @@ sub-↝ s (context-↑ r) = context-↑ (sub-↝ s r)
 sub-↝ s (context-promise r) = context-promise (sub-↝ (lift s) r)
 sub-↝ s (context-T T r) = context-T _ (sub-↝ s r)
 sub-↝ s (coerce-return V) = coerce-return _
+
+ren : Ren Γ Γ' → Sub Γ Γ'
+ren r x = ` r x
+
+ren-rename : TT [ ren r ] ≡ rename r TT
+
+ren-rename-l : TT [ lift (ren r) ] ≡ rename (wk₂ r) TT
+ren-rename-l = trans (cong-sub (λ {Hd → refl; (Tl x) → refl})) ren-rename
+
+ren-rename {TT = ⊢V (` x)} = refl
+ren-rename {TT = ⊢V (`` c)} = refl
+ren-rename {TT = ⊢V (ƛ M)} = ⌈ cong ƛ ⌊ ren-rename-l ⌋m ⌉v
+ren-rename {TT = ⊢V ⟨ V ⟩} = ⌈ cong ⟨_⟩ ⌊ ren-rename ⌋v ⌉v
+
+ren-rename {TT = ⊢M (return V)} = ⌈ cong return ⌊ ren-rename ⌋v ⌉m
+ren-rename {TT = ⊢M (V · W)} = ⌈ cong₂ _·_ ⌊ ren-rename ⌋v ⌊ ren-rename ⌋v ⌉m
+ren-rename {TT = ⊢M (↑ op V M)} = ⌈ cong₂ (↑ op) ⌊ ren-rename ⌋v ⌊ ren-rename ⌋m ⌉m
+ren-rename {TT = ⊢M (promise op ↦ M `in N)} = ⌈ cong₂ (promise op ↦_`in_) ⌊ ren-rename-l ⌋m ⌊ ren-rename-l ⌋m ⌉m
+ren-rename {TT = ⊢M (await V until M)} = ⌈ cong₂ await_until_ ⌊ ren-rename ⌋v ⌊ ren-rename-l ⌋m ⌉m
+ren-rename {TT = ⊢M (T aT M)} = ⌈ cong₂ _aT_ ⌊ ren-rename ⌋t ⌊ ren-rename ⌋m ⌉m
+
+ren-rename {TT = ⊢T (Tl N)} = ⌈ cong Tl ⌊ ren-rename-l ⌋m ⌉t
+ren-rename {TT = ⊢T (T↓ op V)} = ⌈ cong (T↓ op) ⌊ ren-rename ⌋v ⌉t
+ren-rename {TT = ⊢T Tc} = refl
+
+ren-↝ : (r : Ren Γ Γ') →
+        M ↝ M' →
+        -------------------
+        M-rename r M ↝ M-rename r M'
+ren-↝ {M = M} {M' = M'} rn r
+  rewrite
+  sym ⌊ ren-rename {TT = ⊢M M} {r = rn} ⌋m |
+  sym ⌊ ren-rename {TT = ⊢M M'} {r = rn} ⌋m =
+  sub-↝ _ r

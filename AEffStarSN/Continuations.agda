@@ -14,7 +14,7 @@ data _⊢K⦂_⊸_ (Γ : Ctx) (X : Type) : Type → Set where
         -----------
         Γ ⊢K⦂ X ⊸ Z
 
-infix 20 _aK_
+infix 12 _aK_
 
 _aK_ : Γ ⊢K⦂ X ⊸ Y → Γ ⊢M⦂ X → Γ ⊢M⦂ Y
 id aK M = M
@@ -46,3 +46,7 @@ aK→`aK id r = `id r
 aK→`aK (K ∘ T) r with aK→`aK K r
 ... | `id _ = `aK _ r
 ... | `aK _ (context-T _ r) = `aK _ r
+
+K-rename : Ren Γ Γ' → Γ ⊢K⦂ X ⊸ Y → Γ' ⊢K⦂ X ⊸ Y
+K-rename r id = id
+K-rename r (K ∘ T) = K-rename r K ∘ T-rename r T
