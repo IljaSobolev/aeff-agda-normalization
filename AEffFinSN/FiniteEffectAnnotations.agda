@@ -3,7 +3,8 @@ open import Data.Unit using (⊤; tt)
 open import Data.Product using (_×_; _,_; proj₁; proj₂)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_]′)
 open import Data.Nat using (ℕ; zero; suc; _+_; _≤_; z≤n; s≤s; _<_)
-open import Data.Nat.Properties as NatProp using (+-comm; +-assoc; +-monoʳ-≤; +-mono-≤; +-identityʳ; ≤-reflexive; ≤-refl; ≤-antisym; n≤1+n; +-suc)
+open import Data.Nat.Properties as NatProp using
+  (+-comm; +-assoc; +-monoʳ-≤; +-mono-≤; +-identityʳ; ≤-reflexive; ≤-refl; ≤-antisym; ≤-trans; n≤1+n; +-suc; <⇒≤)
 open import Data.Nat.ListAction using (sum)
 open import Data.List using (List) renaming ([] to []ₗ; _∷_ to _∷ₗ_)
 
@@ -197,7 +198,11 @@ data _⊑i_ : I → I → Set where
 
 ⊑i-refl : i ⊑i i
 ⊑i-refl {leaf} = l⊑n
-⊑i-refl {node x} = n⊑n (λ _ → ⊑i-refl)
+⊑i-refl {node _} = n⊑n (λ _ → ⊑i-refl)
+
+⊑i-trans : i ⊑i i' → i' ⊑i i'' → i ⊑i i''
+⊑i-trans l⊑n q = l⊑n
+⊑i-trans (n⊑n f) (n⊑n f') = n⊑n (λ op → ⊑i-trans (f op) (f' op))
 
 infix 15 _∪_
 _∪_ : I → I → I
@@ -215,6 +220,11 @@ node f ∪ node g = node (λ op → f op ∪ g op)
 ∪-inr {node _} {leaf} = ⊑i-refl
 ∪-inr {node _} {node _} = n⊑n (λ _ → ∪-inr)
 
+∪-copair : i ⊑i i'' → i' ⊑i i'' → i ∪ i' ⊑i i''
+∪-copair l⊑n q = q
+∪-copair (n⊑n f) l⊑n = n⊑n f
+∪-copair (n⊑n f) (n⊑n f') = n⊑n (λ op → ∪-copair (f op) (f' op))
+
 lkp : Σₛ → I → I
 lkp op leaf = leaf
 lkp op (node f) = f op
@@ -227,6 +237,11 @@ infix 40 _↓ₑ_
 _↓ₑ_ : Σₛ → I → I
 op ↓ₑ i = i [ op ↦ leaf ] ∪ lkp op i
 
+infix 40 _↓↓ₑ_
+_↓↓ₑ_ : List Σₛ → I → I
+[]ₗ ↓↓ₑ i = i
+(op ∷ₗ ops) ↓↓ₑ i = ops ↓↓ₑ (op ↓ₑ i)
+
 ↓ₑ-⊑i : lkp op i ⊑i op ↓ₑ i
 ↓ₑ-⊑i {i = leaf} = l⊑n
 ↓ₑ-⊑i {i = node _} = ∪-inr
@@ -237,9 +252,21 @@ lkp-↓ₑ-≢ {op} {i = node f} p with f op
 ... | leaf   = subst (_ ⊑i_) (sym (ite-≢ p)) ⊑i-refl
 ... | node _ = subst (λ z → _ ⊑i z ∪ _) (sym (ite-≢ p)) ∪-inl
 
+if-mono : i ⊑i i' → if op ≡ op' then leaf else i ⊑i if op ≡ op' then leaf else i'
+if-mono {i} {i'} {op} {op'} p with decₛ op op'
+... | yes _ = l⊑n
+... | no  _ = p
+
+[↦]-mono : i ⊑i i' → i [ op ↦ leaf ] ⊑i i' [ op ↦ leaf ]
+[↦]-mono l⊑n = l⊑n
+[↦]-mono (n⊑n f) = n⊑n (λ op → if-mono (f op))
+
 lkp-mono : i ⊑i i' → lkp op i ⊑i lkp op i'
 lkp-mono l⊑n = l⊑n
 lkp-mono (n⊑n f) = f _
+
+↓ₑ-mono : i ⊑i i' → op ↓ₑ i ⊑i op ↓ₑ i'
+↓ₑ-mono p = ∪-copair (⊑i-trans ([↦]-mono p) ∪-inl) (⊑i-trans (lkp-mono p) ∪-inr)
 
 
 -- FINITENESS
@@ -327,6 +354,10 @@ fin-[↦] {node f} op isf =
 
 fin-↓ₑ : (op : Σₛ) → isfin i → isfin (op ↓ₑ i)
 fin-↓ₑ op isf = fin-∪ (fin-[↦] op isf) (fin-lkp op isf)
+
+fin-↓↓ₑ : (ops : List Σₛ) → isfin i → isfin (ops ↓↓ₑ i)
+fin-↓↓ₑ []ₗ isf = isf
+fin-↓↓ₑ (op ∷ₗ ops) isf = fin-↓↓ₑ ops (fin-↓ₑ op isf)
 
 map : (Σₛ → A) → Ops → List A
 map f [] = []ₗ
@@ -474,11 +505,79 @@ size-[↦]-lkp {node _} {op} isf p = let lf = list isf in cong suc (
   ∎)
   where open Eq.≡-Reasoning
 
+size-[↦]-lkp-leaf : (isf : isfin i) → isleaf (lkp op i) → ∣ fin-[↦] op isf ∣ + ∣ fin-lkp op isf ∣ ≤ ∣ isf ∣
+size-[↦]-lkp-leaf {leaf} isf p = z≤n
+size-[↦]-lkp-leaf {node x} {op} isf p = let lf = list isf in s≤s (
+  begin
+    sum (map (λ op' → ∣ fin-if op op' (cfin isf op') ∣) (delete lf op)) + ∣ cfin isf op ∣
+  ≡⟨ cong (_+ ∣ cfin isf op ∣) (sum-≡ (delete lf op) (λ p → fin-if-≢ (cfin isf _) (λ {refl → p (#-delete-i₂ lf)}))) ⟩
+    sum (map (λ op → ∣ cfin isf op ∣) (delete lf op)) + ∣ cfin isf op ∣
+  ≡⟨ +-comm _ ∣ cfin isf op ∣ ⟩
+    ∣ cfin isf op ∣ + sum (map (λ op → ∣ cfin isf op ∣) (delete lf op))
+  ≡⟨ cong (_+ sum (map (λ op → ∣ cfin isf op ∣) (delete lf op))) (isf-disj isf (from isf _ p)) ⟩
+    sum (map (λ op → ∣ cfin isf op ∣) (delete lf op))
+  ≤⟨ sum-mono-⊆ (delete lf op) lf (#-delete-i₁ lf) ⟩
+    sum (map (λ op → ∣ cfin isf op ∣) lf)
+  ∎)
+  where open NatProp.≤-Reasoning
+
 lkp-isnode : isnode (lkp op i) → isnode i
 lkp-isnode {op} {leaf} p = p
 
 [↦]-isnode : isnode i → isnode (i [ op ↦ i' ])
 [↦]-isnode {leaf} p = p
 
-size-↓ₑ : (isf : isfin i) → isnode (lkp op i) → ∣ fin-↓ₑ op isf ∣ < ∣ isf ∣
-size-↓ₑ isf p rewrite sym (size-[↦]-lkp isf p) = size-∪-< _ _ ([↦]-isnode (lkp-isnode p)) p
+size-↓ₑ-leaf : (isf : isfin i) → isleaf (lkp op i) → ∣ fin-↓ₑ op isf ∣ ≤ ∣ isf ∣
+size-↓ₑ-leaf {i} {op} isf p = ≤-trans (size-∪ (fin-[↦] op isf) _) (size-[↦]-lkp-leaf isf p)
+
+l⊎n : (i : I) → isleaf i ⊎ isnode i
+l⊎n leaf = inj₁ refl
+l⊎n (node _) = inj₂ (λ ())
+
+size-↓ₑ-< : (isf : isfin i) → isnode (lkp op i) → ∣ fin-↓ₑ op isf ∣ < ∣ isf ∣
+size-↓ₑ-< isf p = ≤-trans (size-∪-< _ _ ([↦]-isnode (lkp-isnode p)) p) (≤-reflexive (size-[↦]-lkp isf p))
+
+size-↓ₑ : (isf : isfin i) → ∣ fin-↓ₑ op isf ∣ ≤ ∣ isf ∣
+size-↓ₑ {leaf} {op} isf = z≤n
+size-↓ₑ {node f} {op} isf with l⊎n (f op)
+... | inj₁ p = size-↓ₑ-leaf isf p
+... | inj₂ p = <⇒≤ (size-↓ₑ-< isf p)
+
+size-⊑i : (isf : isfin i) (isf' : isfin i') → i ⊑i i' → ∣ isf ∣ ≤ ∣ isf' ∣
+size-⊑i isf isf' l⊑n = z≤n
+size-⊑i isf isf' (n⊑n f) = s≤s (
+  begin
+    sum (map (λ op → ∣ cfin isf op ∣) (list isf))
+  ≤⟨ sum-mono-≤ (list isf) (λ _ → size-⊑i _ _ (f _)) ⟩
+    sum (map (λ op → ∣ cfin isf' op ∣) (list isf))
+  ≤⟨ sum-mono-⊆ _ _ (λ u → from isf _ (isleaf-⊑i (f _) (to isf' _ u))) ⟩
+    sum (map (λ op → ∣ cfin isf' op ∣) (list isf'))
+  ∎)
+  where open NatProp.≤-Reasoning
+
+⊑i-lemma : i ∪ i' ⊑i (i ∪ i'') ∪ (i' ∪ i''')
+⊑i-lemma {i} {i'} {i''} {i'''} = ∪-copair {i} {_} {i'} (⊑i-trans ∪-inl ∪-inl) (⊑i-trans ∪-inl (∪-inr {i' ∪ i'''} {i ∪ i''}))
+
+⊑i-lemma' : i ∪ i' ⊑i (i'' ∪ i) ∪ (i''' ∪ i')
+⊑i-lemma' {i} {i'} {i''} {i'''} = ∪-copair {i} {_} {i'} (⊑i-trans (∪-inr {i} {i''}) ∪-inl) (⊑i-trans ∪-inr (∪-inr {i''' ∪ i'} {i'' ∪ i}))
+
+if-distrib-∪₁ : if op ≡ op' then i else (i' ∪ i'') ⊑i if op ≡ op' then i else i' ∪ if op ≡ op' then i else i''
+if-distrib-∪₁ {op} {op'} with decₛ op op'
+... | yes _ = ∪-inl
+... | no  _ = ⊑i-refl
+
+[↦]-distrib-∪₁ : (i ∪ i') [ op ↦ leaf ] ⊑i i [ op ↦ leaf ] ∪ i' [ op ↦ leaf ]
+[↦]-distrib-∪₁ {leaf} = ⊑i-refl
+[↦]-distrib-∪₁ {node _} {leaf} = ⊑i-refl
+[↦]-distrib-∪₁ {node _} {node _} = n⊑n (λ _ → if-distrib-∪₁)
+
+lkp-distrib-∪₁ : lkp op (i ∪ i') ⊑i lkp op i ∪ lkp op i'
+lkp-distrib-∪₁ {op} {leaf} = ⊑i-refl
+lkp-distrib-∪₁ {op} {node _} {leaf} = ∪-inl
+lkp-distrib-∪₁ {op} {node _} {node _} = ⊑i-refl
+
+↓ₑ-distrib-∪₁ : op ↓ₑ (i ∪ i') ⊑i op ↓ₑ i ∪ op ↓ₑ i'
+↓ₑ-distrib-∪₁ {op} {i} {i'} =
+  ∪-copair
+    (⊑i-trans ([↦]-distrib-∪₁ {i} {i'}) (⊑i-lemma {i [ op ↦ leaf ]}))
+    (⊑i-trans (lkp-distrib-∪₁ {_} {i} {i'}) (⊑i-lemma' {i'' = i [ op ↦ leaf ]}))

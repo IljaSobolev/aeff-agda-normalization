@@ -1,6 +1,7 @@
 {-# OPTIONS --guardedness #-}
 
 open import Data.Product
+open import Data.List using (List) renaming (_∷_ to _∷ₗ_; [] to []ₗ)
 
 open import Relation.Binary.PropositionalEquality
 
@@ -275,12 +276,19 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       ↝
                       promise op' ∣ isnode-⊑i (lkp-↓ₑ-≢ {i = i} p) q ↦ coerce (lkp-↓ₑ-≢ {i = i} p) M `in ↓ op (V-rename wk₁ V) N
 
-    await-promise   : (V : Γ ⊢V⦂ X) →
+    await-promise   : (V : Γ ⊢V⦂ X)
                       (N : Γ ∷ X ⊢M⦂ Y ! (i , isf)) →
                       --------------------
                       await ⟨ V ⟩ until N
                       ↝
                       N [ id-subst [ V ]s ]m
+
+    ↑-discard       : (V : Γ ⊢V⦂ ```(payload op))
+                      (M : Γ ⊢M⦂ X ! (i , isf)) →
+                      ------------------
+                      ↑ op V M
+                      ↝
+                      M
 
     -- INLINED EVALUATION CONTEXT RULES
 
@@ -336,3 +344,136 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       coerce {isf' = isf'} q (promise op ∣ p ↦ M `in N)
                       ↝
                       promise op ∣ isnode-⊑i (lkp-mono q) p ↦ coerce (lkp-mono q) M `in coerce q N
+
+data PType : Set where
+  ````_ : CType Xs → PType
+  _∥_   : PType → PType → PType
+
+variable
+  PP QQ RR : PType
+
+infix 40 _↓ₚ_
+_↓ₚ_ : Σₛ → PType → PType
+op ↓ₚ (```` X ! (i , isf)) = ```` X ! (op ↓ₑ i , fin-↓ₑ op isf)
+op ↓ₚ (PP ∥ QQ) = op ↓ₚ PP ∥ op ↓ₚ QQ
+
+infix 40 _↓↓ₚ_
+_↓↓ₚ_ : List Σₛ → PType → PType
+[]ₗ ↓↓ₚ PP = PP
+(op ∷ₗ ops) ↓↓ₚ PP = ops ↓↓ₚ (op ↓ₚ PP)
+
+infix 10 _⊢P⦂_
+data _⊢P⦂_ (Γ : Ctx Γs) : PType → Set where
+
+  run     : Γ ⊢M⦂ C →
+            -----------
+            Γ ⊢P⦂ ```` C
+
+  _∥_     : Γ ⊢P⦂ PP →
+            Γ ⊢P⦂ QQ →
+            --------------
+            Γ ⊢P⦂ (PP ∥ QQ)
+
+  ↑       : (op : Σₛ) →
+            Γ ⊢V⦂ ```(payload op) →
+            Γ ⊢P⦂ PP →
+            ----------
+            Γ ⊢P⦂ PP
+
+  ↓       : (op : Σₛ) →
+            Γ ⊢V⦂ ```(payload op) →
+            Γ ⊢P⦂ PP →
+            ----------
+            Γ ⊢P⦂ op ↓ₚ PP
+
+variable
+  P P' Q Q' R R' : Γ ⊢P⦂ PP
+
+infix 10 _↝ₚ_
+data _↝ₚ_ : Γ ⊢P⦂ PP → Γ ⊢P⦂ QQ → Set where
+
+  -- RUNNING INDIVIDUAL COMPUTATIONS
+
+  run   : M ↝ N →
+          -----
+          run M
+          ↝ₚ
+          run N
+
+  -- BROADCAST RULES
+
+  ↑-∥ₗ   : (V : Γ ⊢V⦂ ```(payload op)) →
+           (P : Γ ⊢P⦂ PP) →
+           (Q : Γ ⊢P⦂ QQ) →
+           ------------------
+           ↑ op V P ∥ Q
+           ↝ₚ
+           ↑ op V (P ∥ ↓ op V Q)
+
+  ↑-∥ᵣ   : (V : Γ ⊢V⦂ ```(payload op)) →
+           (P : Γ ⊢P⦂ PP) →
+           (Q : Γ ⊢P⦂ QQ) →
+           ------------------
+           P ∥ ↑ op V Q
+           ↝ₚ
+           ↑ op V (↓ op V P ∥ Q)
+
+  -- INTERRUPT PROPAGATION RULES
+
+  ↓-run : (V : Γ ⊢V⦂ ```(payload op)) → 
+          (M : Γ ⊢M⦂ X ! (i , isf)) →
+          --------------
+          ↓ op V (run M)
+          ↝ₚ
+          run (↓ op V M)
+
+  ↓-∥   : (V : Γ ⊢V⦂ ```(payload op)) →
+          (P : Γ ⊢P⦂ PP) →
+          (Q : Γ ⊢P⦂ QQ) →
+          --------------
+          ↓ op V (P ∥ Q)
+          ↝ₚ
+          ↓ op V P ∥ ↓ op V Q
+
+  ↓-↑   : (V : Γ ⊢V⦂ ```(payload op)) →
+          (W : Γ ⊢V⦂ ```(payload op')) →
+          (P : Γ ⊢P⦂ PP) →
+          ------------------
+          ↓ op V (↑ op' W P)
+          ↝ₚ
+          ↑ op' W (↓ op V P)
+
+  -- SIGNAL HOISTING RULE
+
+  ↑     : (V : Γ ⊢V⦂ ```(payload op)) →
+          (M : Γ ⊢M⦂ X ! (i , isf)) →
+          --------------
+          run (↑ op V M)
+          ↝ₚ
+          ↑ op V (run M)
+
+  -- EVALUATION CONTEXT RULES
+
+  context-∥ₗ : P ↝ₚ P' → 
+               ------
+               P ∥ Q
+               ↝ₚ
+               P' ∥ Q
+
+  context-∥ᵣ : Q ↝ₚ Q' → 
+               -----
+               P ∥ Q
+               ↝ₚ
+               P ∥ Q'
+
+  context-↑ : P ↝ₚ P' →
+              --------
+              ↑ op V P
+              ↝ₚ
+              ↑ op V P'
+
+  context-↓ : P ↝ₚ P' →
+              ---------
+              ↓ op V P
+              ↝ₚ
+              ↓ op V P'
