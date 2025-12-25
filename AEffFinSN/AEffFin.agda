@@ -1,16 +1,6 @@
-open import Data.Nat
-open import Data.Nat.Properties
-open import Data.Nat.Induction using (<-wellFounded)
-open import Data.Product
-open import Data.Empty
-open import Data.List using (List) renaming (_∷_ to _∷ₗ_; [] to []ₗ; [_] to [_]ₗ)
+open import Data.Product using (Σ-syntax; _,_)
 
-open import Induction.WellFounded
-
-open import Relation.Nullary.Decidable using (Dec; yes; no)
-open import Relation.Binary.PropositionalEquality
-
-open import Function using (_∘_)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_)
 
 open import AEffFinSN.FiniteEffectAnnotations
 
@@ -101,8 +91,8 @@ data _⊢M⦂_ where
                      Γ ⊢M⦂ v-of C ! (op ↓ₑ i-of C , fin-↓ₑ op (isf-of C))
 
   promise_∣_↦_`in_ : (op : Σₛ) →
-                     lkp op i ≢ leaf →
-                     Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (lkp op i , fin-lkp op isf) →
+                     i' ⊑ lkp op i →
+                     Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf') →
                      Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf) →
                      ------------------
                      Γ ⊢M⦂ Y ! (i , isf)
@@ -236,8 +226,8 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       ↝
                       ↑ op V (let= M `in N)
 
-    let-promise     : (p : lkp op i ≢ leaf)
-                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (lkp op i , fin-lkp op isf))
+    let-promise     : (p : i' ⊑ lkp op i)
+                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf))
                       (L : Γ ∷ Y ⊢M⦂ Z ! (i , isf)) →
                       ----------------------------------
@@ -245,9 +235,9 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       ↝
                       promise op ∣ p ↦ M `in let= N `in (M-rename (wk₂ wk₁) L)
 
-    promise-↑       : (p : lkp op i ≢ leaf)
+    promise-↑       : (p : i' ⊑ lkp op i)
                       (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ```(payload op'))
-                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (lkp op i , fin-lkp op isf))
+                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
                       --------------------------------------------
                       promise op ∣ p ↦ M `in (↑ op' V N)
@@ -269,24 +259,24 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       ↝
                       ↑ op' W (↓ op V M)
 
-    ↓-promise-op    : (p : lkp op i ≢ leaf)
+    ↓-promise-op    : (p : i' ⊑ lkp op i)
                       (V : Γ ⊢V⦂ ```(payload op))
-                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (lkp op i , fin-lkp op isf))
+                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
                       --------------------------------
                       ↓ op V (promise op ∣ p ↦ M `in N)
                       ↝
-                      let= coerce ∪-inr (M [ id-subst [ V ]s ]m) `in ↓ op (V-rename wk₁ V) N
+                      let= coerce (⊑-trans p ∪-inr) (M [ id-subst [ V ]s ]m) `in ↓ op (V-rename wk₁ V) N
 
     ↓-promise-op'   : (V : Γ ⊢V⦂ ```(payload op))
-                      (q : lkp op' i ≢ leaf)
-                      (p : op ≢ op')
-                      (M : Γ ∷ ```(payload op') ⊢M⦂ ⟨ X ⟩ ! (lkp op' i , fin-lkp op' isf))
+                      (p : i' ⊑ lkp op' i)
+                      (q : op ≢ op')
+                      (M : Γ ∷ ```(payload op') ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
                       ------------------------------------------------------------------------
-                      ↓ op V (promise op' ∣ q ↦ M `in N)
+                      ↓ op V (promise op' ∣ p ↦ M `in N)
                       ↝
-                      promise op' ∣ ⊑-leaf-≢ (lkp-↓ₑ-≢ i p) q ↦ coerce (lkp-↓ₑ-≢ i p) M `in ↓ op (V-rename wk₁ V) N
+                      promise op' ∣ ⊑-trans p (lkp-↓ₑ-≢ i q) ↦ M `in ↓ op (V-rename wk₁ V) N
 
     await-promise   : (V : Γ ⊢V⦂ X)
                       (N : Γ ∷ X ⊢M⦂ Y ! (i , isf)) →
@@ -315,8 +305,8 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       ↝
                       ↓ op V N
 
-    context-promise : {p : lkp op i ≢ leaf}
-                      {M M' : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (lkp op i , fin-lkp op isf)}
+    context-promise : {p : i' ⊑ lkp op i} →
+                      {M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf')}
                       {N N' : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)} →
                       N ↝ N' →
                       ---------------------
@@ -342,13 +332,13 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       ↑ op V (coerce q M)
 
     coerce-promise  : {q : i ⊑ i'}
-                      (p : lkp op i ≢ leaf)
-                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (lkp op i , fin-lkp op isf))
+                      (p : i' ⊑ lkp op i)
+                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
                       ------------------------------------------------------------------
                       coerce {isf' = isf'} q (promise op ∣ p ↦ M `in N)
                       ↝
-                      promise op ∣ ⊑-leaf-≢ (lkp-mono q) p ↦ coerce (lkp-mono q) M `in coerce q N
+                      promise op ∣ ⊑-trans p (lkp-mono q) ↦ M `in coerce q N
 
 type-of : Γ ⊢M⦂ C → CType
 type-of {C = C} _ = C
