@@ -46,7 +46,7 @@ data Ctx : Set where
   _∷_ : Ctx → VType → Ctx
 
 variable
-  Γ Γ' : Ctx
+  Γ Γ' Δ Δ' : Ctx
 
 data _∈_ (X : VType) : Ctx → Set where
   Hd : X ∈ Γ ∷ X
