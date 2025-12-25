@@ -1,9 +1,16 @@
-{-# OPTIONS --guardedness #-}
-
+open import Data.Nat
+open import Data.Nat.Properties
+open import Data.Nat.Induction using (<-wellFounded)
 open import Data.Product
-open import Data.List using (List) renaming (_∷_ to _∷ₗ_; [] to []ₗ)
+open import Data.Empty
+open import Data.List using (List) renaming (_∷_ to _∷ₗ_; [] to []ₗ; [_] to [_]ₗ)
 
+open import Induction.WellFounded
+
+open import Relation.Nullary.Decidable using (Dec; yes; no)
 open import Relation.Binary.PropositionalEquality
+
+open import Function using (_∘_)
 
 open import AEffFinSN.FiniteEffectAnnotations
 
@@ -11,48 +18,53 @@ open import EffectAnnotations using (Σₛ)
 open import AEff using (payload; Σ-base; ar-base)
 open import Types using (GType)
 
-open import AEffStarSN.AEffStar using () renaming (Type to Type*; Ctx to Ctx*; ``` to ```*; _⇒_ to _⇒*_; ⟨_⟩ to ⟨_⟩*; [] to []*; _∷_ to _∷*_)
-
 module AEffFinSN.AEffFin where
 
 variable
-  A B   : GType
-  Xs Ys Zs : Type*
-  Γs Δs : Ctx*
+  A : GType
 
-data VType : Type* → Set
+data VType : Set
 
-data CType : Type* → Set
+data CType : Set
 
 infix 30 _⇒_
 data VType where
-  ``` : (A : GType) → VType (```* A)
-  _⇒_ : VType Xs → CType Ys → VType (Xs ⇒* Ys)
-  ⟨_⟩ : VType Xs → VType (⟨ Xs ⟩*)
+  ``` : GType → VType
+  _⇒_ : VType → CType → VType
+  ⟨_⟩ : VType → VType
 
 infix 30 _!_
 data CType where
-  _!_ : VType Xs → Σ[ i ∈ I ] isfin i → CType Xs
+  _!_ : VType → Σ[ i ∈ I ] isfin i → CType
 
 variable
-  X Y Z : VType Xs
-  C D E : CType Xs
+  X Y Z : VType
+  C D E : CType
+
+v-of : CType → VType
+v-of (X ! _) = X
+
+i-of : CType → I
+i-of (_ ! (i , _)) = i
+
+isf-of : (C : CType) → isfin (i-of C)
+isf-of (_ ! (_ , isf)) = isf
 
 infixl 30 _∷_
-data Ctx : Ctx* → Set where
-  []  : Ctx []*
-  _∷_ : Ctx Γs → VType Xs → Ctx (Γs ∷* Xs)
+data Ctx : Set where
+  []  : Ctx
+  _∷_ : Ctx → VType → Ctx
 
 variable
-  Γ Γ' Δ Δ' Ε Ε' : Ctx Γs
+  Γ Γ' : Ctx
 
-data _∈_ (X : VType Xs) : Ctx Γs → Set where
+data _∈_ (X : VType) : Ctx → Set where
   Hd : X ∈ Γ ∷ X
   Tl : X ∈ Γ → X ∈ Γ ∷ Y
 
-data _⊢V⦂_ : Ctx Γs → VType Xs → Set
+data _⊢V⦂_ : Ctx → VType → Set
 
-data _⊢M⦂_ : Ctx Γs → CType Xs → Set
+data _⊢M⦂_ : Ctx → CType → Set
 
 data _⊢V⦂_ where
   `_  : X ∈ Γ → Γ ⊢V⦂ X
@@ -78,29 +90,29 @@ data _⊢M⦂_ where
 
   ↑                : (op : Σₛ) →
                      Γ ⊢V⦂ ```(payload op) →
-                     Γ ⊢M⦂ X ! (i , isf) →
+                     Γ ⊢M⦂ C →
                      --------------
-                     Γ ⊢M⦂ X ! (i , isf)
+                     Γ ⊢M⦂ C
 
   ↓                : (op : Σₛ) →
                      Γ ⊢V⦂ ```(payload op) →
-                     Γ ⊢M⦂ X ! (i , isf) →
+                     Γ ⊢M⦂ C →
                      --------------
-                     Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)
+                     Γ ⊢M⦂ v-of C ! (op ↓ₑ i-of C , fin-↓ₑ op (isf-of C))
 
   promise_∣_↦_`in_ : (op : Σₛ) →
-                     isnode (lkp op i) →
+                     lkp op i ≢ leaf →
                      Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (lkp op i , fin-lkp op isf) →
                      Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf) →
                      ------------------
                      Γ ⊢M⦂ Y ! (i , isf)
 
   await_until_     : Γ ⊢V⦂ ⟨ X ⟩ →
-                     Γ ∷ X ⊢M⦂ Y ! (i , isf) →
-                     ------------------
-                     Γ ⊢M⦂ Y ! (i , isf)
+                     Γ ∷ X ⊢M⦂ C →
+                     -------
+                     Γ ⊢M⦂ C
 
-  coerce           : i ⊑i i' →
+  coerce           : i ⊑ i' →
                      Γ ⊢M⦂ X ! (i , isf) →
                      -------------------
                      Γ ⊢M⦂ X ! (i' , isf')
@@ -109,8 +121,8 @@ variable
   V V' W W' U U' : Γ ⊢V⦂ X
   M M' N N' L L' : Γ ⊢M⦂ C
 
-Ren : Ctx Γs → Ctx Δs → Set
-Ren Γ Γ' = {Xs : Type*} {X : VType Xs} → X ∈ Γ → X ∈ Γ'
+Ren : Ctx → Ctx → Set
+Ren Γ Γ' = {X : VType} → X ∈ Γ → X ∈ Γ'
 
 id-ren : Ren Γ Γ 
 id-ren x = x
@@ -148,8 +160,8 @@ M-rename r (await V until N) =
 M-rename r (coerce p M) =
   coerce p (M-rename r M)
 
-Sub : Ctx Γs → Ctx Δs → Set
-Sub Γ Γ' = {Xs : Type*} {X : VType Xs} → X ∈ Γ → Γ' ⊢V⦂ X
+Sub : Ctx → Ctx → Set
+Sub Γ Γ' = {X : VType} → X ∈ Γ → Γ' ⊢V⦂ X
 
 id-subst : Sub Γ Γ
 id-subst x = ` x
@@ -224,7 +236,7 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       ↝
                       ↑ op V (let= M `in N)
 
-    let-promise     : (p : isnode (lkp op i))
+    let-promise     : (p : lkp op i ≢ leaf)
                       (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (lkp op i , fin-lkp op isf))
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf))
                       (L : Γ ∷ Y ⊢M⦂ Z ! (i , isf)) →
@@ -233,7 +245,7 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       ↝
                       promise op ∣ p ↦ M `in let= N `in (M-rename (wk₂ wk₁) L)
 
-    promise-↑       : (p : isnode (lkp op i))
+    promise-↑       : (p : lkp op i ≢ leaf)
                       (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ```(payload op'))
                       (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (lkp op i , fin-lkp op isf))
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
@@ -245,7 +257,7 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
     ↓-return        : (V : Γ ⊢V⦂ ```(payload op))
                       (W : Γ ⊢V⦂ X) →
                       ------------------------
-                      ↓ {i = i} {isf} op V (return W)
+                      ↓ op V (return {i = i} {isf} W)
                       ↝
                       return W
 
@@ -257,24 +269,24 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       ↝
                       ↑ op' W (↓ op V M)
 
-    ↓-promise-op    : (p : isnode (lkp op i))
+    ↓-promise-op    : (p : lkp op i ≢ leaf)
                       (V : Γ ⊢V⦂ ```(payload op))
                       (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (lkp op i , fin-lkp op isf))
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
                       --------------------------------
                       ↓ op V (promise op ∣ p ↦ M `in N)
                       ↝
-                      let= coerce (↓ₑ-⊑i {i = i}) (M [ id-subst [ V ]s ]m) `in ↓ op (V-rename wk₁ V) N
+                      let= coerce ∪-inr (M [ id-subst [ V ]s ]m) `in ↓ op (V-rename wk₁ V) N
 
     ↓-promise-op'   : (V : Γ ⊢V⦂ ```(payload op))
-                      (q : isnode (lkp op' i))
+                      (q : lkp op' i ≢ leaf)
                       (p : op ≢ op')
                       (M : Γ ∷ ```(payload op') ⊢M⦂ ⟨ X ⟩ ! (lkp op' i , fin-lkp op' isf))
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
                       ------------------------------------------------------------------------
                       ↓ op V (promise op' ∣ q ↦ M `in N)
                       ↝
-                      promise op' ∣ isnode-⊑i (lkp-↓ₑ-≢ {i = i} p) q ↦ coerce (lkp-↓ₑ-≢ {i = i} p) M `in ↓ op (V-rename wk₁ V) N
+                      promise op' ∣ ⊑-leaf-≢ (lkp-↓ₑ-≢ i p) q ↦ coerce (lkp-↓ₑ-≢ i p) M `in ↓ op (V-rename wk₁ V) N
 
     await-promise   : (V : Γ ⊢V⦂ X)
                       (N : Γ ∷ X ⊢M⦂ Y ! (i , isf)) →
@@ -282,13 +294,6 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       await ⟨ V ⟩ until N
                       ↝
                       N [ id-subst [ V ]s ]m
-
-    ↑-discard       : (V : Γ ⊢V⦂ ```(payload op))
-                      (M : Γ ⊢M⦂ X ! (i , isf)) →
-                      ------------------
-                      ↑ op V M
-                      ↝
-                      M
 
     -- INLINED EVALUATION CONTEXT RULES
 
@@ -310,7 +315,7 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       ↝
                       ↓ op V N
 
-    context-promise : {p : isnode (lkp op i)}
+    context-promise : {p : lkp op i ≢ leaf}
                       {M M' : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (lkp op i , fin-lkp op isf)}
                       {N N' : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)} →
                       N ↝ N' →
@@ -321,14 +326,14 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
 
     -- COERCION RULES
 
-    coerce-return   : {q : i ⊑i i'}
+    coerce-return   : {q : i ⊑ i'}
                       (V : Γ ⊢V⦂ X) →
                       --------------------------------
                       coerce {isf = isf} {isf' = isf'} q (return V)
                       ↝
                       return V
 
-    coerce-↑        : {q : i ⊑i i'}
+    coerce-↑        : {q : i ⊑ i'}
                       (V : Γ ⊢V⦂ ```(payload op))
                       (M : Γ ⊢M⦂ X ! (i , isf)) →
                       -------------------------------
@@ -336,144 +341,60 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       ↝
                       ↑ op V (coerce q M)
 
-    coerce-promise  : {q : i ⊑i i'}
-                      (p : isnode (lkp op i))
+    coerce-promise  : {q : i ⊑ i'}
+                      (p : lkp op i ≢ leaf)
                       (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (lkp op i , fin-lkp op isf))
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
                       ------------------------------------------------------------------
                       coerce {isf' = isf'} q (promise op ∣ p ↦ M `in N)
                       ↝
-                      promise op ∣ isnode-⊑i (lkp-mono q) p ↦ coerce (lkp-mono q) M `in coerce q N
+                      promise op ∣ ⊑-leaf-≢ (lkp-mono q) p ↦ coerce (lkp-mono q) M `in coerce q N
 
-data PType : Set where
-  ````_ : CType Xs → PType
-  _∥_   : PType → PType → PType
+type-of : Γ ⊢M⦂ C → CType
+type-of {C = C} _ = C
 
-variable
-  PP QQ RR : PType
-
-infix 40 _↓ₚ_
-_↓ₚ_ : Σₛ → PType → PType
-op ↓ₚ (```` X ! (i , isf)) = ```` X ! (op ↓ₑ i , fin-↓ₑ op isf)
-op ↓ₚ (PP ∥ QQ) = op ↓ₚ PP ∥ op ↓ₚ QQ
-
-infix 40 _↓↓ₚ_
-_↓↓ₚ_ : List Σₛ → PType → PType
-[]ₗ ↓↓ₚ PP = PP
-(op ∷ₗ ops) ↓↓ₚ PP = ops ↓↓ₚ (op ↓ₚ PP)
-
-infix 10 _⊢P⦂_
-data _⊢P⦂_ (Γ : Ctx Γs) : PType → Set where
-
-  run     : Γ ⊢M⦂ C →
-            -----------
-            Γ ⊢P⦂ ```` C
-
-  _∥_     : Γ ⊢P⦂ PP →
-            Γ ⊢P⦂ QQ →
-            --------------
-            Γ ⊢P⦂ (PP ∥ QQ)
-
-  ↑       : (op : Σₛ) →
-            Γ ⊢V⦂ ```(payload op) →
-            Γ ⊢P⦂ PP →
-            ----------
-            Γ ⊢P⦂ PP
-
-  ↓       : (op : Σₛ) →
-            Γ ⊢V⦂ ```(payload op) →
-            Γ ⊢P⦂ PP →
-            ----------
-            Γ ⊢P⦂ op ↓ₚ PP
+infix 10 _⊢P⦂
+data _⊢P⦂ Γ : Set where
+  []  : Γ ⊢P⦂
+  _∥_ : Γ ⊢M⦂ C → Γ ⊢P⦂ → Γ ⊢P⦂
 
 variable
-  P P' Q Q' R R' : Γ ⊢P⦂ PP
+  P P' Q Q' : Γ ⊢P⦂
+
+↓ₜ : (op : Σₛ) → Γ ⊢V⦂ ```(payload op) → Γ ⊢P⦂ → Γ ⊢P⦂
+↓ₜ op V [] = []
+↓ₜ op V (M ∥ P) = ↓ op V M ∥ ↓ₜ op V P
+
+infix 10 _↝ₚ-[_,_]_
+data _↝ₚ-[_,_]_ : Γ ⊢P⦂ → (op : Σₛ) → Γ ⊢V⦂ ```(payload op) → Γ ⊢P⦂ → Set where
+
+  ↑-∥ₗ : --------------
+         ↑ op V M ∥ P
+         ↝ₚ-[ op , V ]
+         M ∥ ↓ₜ op V P
+
+  ↑-∥ᵣ : P ↝ₚ-[ op , V ] Q →
+         -------------
+         M ∥ P
+         ↝ₚ-[ op , V ]
+         ↓ op V M ∥ Q
+
+infix 10 _↝ₚ-↝_
+data _↝ₚ-↝_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where
+
+  context-∥ₗ : M ↝ N →
+               -----
+               M ∥ P
+               ↝ₚ-↝
+               N ∥ P
+
+  context-∥ᵣ : P ↝ₚ-↝ Q →
+               -----
+               M ∥ P
+               ↝ₚ-↝
+               M ∥ Q
 
 infix 10 _↝ₚ_
-data _↝ₚ_ : Γ ⊢P⦂ PP → Γ ⊢P⦂ QQ → Set where
-
-  -- RUNNING INDIVIDUAL COMPUTATIONS
-
-  run   : M ↝ N →
-          -----
-          run M
-          ↝ₚ
-          run N
-
-  -- BROADCAST RULES
-
-  ↑-∥ₗ   : (V : Γ ⊢V⦂ ```(payload op)) →
-           (P : Γ ⊢P⦂ PP) →
-           (Q : Γ ⊢P⦂ QQ) →
-           ------------------
-           ↑ op V P ∥ Q
-           ↝ₚ
-           ↑ op V (P ∥ ↓ op V Q)
-
-  ↑-∥ᵣ   : (V : Γ ⊢V⦂ ```(payload op)) →
-           (P : Γ ⊢P⦂ PP) →
-           (Q : Γ ⊢P⦂ QQ) →
-           ------------------
-           P ∥ ↑ op V Q
-           ↝ₚ
-           ↑ op V (↓ op V P ∥ Q)
-
-  -- INTERRUPT PROPAGATION RULES
-
-  ↓-run : (V : Γ ⊢V⦂ ```(payload op)) → 
-          (M : Γ ⊢M⦂ X ! (i , isf)) →
-          --------------
-          ↓ op V (run M)
-          ↝ₚ
-          run (↓ op V M)
-
-  ↓-∥   : (V : Γ ⊢V⦂ ```(payload op)) →
-          (P : Γ ⊢P⦂ PP) →
-          (Q : Γ ⊢P⦂ QQ) →
-          --------------
-          ↓ op V (P ∥ Q)
-          ↝ₚ
-          ↓ op V P ∥ ↓ op V Q
-
-  ↓-↑   : (V : Γ ⊢V⦂ ```(payload op)) →
-          (W : Γ ⊢V⦂ ```(payload op')) →
-          (P : Γ ⊢P⦂ PP) →
-          ------------------
-          ↓ op V (↑ op' W P)
-          ↝ₚ
-          ↑ op' W (↓ op V P)
-
-  -- SIGNAL HOISTING RULE
-
-  ↑     : (V : Γ ⊢V⦂ ```(payload op)) →
-          (M : Γ ⊢M⦂ X ! (i , isf)) →
-          --------------
-          run (↑ op V M)
-          ↝ₚ
-          ↑ op V (run M)
-
-  -- EVALUATION CONTEXT RULES
-
-  context-∥ₗ : P ↝ₚ P' → 
-               ------
-               P ∥ Q
-               ↝ₚ
-               P' ∥ Q
-
-  context-∥ᵣ : Q ↝ₚ Q' → 
-               -----
-               P ∥ Q
-               ↝ₚ
-               P ∥ Q'
-
-  context-↑ : P ↝ₚ P' →
-              --------
-              ↑ op V P
-              ↝ₚ
-              ↑ op V P'
-
-  context-↓ : P ↝ₚ P' →
-              ---------
-              ↓ op V P
-              ↝ₚ
-              ↓ op V P'
+data _↝ₚ_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where
+  ↑-∥ : P ↝ₚ-[ op , V ] Q → P ↝ₚ Q
+  run : P ↝ₚ-↝ Q → P ↝ₚ Q

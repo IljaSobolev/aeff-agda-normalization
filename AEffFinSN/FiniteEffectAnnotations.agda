@@ -3,7 +3,7 @@ open import Data.Unit using (⊤; tt)
 open import Data.Product using (_×_; _,_; Σ-syntax)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Nat using (ℕ; zero; suc; _≤_; z≤n; s≤s; _<_)
-open import Data.Nat.Properties using (≤-refl; ≤-antisym; ≤-trans; n≤1+n)
+open import Data.Nat.Properties using (≤-refl; ≤-antisym; ≤-trans; n≤1+n; m≤n⇒m<n∨m≡n)
 open import Data.List using (List) renaming ([] to []ₗ; _∷_ to _∷ₗ_; [_] to [_]ₗ)
 
 open import Relation.Nullary.Decidable using (Dec; yes; no)
@@ -127,8 +127,8 @@ op ↓↓ₚ ps = map (op ↓↓_) ps
 ...   | yes b = ⊥-elim (u (a , b))
 ...   | no  b = Tl (¬#-∈ b)
 
-↓ₚ-≡ : op ↓ (op ∷ₗ p) ≡ p
-↓ₚ-≡ {op} {p} with decₛ op op
+↓-≡ : op ↓ (op ∷ₗ p) ≡ p
+↓-≡ {op} {p} with decₛ op op
 ... | yes refl = refl
 ... | no     a = ⊥-elim (a refl)
 
@@ -136,9 +136,9 @@ startswith : Σₛ → Path → Set
 startswith op []ₗ = ⊥
 startswith op (op' ∷ₗ _) = op ≡ op'
 
-↓ₚ-≢' : ¬ startswith op p → p ≡ op ↓ p
-↓ₚ-≢' {op} {[]ₗ} u = refl
-↓ₚ-≢' {op} {op' ∷ₗ _} u with decₛ op op'
+↓-≢' : ¬ startswith op p → p ≡ op ↓ p
+↓-≢' {op} {[]ₗ} u = refl
+↓-≢' {op} {op' ∷ₗ _} u with decₛ op op'
 ... | yes a = ⊥-elim (u a)
 ... | no  _ = refl
 
@@ -241,11 +241,17 @@ len-⊑ {cons _ _ _} u = ≤-trans (s≤s (len-⊑ (cons-⧵ u))) (len-⧵-< (u 
 ↓ₚ-⧵ : []ₗ ∈ₚ ps → op ↓ₚ ps ⊑ₚ op ↓ₚ (ps ⧵ [ op ]ₗ)
 ↓ₚ-⧵ {ps} {op} h v with ∈-map-e _ ps v
 ... | p , u , refl with p ≟ [ op ]ₗ
-...   | yes refl rewrite ↓ₚ-≡ {op} {[]ₗ} = ∈-map-i _ (∈-⧵-i h (λ ()))
+...   | yes refl rewrite ↓-≡ {op} {[]ₗ} = ∈-map-i _ (∈-⧵-i h (λ ()))
 ...   | no     a = ∈-map-i _ (∈-⧵-i u a)
 
 len-↓ₚ-< : []ₗ ∈ₚ ps → [ op ]ₗ ∈ₚ ps → len (op ↓ₚ ps) < len ps
 len-↓ₚ-< {ps} {op} u v = ≤-trans (s≤s (≤-trans (len-⊑ (↓ₚ-⧵ {ps} {op} u)) (len-map-≤ _ (ps ⧵ _)))) (len-⧵-< v)
+
+⊑ₚ-↓ₚ : ({p : Path} → p ∈ₚ ps → ¬ startswith op p) → ps ⊑ₚ op ↓ₚ ps
+⊑ₚ-↓ₚ u v rewrite ↓-≢' (u v) = ∈-map-i _ v
+
+len-↓ₚ-≡ : ({p : Path} → p ∈ₚ ps → ¬ startswith op p) → len (op ↓ₚ ps) ≡ len ps
+len-↓ₚ-≡ f = ≤-antisym (len-map-≤ _ _) (len-⊑ (⊑ₚ-↓ₚ f))
 
 
 -- EFFECT ANNOTATIONS FOR INTERRUPT HANDLERS
@@ -339,6 +345,13 @@ data _∈ᵢ_ : Path → I → Set where
   Hd : []ₗ ∈ᵢ node f
   Tl : p ∈ᵢ f op → op ∷ₗ p ∈ᵢ node f
 
+_∈ᵢ?_ : (p : Path) (i : I) → Dec (p ∈ᵢ i)
+p ∈ᵢ? leaf = no (λ ())
+[]ₗ ∈ᵢ? node _ = yes Hd
+(op ∷ₗ p) ∈ᵢ? node f with p ∈ᵢ? f op
+... | yes a = yes (Tl a)
+... | no  a = no (λ {(Tl h) → a h})
+
 ∈-∪-i₁ : p ∈ᵢ i → p ∈ᵢ i ∪ i'
 ∈-∪-i₁ {i' = leaf} Hd = Hd
 ∈-∪-i₁ {i' = node _} Hd = Hd
@@ -381,8 +394,8 @@ data _∈ᵢ_ : Path → I → Set where
 
 ∈ᵢ-↓-e : (i : I) → p ∈ᵢ op ↓ₑ i → Σ[ p' ∈ Path ] p' ∈ᵢ i × p ≡ op ↓ p'
 ∈ᵢ-↓-e i u with ∈-∪-e u
-... | inj₂ a = _ , ∈ᵢ-lkp-e a , sym ↓ₚ-≡
-... | inj₁ a = _ , ∈-[↦]-e₂ a , ↓ₚ-≢' (∈-[↦]-e₁ a)
+... | inj₂ a = _ , ∈ᵢ-lkp-e a , sym ↓-≡
+... | inj₁ a = _ , ∈-[↦]-e₂ a , ↓-≢' (∈-[↦]-e₁ a)
 
 ∈ᵢ-↓-i : p ∈ᵢ i → op ↓ p ∈ᵢ op ↓ₑ i
 ∈ᵢ-↓-i {[]ₗ} u = ∈-∪-i₁ (∈-[↦]-i (λ ()) u)
@@ -445,8 +458,14 @@ size-↓ₑ-≤ isf = len-map-≤ _ (paths isf)
 []∈ᵢ Hd = Hd
 []∈ᵢ (Tl u) = Hd
 
+∈ᵢ-startswith : p ∈ᵢ i → ¬ [ op ]ₗ ∈ᵢ i → ¬ startswith op p
+∈ᵢ-startswith (Tl u) v refl = v (Tl ([]∈ᵢ u))
+
 size-↓ₑ-< : (isf : isfin i) → [ op ]ₗ ∈ᵢ i → ∣ fin-↓ₑ op isf ∣ < ∣ isf ∣
 size-↓ₑ-< isf u = len-↓ₚ-< (itop isf _ ([]∈ᵢ u)) (itop isf _ u)
+
+size-↓ₑ-≡ : (isf : isfin i) → ¬ [ op ]ₗ ∈ᵢ i → ∣ fin-↓ₑ op isf ∣ ≡ ∣ isf ∣
+size-↓ₑ-≡ isf u = len-↓ₚ-≡ (λ x → ∈ᵢ-startswith (ptoi isf _ x) u)
 
 itop-↓↓ₑ : (isf : isfin i) → p ∈ᵢ q ↓↓ₑ i → p ∈ₚ q ↓↓ₚ paths isf
 itop-↓↓ₑ {q = q} isf u with ∈ᵢ-↓↓-e q _ u
