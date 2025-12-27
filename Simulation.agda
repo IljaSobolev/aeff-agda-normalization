@@ -9,7 +9,15 @@ open import Renamings
 open import Substitutions
 open import EffectAnnotations
 
+open import Data.Nat using (ℕ; zero; suc; _+_; _≤_; z≤n; s≤s; _<_)
+open import Data.Nat.Properties using (≤-refl; ≤-reflexive; +-mono-≤-<; +-suc)
+open import Data.Nat.Induction using (<-wellFounded)
 open import Data.List renaming (_∷_ to _∷ₗ_)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Product using (_×_; _,_; proj₁; proj₂)
+
+open import Induction.WellFounded using (Acc; acc)
+
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂; subst)
 
 module Simulation where
@@ -48,15 +56,13 @@ emb-tm-m (↑ op p V M) = B.↑ op (emb-tm-v V) (emb-tm-m M)
 emb-tm-m (↓ op V M) = B.↓ op (emb-tm-v V) (emb-tm-m M)
 emb-tm-m (promise op ∣ p ↦ M `in N) = B.promise op ↦ emb-tm-m M `in emb-tm-m N
 emb-tm-m (await V until M) = B.await emb-tm-v V until emb-tm-m M
-emb-tm-m (coerce p q M) = B.coerce (emb-tm-m M)
+emb-tm-m (coerce p q M) = emb-tm-m M
 
 infix 4 _~-ren_
-
 _~-ren_ : {Γ Δ : Ctx} (r : Ren Γ Δ) (r† : B.Ren (emb-ctx Γ) (emb-ctx Δ)) → Set
 _~-ren_ {Γ} r r† = {X : VType} (x : X ∈ Γ) → emb-∈ (r x) ≡ r† (emb-∈ x)
 
 infix 4 _~-sub_
-
 _~-sub_ : {Γ Δ : Ctx} (s : Sub Γ Δ) (r† : B.Sub (emb-ctx Γ) (emb-ctx Δ)) → Set
 _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (emb-∈ x)
 
@@ -91,7 +97,7 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
 ~-ren-m (↓ op V M) ~r = cong₂ (B.↓ op) (~-ren-v V ~r) (~-ren-m M ~r)
 ~-ren-m (promise op ∣ p ↦ M `in N) ~r = cong₂ (B.promise op ↦_`in_) (~-ren-lift M ~r) (~-ren-lift N ~r)
 ~-ren-m (await V until M) ~r = cong₂ B.await_until_ (~-ren-v V ~r) (~-ren-lift M ~r)
-~-ren-m (coerce p q M) ~r = cong B.coerce (~-ren-m M ~r)
+~-ren-m (coerce p q M) ~r = ~-ren-m M ~r
 
 ~-sub-v : {Γ Δ : Ctx} {X : VType} (V : Γ ⊢V⦂ X)
           {s : Sub Γ Δ} {s† : B.Sub (emb-ctx Γ) (emb-ctx Δ)} →
@@ -132,7 +138,7 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
 ~-sub-m (↓ op V M) ~r = cong₂ (B.↓ op) (~-sub-v V ~r) (~-sub-m M ~r)
 ~-sub-m (promise op ∣ p ↦ M `in N) ~r = cong₂ (B.promise op ↦_`in_) (~-sub-lift M ~r) (~-sub-lift N ~r)
 ~-sub-m (await V until M) ~r = cong₂ B.await_until_ (~-sub-v V ~r) (~-sub-lift M ~r)
-~-sub-m (coerce p q M) ~r = cong B.coerce (~-sub-m M ~r)
+~-sub-m (coerce p q M) ~r = ~-sub-m M ~r
 
 ~-rename-v : {Γ : Ctx} {X Z : VType}
              (V : Γ ⊢V⦂ X) →
@@ -159,36 +165,95 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
 ~-strengthen (` Tl x) = refl
 ~-strengthen (`` c) = refl
 
+data Context : Set where
+  [-] : Context
+  coe other : Context → Context
+
+variable
+  CC CC' : Context
+
+infix 4 _↝c_
+data _↝c_ : Context → Context → Set where
+  coe-[-] : coe [-] ↝c [-]
+  coe-↓ : coe (other CC) ↝c other (coe CC)
+  coe-ctx : CC ↝c CC' → coe CC ↝c coe CC'
+  other-ctx : CC ↝c CC' → other CC ↝c other CC'
+
+find-ctx : {Γ : Ctx} {X : CType} → Γ ⊢M⦂ X → Context
+find-ctx (return _) = [-]
+find-ctx (let= M `in _) = other (find-ctx M)
+find-ctx (_ · _) = [-]
+find-ctx (↑ _ _ _ M) = other (find-ctx M)
+find-ctx (↓ _ _ M) = other (find-ctx M)
+find-ctx (promise _ ∣ _ ↦ _ `in N) = other (find-ctx N)
+find-ctx (await _ until M) = [-]
+find-ctx (coerce _ _ M) = coe (find-ctx M)
+
 sim : {Γ : Ctx} {X : CType} {M N : Γ ⊢M⦂ X} →
       M ↝↝ N →
-      ------
-      emb-tm-m M B.↝ emb-tm-m N
-sim (apply M V) rewrite ~-subst-m M V = B.apply _ _
-sim (let-return V N) rewrite ~-subst-m N V = B.let-return _ _
-sim (let-↑ p V M N) = B.T-↑ _ _ _
-sim (let-promise {X} p M₁ M₂ N) rewrite ~-rename-m {Z = ⟨ X ⟩} N = B.T-promise _ _ _
-sim (promise-↑ p q V M N) rewrite ~-strengthen V = B.promise-↑ _ _ _
-sim (↓-return V W) = B.↓-return _ _
-sim (↓-↑ p V W M) = B.T-↑ _ _ _
-sim (↓-promise-op {X} p V M N) rewrite ~-subst-m M V | ~-rename-v {Z = ⟨ X ⟩} V = B.↓-promise-op _ _ _
-sim (↓-promise-op' {X} p q V M N) rewrite ~-rename-v {Z = ⟨ X ⟩} V = B.T-promise _ _ _
-sim (await-promise V M) rewrite ~-subst-m M V = B.await-promise _ _
-sim (context-let r) = B.context-T _ (sim r)
-sim (context-↑ r) = B.context-↑ (sim r)
-sim (context-↓ r) = B.context-T _ (sim r)
-sim (context-promise r) = B.context-promise (sim r)
-sim (context-coerce r) = B.context-T _ (sim r)
-sim (coerce-return V) = B.coerce-return _
-sim (coerce-↑ r V M) = B.T-↑ _ _ _
-sim (coerce-promise r M N) = B.T-promise _ _ _
+      ------------------------
+      emb-tm-m M B.↝ emb-tm-m N ⊎ (emb-tm-m M ≡ emb-tm-m N) × find-ctx M ↝c find-ctx N
+sim (apply M V) rewrite ~-subst-m M V = inj₁ (B.apply _ _)
+sim (let-return V N) rewrite ~-subst-m N V = inj₁ (B.let-return _ _)
+sim (let-↑ p V M N) = inj₁ (B.T-↑ _ _ _)
+sim (let-promise {X} p M₁ M₂ N) rewrite ~-rename-m {Z = ⟨ X ⟩} N = inj₁ (B.T-promise _ _ _)
+sim (promise-↑ p q V M N) rewrite ~-strengthen V = inj₁ (B.promise-↑ _ _ _)
+sim (↓-return V W) = inj₁ (B.↓-return _ _)
+sim (↓-↑ p V W M) = inj₁ (B.T-↑ _ _ _)
+sim (↓-promise-op {X} p V M N) rewrite ~-subst-m M V | ~-rename-v {Z = ⟨ X ⟩} V = inj₁ (B.↓-promise-op _ _ _)
+sim (↓-promise-op' {X} p q V M N) rewrite ~-rename-v {Z = ⟨ X ⟩} V = inj₁ (B.T-promise _ _ _)
+sim (await-promise V M) rewrite ~-subst-m M V = inj₁ (B.await-promise _ _)
+sim (context-let r) with sim r
+... | inj₁ r = inj₁ (B.context-T _ r)
+... | inj₂ (e , r) rewrite e = inj₂ (refl , other-ctx r)
+sim (context-↑ r) with sim r
+... | inj₁ r = inj₁ (B.context-↑ r)
+... | inj₂ (e , r) rewrite e = inj₂ (refl , other-ctx r)
+sim (context-↓ r) with sim r
+... | inj₁ r = inj₁ (B.context-T _ r)
+... | inj₂ (e , r) rewrite e = inj₂ (refl , other-ctx r)
+sim (context-promise r) with sim r
+... | inj₁ r = inj₁ (B.context-promise r)
+... | inj₂ (e , r) rewrite e = inj₂ (refl , other-ctx r)
+sim (context-coerce r) with sim r
+... | inj₁ r = inj₁ r
+... | inj₂ (e , r) rewrite e = inj₂ (refl , coe-ctx r)
+sim (coerce-return V) = inj₂ (refl , coe-[-])
+sim (coerce-↑ r V M) = inj₂ (refl , coe-↓)
+sim (coerce-promise r M N) = inj₂ (refl , coe-↓)
+
+height : Context → ℕ
+height [-] = zero
+height (coe CC) = suc (height CC)
+height (other CC) = suc (height CC)
+
+∣_∣ : Context → ℕ
+∣ [-] ∣ = 0
+∣ coe CC ∣ = height CC + suc ∣ CC ∣
+∣ other CC ∣ = suc ∣ CC ∣
+
+height-mono-↝ : CC ↝c CC' → height CC' ≤ height CC
+height-mono-↝ coe-[-] = z≤n
+height-mono-↝ coe-↓ = ≤-refl
+height-mono-↝ (coe-ctx r) = s≤s (height-mono-↝ r)
+height-mono-↝ (other-ctx r) = s≤s (height-mono-↝ r)
+
+size-mono-↝ : CC ↝c CC' → ∣ CC' ∣ < ∣ CC ∣
+size-mono-↝ coe-[-] = s≤s z≤n
+size-mono-↝ coe-↓ = s≤s (≤-reflexive (sym (+-suc _ _)))
+size-mono-↝ (coe-ctx r) = +-mono-≤-< (height-mono-↝ r) (s≤s (size-mono-↝ r))
+size-mono-↝ (other-ctx r) = s≤s (size-mono-↝ r)
 
 data SN {Γ : Ctx} {X : CType} (M : Γ ⊢M⦂ X) : Set where
   sn : ({N : Γ ⊢M⦂ X} → M ↝↝ N → SN N) → SN M
 
 sn*→sn : {Γ : Ctx} {X : CType} {M N : Γ ⊢M⦂ X} →
-         ----------------------------
+         Acc _<_ ∣ find-ctx M ∣ →
+         --------------------------------
          SN* (emb-tm-m M) → M ↝↝ N → SN N
-sn*→sn (sn f) r = sn (sn*→sn (f (sim r)))
+sn*→sn aM sM r with sim r
+sn*→sn aM (sn f) _ | inj₁ r = sn (sn*→sn (<-wellFounded _) (f r))
+sn*→sn (acc aM) sM _ | inj₂ (e , r) rewrite e = sn (sn*→sn (aM (size-mono-↝ r)) sM)
 
 strong-norm : {Γ : Ctx} {X : CType} (M : Γ ⊢M⦂ X) → SN M
-strong-norm M = sn (sn*→sn (strong-norm* (emb-tm-m M)))
+strong-norm M = sn (sn*→sn (<-wellFounded _) (strong-norm* (emb-tm-m M)))

@@ -55,13 +55,11 @@ ren-id-k : (K : Γ ⊢K⦂ X ⊸ Y) → K-rename idr K ≡ K
 ren-id-k id = refl
 ren-id-k (K ∘ Tl M) = cong₂ (λ z w → z ∘ Tl w) (ren-id-k K) ⌊ ren-id-l ⌋m
 ren-id-k (K ∘ T↓ op V) = cong₂ (λ z w → z ∘ T↓ _ w) (ren-id-k K) ⌊ ren-id ⌋v
-ren-id-k (K ∘ Tc) = cong (λ z → z ∘ Tc) (ren-id-k K)
 
 ren-ren-k : (K : Γ ⊢K⦂ X ⊸ Y) → K-rename r (K-rename r' K) ≡ K-rename (r ∘f r') K
 ren-ren-k id = refl
 ren-ren-k (K ∘ Tl M) = cong₂ (λ z w → z ∘ Tl w) (ren-ren-k K) ⌊ ren-ren-l ⌋m
 ren-ren-k (K ∘ T↓ op V) = cong₂ (λ z w → z ∘ T↓ _ w) (ren-ren-k K) ⌊ ren-ren ⌋v
-ren-ren-k (K ∘ Tc) = cong (λ z → z ∘ Tc) (ren-ren-k K)
 
 vred-r : {V : Γ ⊢V⦂ X} → VRed V → VRed (V-rename r V)
 vred-r {X = ``` x} rV = tt
@@ -126,17 +124,6 @@ kred-↓ K rK rV = sn-↓ (K-rename _ K) (sn'→sn (rK rV))
 cred-↓ : CRed M → CRed (↓ op V M)
 cred-↓ rM K rK = rM (K ∘ T↓ _ _) (kred-↓ K rK)
 
-sn-coerce : (K : Γ ⊢K⦂ X ⊸ Y) → SN (K aK return V) → SN' (K aK coerce (return V))
-sn-coerce K s r with aK→`aK K r
-... | `id (coerce-return _) = s
-... | `aK _ (context-T _ (coerce-return _)) = s
-
-kred-coerce : (K : Γ ⊢K⦂ X ⊸ Y) → KRed K → KRed (K ∘ Tc)
-kred-coerce K rK rV = sn-coerce (K-rename _ K) (sn'→sn (rK rV))
-
-cred-coerce : CRed M → CRed (coerce M)
-cred-coerce rM K rK = rM (K ∘ Tc) (kred-coerce K rK)
-
 sn-↑ : (K : Γ ⊢K⦂ X ⊸ Y) → SN (K aK M) → SN' (K aK (↑ op V M))
 sn-↑ K (sn f) r with aK→`aK K r
 ... | `id (↑-discard _) = sn f
@@ -194,7 +181,7 @@ sn-promise K rK rM (sn h) r with aK→`aK K r
 ... | `aK K (T-promise _ _ _) =
   sn'→sn (sn-promise K (kred-comm-t K rK) rM (sn h))
 ... | `aK K (↓-promise-op _ _ _) =
-  sn'→sn (cred-kred (K ∘ Tl _) (kred-comm-t K rK) (cred-coerce (subst (λ z → CRed (z [ ids [ _ ]s ]m)) ⌊ ren-id-l ⌋m (rM tt))))
+  sn'→sn (cred-kred (K ∘ Tl _) (kred-comm-t K rK) (subst (λ z → CRed (z [ ids [ _ ]s ]m)) ⌊ ren-id-l ⌋m (rM tt)))
 ... | `aK _ (context-T _ (promise-↑ V _ _)) =
   sn'→sn (sn-↑ K (sn'→sn (sn-promise K (kred-↝ K (↑-discard V) rK) rM (h (context-K (K-rename wk₁ K) (↑-discard _))))))
 ... | `aK _ (context-T _ (context-promise r)) =
@@ -277,7 +264,6 @@ fund-m (promise op ↦ M `in N) rs = cred-promise (cred-⨟ rs (fund-m M)) (cred
 fund-m (await V until M) rs = cred-await (fund-v V rs) (cred-⨟ rs (fund-m M))
 fund-m (let= M `in N) rs = cred-let (fund-m M rs) (cred-⨟ rs (fund-m N))
 fund-m (↓ op V M) rs = cred-↓ (fund-m M rs)
-fund-m (coerce M) rs = cred-coerce (fund-m M rs)
 
 all-terms-red : (M : Γ ⊢M⦂ X) → CRed M
 all-terms-red M rewrite sym ⌊ sub-id {TT = ⊢M M} ⌋m = fund-m M vred-var

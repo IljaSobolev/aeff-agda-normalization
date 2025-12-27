@@ -77,7 +77,6 @@ cong-ren {TT = ⊢M (T aT M)} f = ⌈ cong₂ _aT_ ⌊ cong-ren f ⌋t ⌊ cong-
 
 cong-ren {TT = ⊢T (Tl N)} f = ⌈ cong Tl ⌊ cong-ren-l f ⌋m ⌉t
 cong-ren {TT = ⊢T (T↓ op V)} f = ⌈ cong (T↓ op) ⌊ cong-ren f ⌋v ⌉t
-cong-ren {TT = ⊢T Tc} f = refl
 
 cong-sub : ({Y : Type} (x : Y ∈ Γ) → s x ≡ s' x) →
            ------------------
@@ -102,7 +101,6 @@ cong-sub {TT = ⊢M (T aT M)} f = ⌈ cong₂ _aT_ ⌊ cong-sub f ⌋t ⌊ cong-
 
 cong-sub {TT = ⊢T (Tl N)} f = ⌈ cong Tl ⌊ cong-sub-l f ⌋m ⌉t
 cong-sub {TT = ⊢T (T↓ op V)} f = ⌈ cong (T↓ op) ⌊ cong-sub {TT = ⊢V V} f ⌋v ⌉t
-cong-sub {TT = ⊢T Tc} f = refl
 
 ren-id : rename idr TT ≡ TT
 
@@ -123,7 +121,6 @@ ren-id {TT = ⊢M (T aT M)} = ⌈ cong₂ _aT_ ⌊ ren-id ⌋t ⌊ ren-id ⌋m �
 
 ren-id {TT = ⊢T (Tl N)} = ⌈ cong Tl ⌊ ren-id-l ⌋m ⌉t
 ren-id {TT = ⊢T (T↓ op V)} = ⌈ cong (T↓ op) ⌊ ren-id ⌋v ⌉t
-ren-id {TT = ⊢T Tc} = refl
 
 sub-id : TT [ ids ] ≡ TT
 
@@ -144,7 +141,6 @@ sub-id {TT = ⊢M (T aT M)} = ⌈ cong₂ _aT_ ⌊ sub-id ⌋t ⌊ sub-id ⌋m �
 
 sub-id {TT = ⊢T (Tl N)} = ⌈ cong Tl ⌊ sub-id-l ⌋m ⌉t
 sub-id {TT = ⊢T (T↓ op V)} = ⌈ cong (T↓ op) ⌊ sub-id ⌋v ⌉t
-sub-id {TT = ⊢T Tc} = refl
 
 ren-ren : rename r (rename r' TT) ≡ rename (r ∘ r') TT
 
@@ -165,7 +161,6 @@ ren-ren {TT = ⊢M (T aT M)} = ⌈ cong₂ _aT_ ⌊ ren-ren ⌋t ⌊ ren-ren ⌋
 
 ren-ren {TT = ⊢T (Tl N)} = ⌈ cong Tl ⌊ ren-ren-l ⌋m ⌉t
 ren-ren {TT = ⊢T (T↓ op V)} = ⌈ cong (T↓ op) ⌊ ren-ren ⌋v ⌉t
-ren-ren {TT = ⊢T Tc} = refl
 
 sub-ren : ({Y : Type} (x : Y ∈ Γ) → s' (r x) ≡ V-rename r' (s x)) →
           ------------------------------------------
@@ -204,7 +199,6 @@ sub-ren {TT = ⊢M (T aT M)} f = ⌈ cong₂ _aT_ ⌊ sub-ren f ⌋t ⌊ sub-ren
 
 sub-ren {TT = ⊢T (Tl N)} f = ⌈ cong Tl ⌊ sub-ren-l f ⌋m ⌉t
 sub-ren {TT = ⊢T (T↓ op V)} f = ⌈ cong (T↓ op) ⌊ sub-ren {TT = ⊢V V} f ⌋v ⌉t
-sub-ren {TT = ⊢T Tc} f = refl
 
 infixr 9 _⨟_
 _⨟_ : Sub Γ Γ' → Sub Γ' Γ'' → Sub Γ Γ''
@@ -233,7 +227,6 @@ sub-sub {TT = ⊢M (T aT M)} = ⌈ cong₂ _aT_ ⌊ sub-sub ⌋t ⌊ sub-sub ⌋
 
 sub-sub {TT = ⊢T (Tl N)} = ⌈ cong Tl ⌊ sub-sub-l ⌋m ⌉t
 sub-sub {TT = ⊢T (T↓ op V)} = ⌈ cong (T↓ op) ⌊ sub-sub {TT = ⊢V V} ⌋v ⌉t
-sub-sub {TT = ⊢T Tc} = refl
 
 eq₁ : (TT : Γ ⊢ X) (V : Γ ⊢V⦂ Y) →
       ---------------------------
@@ -315,7 +308,6 @@ sub-↝ s (↑-discard V) = ↑-discard _
 sub-↝ s (context-↑ r) = context-↑ (sub-↝ s r)
 sub-↝ s (context-promise r) = context-promise (sub-↝ (lift s) r)
 sub-↝ s (context-T T r) = context-T _ (sub-↝ s r)
-sub-↝ s (coerce-return V) = coerce-return _
 
 ren : Ren Γ Γ' → Sub Γ Γ'
 ren r x = ` r x
@@ -339,7 +331,6 @@ ren-rename {TT = ⊢M (T aT M)} = ⌈ cong₂ _aT_ ⌊ ren-rename ⌋t ⌊ ren-r
 
 ren-rename {TT = ⊢T (Tl N)} = ⌈ cong Tl ⌊ ren-rename-l ⌋m ⌉t
 ren-rename {TT = ⊢T (T↓ op V)} = ⌈ cong (T↓ op) ⌊ ren-rename ⌋v ⌉t
-ren-rename {TT = ⊢T Tc} = refl
 
 ren-↝ : (r : Ren Γ Γ') →
         M ↝ M' →

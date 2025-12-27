@@ -104,9 +104,6 @@ data _⊢T⦂_⊸_ Γ X where
        -----------
        Γ ⊢T⦂ X ⊸ X
 
-  Tc : -----------
-       Γ ⊢T⦂ X ⊸ X
-
 variable
   V V' W W' : Γ ⊢V⦂ X
   M M' N N' L L' : Γ ⊢M⦂ X
@@ -114,7 +111,6 @@ variable
 
 pattern let=_`in_ M N = Tl N aT M
 pattern ↓ op V M = T↓ op V aT M
-pattern coerce M = Tc aT M
 
 -- SET OF RENAMINGS BETWEEN CONTEXTS
 
@@ -170,8 +166,6 @@ T-rename f (Tl N) =
   Tl (M-rename (wk₂ f) N)
 T-rename f (T↓ op V) =
   T↓ op (V-rename f V)
-T-rename f Tc =
-  Tc
 
 -- SET OF SUBSTITUTIONS BETWEEN CONTEXTS
 
@@ -233,8 +227,6 @@ Tl N [ s ]t =
   Tl (N [ lift s ]m)
 T↓ op V [ s ]t =
   T↓ op (V [ s ]v)
-Tc [ s ]t =
-  Tc
 
 -- STRENGTHENING OF GROUND VALUES WRT BOUND PROMISES
 
@@ -310,7 +302,7 @@ data _↝_ : Γ ⊢M⦂ Y → Γ ⊢M⦂ Y → Set where
                     --------------------
                     ↓ op V (promise op ↦ M `in N)
                     ↝
-                    let= coerce (M [ ids [ V ]s ]m) `in (↓ op (V-rename wk₁ V) N)
+                    let= M [ ids [ V ]s ]m `in (↓ op (V-rename wk₁ V) N)
 
   await-promise   : (V : Γ ⊢V⦂ X)
                     (M : Γ ∷ X ⊢M⦂ Y) →
@@ -345,9 +337,3 @@ data _↝_ : Γ ⊢M⦂ Y → Γ ⊢M⦂ Y → Set where
                     T aT M
                     ↝
                     T aT M'
-
-  coerce-return   : (V : Γ ⊢V⦂ Y) →
-                    ------------
-                    coerce (return V)
-                    ↝
-                    return V
