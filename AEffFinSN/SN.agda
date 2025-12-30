@@ -56,7 +56,20 @@ data Form {op} {i} {isf} : Γ ⊢M⦂ X ! (i , isf) → Γ ⊢M⦂ X ! (op ↓�
   [-]     : Form M (↓ op V M)
   return  : Form (return V) (return V)
   ↑       : Form M N → Form (↑ op' V M) (↑ op' V N)
+  await   : Form M N → Form (await V until M) (await V until N)
   promise : ∀ {x y x' y'} → Form M N → Form (promise op' ∣ x , y ↦ L `in M) (promise op' ∣ x' , y' ↦ L `in N)
+
+form-sub : {M : Γ ⊢M⦂ X ! (i , isf)}
+           {N : Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)}
+           (s : Sub Γ Γ') →
+           Form M N →
+           --------------------------
+           Form (M [ s ]m) (N [ s ]m)
+form-sub s [-] = [-]
+form-sub s return = return
+form-sub s (↑ ff) = ↑ (form-sub _ ff)
+form-sub s (await ff) = await (form-sub _ ff)
+form-sub s (promise ff) = promise (form-sub _ ff)
 
 form-↝ : {M : Γ ⊢M⦂ X ! (i , isf)}
          {N : Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)} →
@@ -69,10 +82,12 @@ form-↝ u [-] (↓-return V W) = inj₁ return
 form-↝ u [-] (↓-↑ V W M) = inj₁ (↑ [-])
 form-↝ u [-] (↓-promise-op p q V M N) = ⊥-elim (u q)
 form-↝ u [-] (↓-promise-op' V p q r M N) = inj₁ (promise [-])
+form-↝ u [-] (↓-await W V M) = inj₁ (await [-])
 form-↝ u [-] (context-↓ r) = inj₂ (_ , [-] , r)
 form-↝ u (↑ ff) (context-↑ r) with form-↝ u ff r
 ... | inj₁ ff = inj₁ (↑ ff)
 ... | inj₂ (_ , ff , r) = inj₂ (_ , ↑ ff , context-↑ r)
+form-↝ u (await ff) (await-promise V N) = inj₂ (_ , form-sub _ ff , await-promise V _)
 form-↝ u (promise (↑ ff)) (promise-↑ p q V M N) = inj₂ (_ , ↑ (promise ff) , promise-↑ _ _ _ _ _)
 form-↝ u (promise ff) (context-promise r) with form-↝ u ff r
 ... | inj₁ ff = inj₁ (promise ff)
@@ -82,6 +97,7 @@ form-#↑ : Form M N → #↑ N ≤ #↑ M
 form-#↑ [-] = z≤n
 form-#↑ return = z≤n
 form-#↑ (↑ ff) = s≤s (form-#↑ ff)
+form-#↑ (await ff) = z≤n
 form-#↑ (promise ff) = z≤n
 
 ≡-↓-sn' : {M : Γ ⊢M⦂ X ! (i , isf)}

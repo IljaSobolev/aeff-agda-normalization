@@ -239,6 +239,22 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       ↝
                       promise op ∣ p , q ↦ M `in let= N `in (M-rename (wk₂ wk₁) L)
 
+    let-await       : (V : Γ ⊢V⦂ ⟨ X ⟩)
+                      (M : Γ ∷ X ⊢M⦂ Y ! (i , isf))
+                      (N : Γ ∷ Y ⊢M⦂ Z ! (i , isf)) →
+                      --------------------------
+                      let= await V until M `in N
+                      ↝
+                      await V until let= M `in M-rename (wk₂ wk₁) N
+
+    ↓-await         : (W : Γ ⊢V⦂ ```(payload op))
+                      (V : Γ ⊢V⦂ ⟨ X ⟩)
+                      (M : Γ ∷ X ⊢M⦂ C) →
+                      ------------------------
+                      ↓ op W (await V until M)
+                      ↝
+                      await V until ↓ op (V-rename (wk₁ {X = X}) W) M
+
     promise-↑       : (p : i' ⊑ lkp op i)
                       (q : [ op ]ₗ ∈ᵢ i)
                       (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ```(payload op'))

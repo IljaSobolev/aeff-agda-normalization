@@ -180,6 +180,8 @@ sim (↓-return V W) = inj₁ (B.↓-return _ _)
 sim (↓-↑ V W M) = inj₁ (B.T-↑ _ _ _)
 sim (↓-promise-op {X = X} p q V M N) rewrite ~ₛᵣ-m M V | ~ᵣ-wk₁-v {Z = ⟨ X ⟩} V = inj₁ (B.↓-promise-op _ _ _)
 sim (↓-promise-op' {X = X} V p q r M N) rewrite ~ᵣ-wk₁-v {Z = ⟨ X ⟩} V = inj₁ (B.T-promise _ _ _)
+sim (let-await {X = X} V M N) rewrite ~ᵣ-wk₂-wk₁-m {Z = X} N = inj₁ (B.T-await _ _ _)
+sim (↓-await {X = X} {_ ! _} W V M) rewrite ~ᵣ-wk₁-v {Z = X} W = inj₁ (B.T-await _ _ _)
 sim (await-promise V N) rewrite ~ₛᵣ-m N V = inj₁ (B.await-promise _ _)
 sim (context-let r) with sim r
 ... | inj₁ r = inj₁ (B.context-T _ r)
