@@ -337,13 +337,14 @@ lkp-mono (n⊑n f) = f _
 ↓ₑ-mono : i ⊑ i' → op ↓ₑ i ⊑ op ↓ₑ i'
 ↓ₑ-mono p = ∪-copair (⊑-trans ([↦]-mono p) ∪-inl) (⊑-trans (lkp-mono p) ∪-inr)
 
-⊑-leaf-≢ : i ⊑ i' → i ≢ leaf → i' ≢ leaf
-⊑-leaf-≢ l⊑n v refl = v refl
-
 infix 4 _∈ᵢ_
 data _∈ᵢ_ : Path → I → Set where
   Hd : []ₗ ∈ᵢ node f
   Tl : p ∈ᵢ f op → op ∷ₗ p ∈ᵢ node f
+
+∈ᵢ-⊑ : i ⊑ i' → p ∈ᵢ i → p ∈ᵢ i'
+∈ᵢ-⊑ (n⊑n f) Hd = Hd
+∈ᵢ-⊑ (n⊑n f) (Tl v) = Tl (∈ᵢ-⊑ (f _) v)
 
 _∈ᵢ?_ : (p : Path) (i : I) → Dec (p ∈ᵢ i)
 p ∈ᵢ? leaf = no (λ ())

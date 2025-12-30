@@ -3,7 +3,7 @@ open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Nat using (ℕ; suc; _+_; _≤_; z≤n; s≤s; _<_; ≤-pred)
 open import Data.Unit using (⊤; tt)
 open import Data.Empty using (⊥; ⊥-elim)
-open import Data.Nat.Properties using (≤-refl; +-monoˡ-<; +-monoʳ-<; +-mono-≤; +-mono-<-≤; +-mono-≤-<)
+open import Data.Nat.Properties using (≤-refl; ≤-trans; +-monoˡ-<; +-monoʳ-<; +-mono-≤; +-mono-<-≤; +-mono-≤-<; +-suc)
 open import Data.Nat.Induction using (<-wellFounded)
 open import Data.List using (List) renaming (_∷_ to _∷ₗ_; [] to []ₗ; [_] to [_]ₗ)
 
@@ -11,7 +11,7 @@ open import Induction.WellFounded using (Acc; acc)
 
 open import Relation.Nullary.Decidable using (Dec; yes; no)
 open import Relation.Nullary.Negation using (¬_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; subst)
 
 open import Function using (_∘_)
 
@@ -36,12 +36,68 @@ data SNₚ (P : Γ ⊢P⦂) : Set where
 data SN (M : Γ ⊢M⦂ C) (n : ℕ) : ℕ → Set where
   sn : ({N : Γ ⊢M⦂ C} → M ↝ N → SN N n m) → #↑ M ≤ n → SN M n (suc m)
 
-postulate
-  ≡-↓-sn : ¬ [ op ]ₗ ∈ᵢ i-of (type-of M) → SN M n m → Σ[ m ∈ ℕ ] SN (↓ op V M) n m
-  strong-norm : (M : Γ ⊢M⦂ C) → Σ[ n ∈ ℕ ] Σ[ m ∈ ℕ ] SN M n m
+data SN↑ (M : Γ ⊢M⦂ C) (n : ℕ) : Set where
+  sn : ({N : Γ ⊢M⦂ C} → M ↝ N → SN↑ N n) → #↑ M ≤ n → SN↑ M n
 
 ΣSN : Γ ⊢M⦂ C → Set
 ΣSN M = Σ[ n ∈ ℕ ] Σ[ m ∈ ℕ ] SN M n m
+
+postulate
+  strong-norm : (M : Γ ⊢M⦂ C) → ΣSN M
+  sn↑-sn : SN↑ M n → Σ[ m ∈ ℕ ] SN M n m
+
+sn-sn↑ : SN M n m → SN↑ M n
+sn-sn↑ (sn sM le) = sn (λ x → sn-sn↑ (sM x)) le
+
+sn-#↑ : SN↑ M n → #↑ M ≤ n
+sn-#↑ (sn _ le) = le
+
+data Form {op} {i} {isf} : Γ ⊢M⦂ X ! (i , isf) → Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf) → Set where
+  [-]     : Form M (↓ op V M)
+  return  : Form (return V) (return V)
+  ↑       : Form M N → Form (↑ op' V M) (↑ op' V N)
+  promise : ∀ {x y x' y'} → Form M N → Form (promise op' ∣ x , y ↦ L `in M) (promise op' ∣ x' , y' ↦ L `in N)
+
+form-↝ : {M : Γ ⊢M⦂ X ! (i , isf)}
+         {N : Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)} →
+         ¬ [ op ]ₗ ∈ᵢ i →
+         Form M N →
+         N ↝ N' →
+         ----------------------------
+         Form M N' ⊎ Σ[ M' ∈ _ ] Form M' N' × M ↝ M'
+form-↝ u [-] (↓-return V W) = inj₁ return
+form-↝ u [-] (↓-↑ V W M) = inj₁ (↑ [-])
+form-↝ u [-] (↓-promise-op p q V M N) = ⊥-elim (u q)
+form-↝ u [-] (↓-promise-op' V p q r M N) = inj₁ (promise [-])
+form-↝ u [-] (context-↓ r) = inj₂ (_ , [-] , r)
+form-↝ u (↑ ff) (context-↑ r) with form-↝ u ff r
+... | inj₁ ff = inj₁ (↑ ff)
+... | inj₂ (_ , ff , r) = inj₂ (_ , ↑ ff , context-↑ r)
+form-↝ u (promise (↑ ff)) (promise-↑ p q V M N) = inj₂ (_ , ↑ (promise ff) , promise-↑ _ _ _ _ _)
+form-↝ u (promise ff) (context-promise r) with form-↝ u ff r
+... | inj₁ ff = inj₁ (promise ff)
+... | inj₂ (_ , ff , r) = inj₂ (_ , promise ff , context-promise r)
+
+form-#↑ : Form M N → #↑ N ≤ #↑ M
+form-#↑ [-] = z≤n
+form-#↑ return = z≤n
+form-#↑ (↑ ff) = s≤s (form-#↑ ff)
+form-#↑ (promise ff) = z≤n
+
+≡-↓-sn' : {M : Γ ⊢M⦂ X ! (i , isf)}
+          {N : Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)} →
+          ¬ [ op ]ₗ ∈ᵢ i →
+          SN↑ M n →
+          SN↑ N m →
+          Form M N →
+          --------------------------
+          ∀ {N'} → N ↝ N' → SN↑ N' n
+≡-↓-sn' u (sn sM le) (sn sN le') ff r with form-↝ u ff r
+... | inj₁ ff = sn (≡-↓-sn' u (sn sM le) (sN r) ff) (≤-trans (form-#↑ ff) le)
+... | inj₂ (_ , ff , r') = sn (≡-↓-sn' u (sM r') (sN r) ff) (≤-trans (form-#↑ ff) (sn-#↑ (sM r')))
+
+≡-↓-sn : ¬ [ op ]ₗ ∈ᵢ i-of (type-of M) → SN↑ M n → SN↑ (↓ op V M) n
+≡-↓-sn {_} {_} {_ ! _} u s = sn (≡-↓-sn' u s (sn-sn↑ (proj₂ (proj₂ (strong-norm _)))) [-]) z≤n
 
 sn-strip-↑ : SN (↑ op V M) (suc n) m → SN M n m
 sn-strip-↑ (sn sM le) = sn (λ r → sn-strip-↑ (sM (context-↑ r))) (≤-pred le)
@@ -53,7 +109,7 @@ sn* (M ∥ P) = ΣSN M × sn* P
 sn-↓ : (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) → ΣSN M → ΣSN (↓ op V M)
 sn-↓ {M = M} op V (_ , _ , sM) with [ op ]ₗ ∈ᵢ? i-of (type-of M)
 ... | yes _ = strong-norm _
-... | no  a = _ , ≡-↓-sn a sM
+... | no  a = _ , sn↑-sn (≡-↓-sn a (sn-sn↑ sM))
 
 sn*-↓ₜ : (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) → sn* P → sn* (↓ₜ op V P)
 sn*-↓ₜ {P = []} _ _ sP = tt
