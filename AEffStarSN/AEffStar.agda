@@ -41,9 +41,6 @@ data _∈_ (X : Type) : Ctx → Set where
   Hd : X ∈ (Γ ∷ X)
   Tl : X ∈ Γ → X ∈ (Γ ∷ Y)
 
-variable
-  x : X ∈ Γ
-
 -- DERIVATIONS OF WELL-TYPED TERMS
 
 data _⊢V⦂_ (Γ : Ctx) : Type → Set
@@ -310,12 +307,6 @@ data _↝_ : Γ ⊢M⦂ Y → Γ ⊢M⦂ Y → Set where
                     await ⟨ V ⟩ until M
                     ↝
                     M [ ids [ V ]s ]m
-
-  ↑-discard       : (V : Γ ⊢V⦂ ```(payload op)) →
-                    --------
-                    ↑ op V M
-                    ↝
-                    M
 
   -- INLINED EVALUATION CONTEXT RULES
 

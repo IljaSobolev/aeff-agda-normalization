@@ -304,7 +304,6 @@ sub-↝ s (promise-↑ V M N) rewrite eq₅ s V = promise-↑ _ _ _
 sub-↝ s (↓-return V W) = ↓-return _ _
 sub-↝ s (↓-promise-op {X = X} V M N) rewrite ⌊ eq₃ s (⊢M M) V ⌋m | ⌊ eq₄ ⟨ X ⟩ s (⊢T (T↓ _ V)) ⌋t = ↓-promise-op _ _ _
 sub-↝ s (await-promise V M) rewrite ⌊ eq₃ s (⊢M M) V ⌋m = await-promise _ _
-sub-↝ s (↑-discard V) = ↑-discard _
 sub-↝ s (context-↑ r) = context-↑ (sub-↝ s r)
 sub-↝ s (context-promise r) = context-promise (sub-↝ (lift s) r)
 sub-↝ s (context-T T r) = context-T _ (sub-↝ s r)

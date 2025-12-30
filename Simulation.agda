@@ -1,5 +1,6 @@
 import AEffStarSN.AEffStar as B
-open import AEffStarSN.SN renaming (SN to SN*; strong-norm to strong-norm*)
+open import AEffStarSN.StronglyNormalising renaming (SN to SN*)
+open import AEffStarSN.Main renaming (strong-norm to strong-norm*)
 
 open import Types
 open import AEff
