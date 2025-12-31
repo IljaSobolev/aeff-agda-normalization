@@ -16,7 +16,7 @@ open import EffectAnnotations using (Σₛ; decₛ)
 
 module AEffFinSN.FiniteEffectAnnotations where
 
-private variable
+variable
   A B : Set
   x y : A
 
@@ -423,7 +423,7 @@ record isfin i : Set where
 open isfin
 
 variable
-  isf isf' : isfin i
+  isf isf' isf'' : isfin i
 
 itop-↓ₑ : (isf : isfin i) → p ∈ᵢ op ↓ₑ i → p ∈ₚ op ↓ₚ paths isf
 itop-↓ₑ {i} isf u with ∈ᵢ-↓-e i u

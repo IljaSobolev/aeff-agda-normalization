@@ -9,9 +9,12 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; cong
 open import Induction.WellFounded using (Acc; acc)
 
 open import AEffFinSN.AEffFin
+open import AEffFinSN.StronglyNormalising using (SN; sn)
 import AEffStarSN.AEffStar as B
 open import AEffStarSN.StronglyNormalising using () renaming (SN to SN*; sn to sn*)
 open import AEffStarSN.Main using () renaming (strong-norm to strong-norm*)
+
+open import Types using (GType)
 
 module AEffFinSN.Simulation where
 
@@ -140,7 +143,7 @@ s ~ₛ s† = {X : VType} (x : X ∈ _) → emb-tm-v (s x) ≡ s† (emb-∈ x)
         emb-tm-m (M [ id-subst [ V ]s ]m) ≡ emb-tm-m M B.[ B.ids B.[ emb-tm-v V ]s ]m
 ~ₛᵣ-m M V = ~ₛ-m M (λ {Hd → refl; (Tl x) → refl})
 
-~-strengthen : (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A) →
+~-strengthen : {A : GType} (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A) →
                -----------------------
                emb-tm-v (strengthen-val V) ≡ B.strengthen-val (emb-tm-v V)
 ~-strengthen (` Tl x) = refl
@@ -195,19 +198,22 @@ sim (context-↓ {_} {_ ! _} r) with sim r
 sim (context-promise r) with sim r
 ... | inj₁ r = inj₁ (B.context-promise r)
 ... | inj₂ (e , r) rewrite e = inj₂ (refl , other-ctx r)
+sim (context-coerce r) with sim r
+... | inj₁ r = inj₁ r
+... | inj₂ (e , r) rewrite e = inj₂ (refl , coe-ctx r)
 sim (coerce-return V) = inj₂ (refl , coe-[-])
 sim (coerce-↑ V M) = inj₂ (refl , coe-↓)
-sim (coerce-promise p q M N) = inj₂ (refl , coe-↓)
+sim (coerce-promise x p q M N) = inj₂ (refl , coe-↓)
 
 height : Context → ℕ
 height [-] = zero
 height (coe CC) = suc (height CC)
 height (other CC) = suc (height CC)
 
-∣_∣ : Context → ℕ
-∣ [-] ∣ = 0
-∣ coe CC ∣ = height CC + suc ∣ CC ∣
-∣ other CC ∣ = suc ∣ CC ∣
+∣_∣c : Context → ℕ
+∣ [-] ∣c = 0
+∣ coe CC ∣c = height CC + suc ∣ CC ∣c
+∣ other CC ∣c = suc ∣ CC ∣c
 
 height-mono-↝ : CC ↝c CC' → height CC' ≤ height CC
 height-mono-↝ coe-[-] = z≤n
@@ -215,16 +221,13 @@ height-mono-↝ coe-↓ = ≤-refl
 height-mono-↝ (coe-ctx r) = s≤s (height-mono-↝ r)
 height-mono-↝ (other-ctx r) = s≤s (height-mono-↝ r)
 
-size-mono-↝ : CC ↝c CC' → ∣ CC' ∣ < ∣ CC ∣
+size-mono-↝ : CC ↝c CC' → ∣ CC' ∣c < ∣ CC ∣c
 size-mono-↝ coe-[-] = s≤s z≤n
 size-mono-↝ coe-↓ = s≤s (≤-reflexive (sym (+-suc _ _)))
 size-mono-↝ (coe-ctx r) = +-mono-≤-< (height-mono-↝ r) (s≤s (size-mono-↝ r))
 size-mono-↝ (other-ctx r) = s≤s (size-mono-↝ r)
 
-data SN (M : Γ ⊢M⦂ C) : Set where
-  sn : ({N : Γ ⊢M⦂ C} → M ↝ N → SN N) → SN M
-
-sn*→sn : Acc _<_ ∣ find-ctx M ∣ → SN* (emb-tm-m M) → M ↝ N → SN N
+sn*→sn : Acc _<_ ∣ find-ctx M ∣c → SN* (emb-tm-m M) → M ↝ N → SN N
 sn*→sn aM sM r with sim r
 sn*→sn aM (sn* f) _ | inj₁ r = sn (sn*→sn (<-wellFounded _) (f r))
 sn*→sn (acc aM) sM _ | inj₂ (e , r) rewrite e = sn (sn*→sn (aM (size-mono-↝ r)) sM)

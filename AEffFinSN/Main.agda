@@ -17,40 +17,13 @@ open import Function using (_∘_)
 
 open import AEffFinSN.AEffFin
 open import AEffFinSN.FiniteEffectAnnotations
+open import AEffFinSN.Simulation
+open import AEffFinSN.StronglyNormalising
 
 open import EffectAnnotations using (Σₛ)
 open import AEff using (payload)
 
-module AEffFinSN.SN where
-
-variable
-  n m k l : ℕ
-
-#↑ : Γ ⊢M⦂ C → ℕ
-#↑ (↑ _ _ M) = suc (#↑ M)
-#↑ _ = 0
-
-data SNₚ (P : Γ ⊢P⦂) : Set where
-  sn : ({Q : Γ ⊢P⦂} → P ↝ₚ Q → SNₚ Q) → SNₚ P
-
-data SN (M : Γ ⊢M⦂ C) (n : ℕ) : ℕ → Set where
-  sn : ({N : Γ ⊢M⦂ C} → M ↝ N → SN N n m) → #↑ M ≤ n → SN M n (suc m)
-
-data SN↑ (M : Γ ⊢M⦂ C) (n : ℕ) : Set where
-  sn : ({N : Γ ⊢M⦂ C} → M ↝ N → SN↑ N n) → #↑ M ≤ n → SN↑ M n
-
-ΣSN : Γ ⊢M⦂ C → Set
-ΣSN M = Σ[ n ∈ ℕ ] Σ[ m ∈ ℕ ] SN M n m
-
-postulate
-  strong-norm : (M : Γ ⊢M⦂ C) → ΣSN M
-  sn↑-sn : SN↑ M n → Σ[ m ∈ ℕ ] SN M n m
-
-sn-sn↑ : SN M n m → SN↑ M n
-sn-sn↑ (sn sM le) = sn (λ x → sn-sn↑ (sM x)) le
-
-sn-#↑ : SN↑ M n → #↑ M ≤ n
-sn-#↑ (sn _ le) = le
+module AEffFinSN.Main where
 
 data Form {op} {i} {isf} : Γ ⊢M⦂ X ! (i , isf) → Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf) → Set where
   [-]     : Form M (↓ op V M)
@@ -113,9 +86,9 @@ form-#↑ (promise ff) = z≤n
 ... | inj₂ (_ , ff , r') = sn (≡-↓-sn' u (sM r') (sN r) ff) (≤-trans (form-#↑ ff) (sn-#↑ (sM r')))
 
 ≡-↓-sn : ¬ [ op ]ₗ ∈ᵢ i-of (type-of M) → SN↑ M n → SN↑ (↓ op V M) n
-≡-↓-sn {_} {_} {_ ! _} u s = sn (≡-↓-sn' u s (sn-sn↑ (proj₂ (proj₂ (strong-norm _)))) [-]) z≤n
+≡-↓-sn {_} {_} {_ ! _} u s = sn (≡-↓-sn' u s (sn→sn↑ (strong-norm _)) [-]) z≤n
 
-sn-strip-↑ : SN (↑ op V M) (suc n) m → SN M n m
+sn-strip-↑ : SNi↑ (↑ op V M) (suc n) m → SNi↑ M n m
 sn-strip-↑ (sn sM le) = sn (λ r → sn-strip-↑ (sM (context-↑ r))) (≤-pred le)
 
 sn* : Γ ⊢P⦂ → Set
@@ -124,8 +97,8 @@ sn* (M ∥ P) = ΣSN M × sn* P
 
 sn-↓ : (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) → ΣSN M → ΣSN (↓ op V M)
 sn-↓ {M = M} op V (_ , _ , sM) with [ op ]ₗ ∈ᵢ? i-of (type-of M)
-... | yes _ = strong-norm _
-... | no  a = _ , sn↑-sn (≡-↓-sn a (sn-sn↑ sM))
+... | yes _ = strong-norm-Σ (strong-norm _)
+... | no  a = _ , sn↑-sni↑ (≡-↓-sn a (sni↑→sn↑ sM))
 
 sn*-↓ₜ : (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) → sn* P → sn* (↓ₜ op V P)
 sn*-↓ₜ {P = []} _ _ sP = tt
@@ -243,7 +216,7 @@ strong-normₚ' sP ai a↑ (acc a↝) (run r)
 
 all-sn* : (P : Γ ⊢P⦂) → sn* P
 all-sn* [] = tt
-all-sn* (M ∥ P) = strong-norm M , all-sn* P
+all-sn* (M ∥ P) = strong-norm-Σ (strong-norm M) , all-sn* P
 
 strong-normₚ : (P : Γ ⊢P⦂) → SNₚ P
 strong-normₚ P = sn (strong-normₚ' (all-sn* P) (<-wellFounded _) (<-wellFounded _) (<-wellFounded _))

@@ -12,9 +12,6 @@ open import Types using (GType)
 
 module AEffFinSN.AEffFin where
 
-variable
-  A : GType
-
 data VType : Set
 
 data CType : Set
@@ -200,7 +197,7 @@ _[_]m : Γ ⊢M⦂ C → Sub Γ Γ' → Γ' ⊢M⦂ C
 (coerce p M) [ s ]m =
   coerce p (M [ s ]m)
 
-strengthen-val : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A → Γ ⊢V⦂ ``` A
+strengthen-val : {A : GType} → Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A → Γ ⊢V⦂ ``` A
 strengthen-val (` Tl x) = ` x
 strengthen-val (`` c) = `` c
 
@@ -302,7 +299,7 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       promise op' ∣ ⊑-trans p (lkp-↓ₑ-≢ i r) , ∈-∪-i₁ (∈-[↦]-i r q) ↦ M `in ↓ op (V-rename wk₁ V) N
 
     await-promise   : (V : Γ ⊢V⦂ X)
-                      (N : Γ ∷ X ⊢M⦂ Y ! (i , isf)) →
+                      (N : Γ ∷ X ⊢M⦂ C) →
                       --------------------
                       await ⟨ V ⟩ until N
                       ↝
@@ -328,42 +325,42 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       ↝
                       ↓ op V N
 
-    context-promise : {p : i' ⊑ lkp op (i-of C)} →
-                      {q : [ op ]ₗ ∈ᵢ i-of C}
-                      {M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf')}
-                      {N N' : Γ ∷ ⟨ X ⟩ ⊢M⦂ C} →
-                      N ↝ N' →
+    context-promise : N ↝ N' →
                       ---------------------
-                      promise op ∣ p , q ↦ M `in N
+                      promise op ∣ x , y ↦ M `in N
                       ↝
-                      promise op ∣ p , q ↦ M `in N'
+                      promise op ∣ x , y ↦ M `in N'
+
+    context-coerce  : M ↝ M' →
+                      -----------
+                      coerce {isf' = isf'} x M
+                      ↝
+                      coerce x M'
 
     -- COERCION RULES
 
-    coerce-return   : {q : i ⊑ i'}
-                      (V : Γ ⊢V⦂ X) →
+    coerce-return   : (V : Γ ⊢V⦂ X) →
                       --------------------------------
-                      coerce {isf = isf} {isf' = isf'} q (return V)
+                      coerce {isf = isf} {isf' = isf'} x (return V)
                       ↝
                       return V
 
-    coerce-↑        : {q : i ⊑ i'}
-                      (V : Γ ⊢V⦂ ```(payload op))
+    coerce-↑        : (V : Γ ⊢V⦂ ```(payload op))
                       (M : Γ ⊢M⦂ X ! (i , isf)) →
                       -------------------------------
-                      coerce {isf' = isf'} q (↑ op V M)
+                      coerce {isf' = isf'} x (↑ op V M)
                       ↝
-                      ↑ op V (coerce q M)
+                      ↑ op V (coerce x M)
 
-    coerce-promise  : {r : i ⊑ i'}
+    coerce-promise  : (x : i ⊑ i'')
                       (p : i' ⊑ lkp op i)
                       (q : [ op ]ₗ ∈ᵢ i)
                       (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
                       ------------------------------------------------------------------
-                      coerce {isf' = isf'} r (promise op ∣ p , q ↦ M `in N)
+                      coerce {isf' = isf''} x (promise op ∣ p , q ↦ M `in N)
                       ↝
-                      promise op ∣ ⊑-trans p (lkp-mono r) , ∈ᵢ-⊑ r q ↦ M `in coerce r N
+                      promise op ∣ ⊑-trans p (lkp-mono x) , ∈ᵢ-⊑ x q ↦ M `in coerce x N
 
 type-of : Γ ⊢M⦂ C → CType
 type-of {C = C} _ = C
