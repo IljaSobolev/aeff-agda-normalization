@@ -196,22 +196,22 @@ sim : {Γ : Ctx} {X : CType} {M N : Γ ⊢M⦂ X} →
       emb-tm-m M B.↝ emb-tm-m N ⊎ (emb-tm-m M ≡ emb-tm-m N) × find-ctx M ↝c find-ctx N
 sim (apply M V) rewrite ~-subst-m M V = inj₁ (B.apply _ _)
 sim (let-return V N) rewrite ~-subst-m N V = inj₁ (B.let-return _ _)
-sim (let-↑ p V M N) = inj₁ (B.T-↑ _ _ _)
-sim (let-promise {X} p M₁ M₂ N) rewrite ~-rename-m {Z = ⟨ X ⟩} N = inj₁ (B.T-promise _ _ _)
+sim (let-↑ p V M N) = inj₁ (B.let-↑ _ _ _)
+sim (let-promise {X} p M₁ M₂ N) rewrite ~-rename-m {Z = ⟨ X ⟩} N = inj₁ (B.let-promise _ _ _)
 sim (promise-↑ p q V M N) rewrite ~-strengthen V = inj₁ (B.promise-↑ _ _ _)
 sim (↓-return V W) = inj₁ (B.↓-return _ _)
-sim (↓-↑ p V W M) = inj₁ (B.T-↑ _ _ _)
+sim (↓-↑ p V W M) = inj₁ (B.↓-↑ _ _ _)
 sim (↓-promise-op {X} p V M N) rewrite ~-subst-m M V | ~-rename-v {Z = ⟨ X ⟩} V = inj₁ (B.↓-promise-op _ _ _)
-sim (↓-promise-op' {X} p q V M N) rewrite ~-rename-v {Z = ⟨ X ⟩} V = inj₁ (B.T-promise _ _ _)
+sim (↓-promise-op' {X} p q V M N) rewrite ~-rename-v {Z = ⟨ X ⟩} V = inj₁ (B.↓-promise-op' (λ z → p (sym z)) _ _ _)
 sim (await-promise V M) rewrite ~-subst-m M V = inj₁ (B.await-promise _ _)
 sim (context-let r) with sim r
-... | inj₁ r = inj₁ (B.context-T _ r)
+... | inj₁ r = inj₁ (B.context-let r)
 ... | inj₂ (e , r) rewrite e = inj₂ (refl , other-ctx r)
 sim (context-↑ r) with sim r
 ... | inj₁ r = inj₁ (B.context-↑ r)
 ... | inj₂ (e , r) rewrite e = inj₂ (refl , other-ctx r)
 sim (context-↓ r) with sim r
-... | inj₁ r = inj₁ (B.context-T _ r)
+... | inj₁ r = inj₁ (B.context-↓ r)
 ... | inj₂ (e , r) rewrite e = inj₂ (refl , other-ctx r)
 sim (context-promise r) with sim r
 ... | inj₁ r = inj₁ (B.context-promise r)
