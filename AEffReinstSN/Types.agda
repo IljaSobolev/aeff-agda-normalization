@@ -1,12 +1,14 @@
+{-# OPTIONS --guardedness #-}
+
 open import Data.Product
 
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 
-open import EffectAnnotations
+open import AEffReinstSN.CoinductiveEffectAnnotations
 
-module Types where
+module AEffReinstSN.Types where
 
 -- BASE AND GROUND TYPES
 
@@ -25,10 +27,13 @@ mutual
     ```  : GType → VType
     _⇒_ : VType → CType → VType
     ⟨_⟩ : VType → VType
+    _+_ : VType → VType → VType
+    𝟙   : VType
 
   data CType : Set where
     _!_ : VType → O × I → CType
 
+infix 35 _+_
 infix 30 _⇒_
 infix 30 _!_
 
@@ -83,6 +88,6 @@ op ↓ₚ PP = proj₂ (op ↓ₚₚ PP)
         o ⊑ₒ proj₁ (op ↓ₚₚ PP)
 
 ↓ₚₚ-⊑ₒ (X ‼ o , i) =
-  ↓ₑ-⊑ₒ
+  ↓ₑ-⊑ₒ {i = i}
 ↓ₚₚ-⊑ₒ (PP ∥ QQ) =
   ∪ₒ-fun (↓ₚₚ-⊑ₒ PP) (↓ₚₚ-⊑ₒ QQ)

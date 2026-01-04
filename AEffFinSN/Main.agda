@@ -15,13 +15,13 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong;
 
 open import Function using (_∘_)
 
-open import AEffFinSN.AEffFin
+open import AEffFinSN.AEff
 open import AEffFinSN.FiniteEffectAnnotations
 open import AEffFinSN.Simulation
 open import AEffFinSN.StronglyNormalising
 
-open import EffectAnnotations using (Σₛ)
-open import AEff using (payload)
+open import AEff.EffectAnnotations using (Σₛ)
+open import AEff.AEff using (payload)
 
 module AEffFinSN.Main where
 
@@ -48,9 +48,9 @@ form-↝ : {M : Γ ⊢M⦂ X ! (i , isf)}
          {N : Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)} →
          ¬ [ op ]ₗ ∈ᵢ i →
          Form M N →
-         N ↝ N' →
+         N ↝↝ N' →
          ----------------------------
-         Form M N' ⊎ Σ[ M' ∈ _ ] Form M' N' × M ↝ M'
+         Form M N' ⊎ Σ[ M' ∈ _ ] Form M' N' × M ↝↝ M'
 form-↝ u [-] (↓-return V W) = inj₁ return
 form-↝ u [-] (↓-↑ V W M) = inj₁ (↑ [-])
 form-↝ u [-] (↓-promise-op p q V M N) = ⊥-elim (u q)
@@ -80,7 +80,7 @@ form-#↑ (promise ff) = z≤n
           SN↑ N m →
           Form M N →
           --------------------------
-          ∀ {N'} → N ↝ N' → SN↑ N' n
+          ∀ {N'} → N ↝↝ N' → SN↑ N' n
 ≡-↓-sn' u (sn sM le) (sn sN le') ff r with form-↝ u ff r
 ... | inj₁ ff = sn (≡-↓-sn' u (sn sM le) (sN r) ff) (≤-trans (form-#↑ ff) le)
 ... | inj₂ (_ , ff , r') = sn (≡-↓-sn' u (sM r') (sN r) ff) (≤-trans (form-#↑ ff) (sn-#↑ (sM r')))
@@ -104,15 +104,15 @@ sn*-↓ₜ : (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) → sn* P → sn* (�
 sn*-↓ₜ {P = []} _ _ sP = tt
 sn*-↓ₜ {P = _ ∥ _} _ _ (sM , sP) = sn-↓ _ _ sM , sn*-↓ₜ _ _ sP
 
-sn*-run : P ↝ₚ-↝ Q → sn* P → sn* Q
+sn*-run : P ↝↝ₚ-↝ Q → sn* P → sn* Q
 sn*-run (context-∥ₗ r) ((_ , _ , sn f _) , sP) = (_ , _ , f r) , sP
 sn*-run (context-∥ᵣ r) (sM , sP) = sM , sn*-run r sP
 
-sn*-↑-∥ : P ↝ₚ-[ op , V ] Q → sn* P → sn* Q
+sn*-↑-∥ : P ↝↝ₚ-[ op , V ] Q → sn* P → sn* Q
 sn*-↑-∥ ↑-∥ₗ ((suc _ , _ , sn sM le) , sP) = (_ , _ , sn-strip-↑ (sn sM le)) , sn*-↓ₜ _ _ sP
 sn*-↑-∥ (↑-∥ᵣ r) (sM , sP) = sn-↓ _ _ sM , sn*-↑-∥ r sP
 
-sn*-↝ : P ↝ₚ Q → sn* P → sn* Q
+sn*-↝ : P ↝↝ₚ Q → sn* P → sn* Q
 sn*-↝ (↑-∥ r) sP = sn*-↑-∥ r sP
 sn*-↝ (run r) sP = sn*-run r sP
 
@@ -131,15 +131,15 @@ sn*-↝ (run r) sP = sn*-run r sP
 ∣_∣↝ {P = []} _ = 0
 ∣_∣↝ {P = _ ∥ _} ((_ , m , _) , sP) = m + ∣ sP ∣↝
 
-run-↝-< : {P : Γ ⊢P⦂} (r : P ↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣↝ < ∣ sP ∣↝
+run-↝-< : {P : Γ ⊢P⦂} (r : P ↝↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣↝ < ∣ sP ∣↝
 run-↝-< (context-∥ₗ r) ((_ , _ , sn _ _) ,  _) = ≤-refl
 run-↝-< (context-∥ᵣ r) ( _ , sP) = +-monoʳ-< _ (run-↝-< r sP)
 
-run-i-≡ : {P : Γ ⊢P⦂} (r : P ↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣i ≡ ∣ sP ∣i
+run-i-≡ : {P : Γ ⊢P⦂} (r : P ↝↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣i ≡ ∣ sP ∣i
 run-i-≡ (context-∥ₗ r) (_ ,  _) = refl
 run-i-≡ (context-∥ᵣ r) (_ , sP) = cong (_ +_) (run-i-≡ r sP)
 
-run-↑-≡ : {P : Γ ⊢P⦂} (r : P ↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣↑ ≡ ∣ sP ∣↑
+run-↑-≡ : {P : Γ ⊢P⦂} (r : P ↝↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣↑ ≡ ∣ sP ∣↑
 run-↑-≡ (context-∥ₗ r) ((_ , _ , sn _ _) ,  _) = refl
 run-↑-≡ (context-∥ᵣ r) ( _ , sP) = cong (_ +_) (run-↑-≡ r sP)
 
@@ -186,7 +186,7 @@ module _ (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) where
   ... | yes a = ⊥-elim (h (inj₁ a))
   ... | no  a = cong (_ +_) (sn*-↓ₜ-↑-≡ sP (h ∘ inj₂))
 
-  ↑-∥-i-< : (r : P ↝ₚ-[ op , V ] Q)
+  ↑-∥-i-< : (r : P ↝↝ₚ-[ op , V ] Q)
             (sP : sn* P) →
             ---------------------------------------------------------
             ∣ sn*-↑-∥ r sP ∣i < ∣ sP ∣i
@@ -206,7 +206,7 @@ strong-normₚ' : (sP : sn* P) →
                 Acc _<_ ∣ sP ∣↑ →
                 Acc _<_ ∣ sP ∣↝ →
                 ---------------------------
-                {Q : Γ ⊢P⦂} → P ↝ₚ Q → SNₚ Q
+                {Q : Γ ⊢P⦂} → P ↝↝ₚ Q → SNₚ Q
 strong-normₚ' sP _ _ _ (↑-∥ r) with ↑-∥-i-< _ _ r sP
 strong-normₚ' sP (acc ai) _ _ (↑-∥ r)  | inj₁ le = sn (strong-normₚ' (sn*-↑-∥ r sP) (ai le) (<-wellFounded _) (<-wellFounded _))
 strong-normₚ' sP ai (acc a↑) _ (↑-∥ r) | inj₂ (eq , le) rewrite sym eq = sn (strong-normₚ' _ ai (a↑ le) (<-wellFounded _))

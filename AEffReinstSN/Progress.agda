@@ -1,22 +1,24 @@
+{-# OPTIONS --guardedness #-}
+
 open import Data.Empty
 open import Data.Maybe
 open import Data.Product
 open import Data.Sum
 open import Data.Unit
 
-open import AEff
-open import AwaitingComputations
-open import EffectAnnotations
-open import Preservation
-open import Renamings
-open import Substitutions
-open import Types
+open import AEffReinstSN.AEff
+open import AEffReinstSN.AwaitingComputations
+open import AEffReinstSN.CoinductiveEffectAnnotations
+open import AEffReinstSN.Preservation
+open import AEffReinstSN.Renamings
+open import AEffReinstSN.Substitutions
+open import AEffReinstSN.Types
 
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 
-module Progress where
+module AEffReinstSN.Progress where
 
 -- WRAPPING PROMISES AROUND A CONTEXT
 
@@ -40,12 +42,13 @@ data RunResult⟨_∣_⟩ (Γ : Ctx) : {C : CType} → ⟨⟨ Γ ⟩⟩ ⊢M⦂ 
              {o o' : O}
              {i i' : I}
              {op : Σₛ}
-             {p : (o' , i') ⊑ lkpᵢ op i}
-             {M : ⟨⟨ Γ ⟩⟩ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')}
+             {p : just (o' , i') ⊑-aux lkpᵢ op i}
+             {q : (∅ᵢ [ op ↦ just (o' , i') ]ᵢ) ⊑ᵢ i'} →
+             {M : ⟨⟨ Γ ⟩⟩ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ + 𝟙 ! (o' , i')}
              {N : ⟨⟨ Γ ⟩⟩ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)} →
              RunResult⟨ Γ ∷ X ∣ N ⟩ →
              ----------------------------------------------------
-             RunResult⟨ Γ ∣ promise op ∣ p ↦ M `in N ⟩
+             RunResult⟨ Γ ∣ promise op ∣ p , q ↦ M `in N ⟩
 
   awaiting : {C : CType}
              {Y : VType}
@@ -81,6 +84,10 @@ data CompResult⟨_∣_⟩ (Γ : Ctx) : {C : CType} → ⟨⟨ Γ ⟩⟩ ⊢M⦂
 ⇒-not-in-ctx {Γ ∷ y} (Tl x) =
   ⇒-not-in-ctx x
 
++-not-in-ctx : {Γ : Ctx} {X Y : VType} → X + Y ∈ ⟨⟨ Γ ⟩⟩ → ⊥
++-not-in-ctx {Γ ∷ y} (Tl x) =
+  +-not-in-ctx x
+
 
 {- THEOREM 3.3 -}  
 
@@ -99,8 +106,8 @@ progress (let= M `in N) with progress M
   inj₁ (_ , context (let= [-] `in N) r)
 ... | inj₂ (comp (return V)) =
   inj₁ (_ , let-return V N)
-... | inj₂ (comp (promise {_} {_} {_} {_} {_} {_} {_} {p} {M'} {M''} R)) =
-  inj₁ (_ , let-promise p M' M'' N)
+... | inj₂ (comp (promise {_} {_} {_} {_} {_} {_} {_} {p} {M'} {M''} {N'} R)) =
+  inj₁ (_ , let-promise p M' M'' N' N)
 ... | inj₂ (comp (awaiting R)) =
   inj₂ (comp (awaiting (let-in R)))
 ... | inj₂ (signal {_} {_} {_} {_} {p} {V} {M'} R) =
@@ -123,18 +130,24 @@ progress (↓ op V M) with progress M
   inj₂ (comp (awaiting (interrupt R)))
 ... | inj₂ (signal {X} {o} {i} {op'} {p} {W} {M'} R) =
   inj₁ (_ , (↓-↑ p V W M'))
-... | inj₂ (comp (promise {_} {_} {_} {_} {_} {_} {op'} {p} {M'} {M''} R)) with decₛ op op'
+... | inj₂ (comp (promise {_} {_} {_} {_} {_} {_} {op'} {p} {M'} {M''} {N} R)) with decₛ op op'
 ... | yes refl =
-  inj₁ (_ , ↓-promise-op p V M' M'')
+  inj₁ (_ , (↓-promise-op p M' V M'' N))
 ... | no ¬q =
-  inj₁ (_ , ↓-promise-op' ¬q p V M' M'')
-progress (promise op ∣ p ↦ M `in N) with progress N
+  inj₁ (_ , ↓-promise-op' ¬q p M' V M'' N)
+progress (promise op ∣ p , q ↦ M `in N) with progress N
 ... | inj₁ (M' , r) =
-  inj₁ (_ , context (promise op ∣ p ↦ M `in [-]) r)
+  inj₁ (_ , context (promise op ∣ p , q ↦ M `in [-]) r)
 ... | inj₂ (comp R) =
   inj₂ (comp (promise R))
-... | inj₂ (signal {_} {_} {_} {_} {q} {V} {M'} R) =
-  inj₁ (_ , promise-↑ p q V M M')
+... | inj₂ (signal {_} {_} {_} {_} {r} {V} {M'} R) =
+  inj₁ (_ , promise-↑ p q r V M M')
+progress (match+ (` x) x₁ x₂) with +-not-in-ctx x
+... | ()
+progress (match+ (inl V) M N) =
+  inj₁ (_ , match+-inl V M N)
+progress (match+ (inr V) M N) =
+  inj₁ (_ , match+-inr V M N)
 progress (await ` x until M) =
   inj₂ (comp (awaiting await))
 progress (await ⟨ V ⟩ until M) =
@@ -144,8 +157,8 @@ progress (coerce p q M) with progress M
   inj₁ (_ , context (coerce p q [-]) r)
 ... | inj₂ (comp (return V)) =
   inj₁ (_ , coerce-return V)
-... | inj₂ (comp (promise {_} {_} {_} {_} {_} {_} {op'} {r} {M'} {M''} R)) =
-  inj₁ (_ , coerce-promise r M' M'')
+... | inj₂ (comp (promise {_} {_} {_} {_} {_} {_} {op'} {r} {M'} {M''} {N} R)) =
+  inj₁ (_ , coerce-promise r M' M'' N)
 ... | inj₂ (comp (awaiting R)) =
   inj₂ (comp (awaiting (coerce R)))
 ... | inj₂ (signal {_} {_} {_} {_} {r} {V} {M'} R) =

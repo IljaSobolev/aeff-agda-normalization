@@ -1,3 +1,5 @@
+{-# OPTIONS --guardedness #-}
+
 open import Data.Empty
 open import Data.List renaming (_∷_ to _∷ₗ_ ; [_] to [_]ₗ)
 open import Data.Maybe
@@ -5,21 +7,21 @@ open import Data.Product
 open import Data.Sum
 open import Data.Unit
 
-open import AEff
-open import AwaitingComputations
-open import EffectAnnotations
-open import Preservation
-open import ProcessPreservation
-open import Progress
-open import Renamings
-open import Substitutions
-open import Types
+open import AEffReinstSN.AEff
+open import AEffReinstSN.AwaitingComputations
+open import AEffReinstSN.CoinductiveEffectAnnotations
+open import AEffReinstSN.Preservation
+open import AEffReinstSN.ProcessPreservation
+open import AEffReinstSN.Progress
+open import AEffReinstSN.Renamings
+open import AEffReinstSN.Substitutions
+open import AEffReinstSN.Types
 
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 
-module ProcessProgress where
+module AEffReinstSN.ProcessProgress where
 
 -- PROCESS RESULTS
 

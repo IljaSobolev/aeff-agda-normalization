@@ -6,11 +6,11 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_)
 
 open import AEffFinSN.FiniteEffectAnnotations
 
-open import EffectAnnotations using (Σₛ)
-open import AEff using (payload; Σ-base; ar-base)
-open import Types using (GType)
+open import AEff.EffectAnnotations using (Σₛ)
+open import AEff.AEff using (payload; Σ-base; ar-base)
+open import AEff.Types using (GType)
 
-module AEffFinSN.AEffFin where
+module AEffFinSN.AEff where
 
 data VType : Set
 
@@ -201,21 +201,21 @@ strengthen-val : {A : GType} → Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A → Γ ⊢V⦂ `
 strengthen-val (` Tl x) = ` x
 strengthen-val (`` c) = `` c
 
-infix 10 _↝_
-data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
+infix 10 _↝↝_
+data _↝↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
 
     apply           : (M : Γ ∷ X ⊢M⦂ C)
                       (V : Γ ⊢V⦂ X) →
                       ----------------------
                       ƛ M · V
-                      ↝
+                      ↝↝
                       M [ id-subst [ V ]s ]m
 
     let-return      : (V : Γ ⊢V⦂ X)
                       (N : Γ ∷ X ⊢M⦂ Y ! (i , isf)) →
                       -----------------------------
                       let= return V `in N
-                      ↝
+                      ↝↝
                       N [ id-subst [ V ]s ]m
 
     let-↑           : (V : Γ ⊢V⦂ ```(payload op))
@@ -223,7 +223,7 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       (N : Γ ∷ X ⊢M⦂ Y ! (i , isf)) →
                       -----------------------------
                       let= ↑ op V M `in N
-                      ↝
+                      ↝↝
                       ↑ op V (let= M `in N)
 
     let-promise     : (p : i' ⊑ lkp op i)
@@ -233,7 +233,7 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       (L : Γ ∷ Y ⊢M⦂ Z ! (i , isf)) →
                       ----------------------------------
                       let= promise op ∣ p , q ↦ M `in N `in L
-                      ↝
+                      ↝↝
                       promise op ∣ p , q ↦ M `in let= N `in (M-rename (wk₂ wk₁) L)
 
     let-await       : (V : Γ ⊢V⦂ ⟨ X ⟩)
@@ -241,7 +241,7 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       (N : Γ ∷ Y ⊢M⦂ Z ! (i , isf)) →
                       --------------------------
                       let= await V until M `in N
-                      ↝
+                      ↝↝
                       await V until let= M `in M-rename (wk₂ wk₁) N
 
     ↓-await         : (W : Γ ⊢V⦂ ```(payload op))
@@ -249,7 +249,7 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       (M : Γ ∷ X ⊢M⦂ C) →
                       ------------------------
                       ↓ op W (await V until M)
-                      ↝
+                      ↝↝
                       await V until ↓ op (V-rename (wk₁ {X = X}) W) M
 
     promise-↑       : (p : i' ⊑ lkp op i)
@@ -259,14 +259,14 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
                       --------------------------------------------
                       promise op ∣ p , q ↦ M `in (↑ op' V N)
-                      ↝
+                      ↝↝
                       ↑ op' (strengthen-val V) (promise op ∣ p , q ↦ M `in N)
 
     ↓-return        : (V : Γ ⊢V⦂ ```(payload op))
                       (W : Γ ⊢V⦂ X) →
                       ------------------------
                       ↓ op V (return {i = i} {isf} W)
-                      ↝
+                      ↝↝
                       return W
 
     ↓-↑             : (V : Γ ⊢V⦂ ```(payload op))
@@ -274,7 +274,7 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       (M : Γ ⊢M⦂ X ! (i , isf)) →
                       -------------------------------
                       ↓ op V (↑ op' W M)
-                      ↝
+                      ↝↝
                       ↑ op' W (↓ op V M)
 
     ↓-promise-op    : (p : i' ⊑ lkp op i)
@@ -284,7 +284,7 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
                       --------------------------------
                       ↓ op V (promise op ∣ p , q ↦ M `in N)
-                      ↝
+                      ↝↝
                       let= coerce (⊑-trans p ∪-inr) (M [ id-subst [ V ]s ]m) `in ↓ op (V-rename wk₁ V) N
 
     ↓-promise-op'   : (V : Γ ⊢V⦂ ```(payload op))
@@ -295,46 +295,46 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
                       ------------------------------------------------------------------------
                       ↓ op V (promise op' ∣ p , q ↦ M `in N)
-                      ↝
+                      ↝↝
                       promise op' ∣ ⊑-trans p (lkp-↓ₑ-≢ i r) , ∈-∪-i₁ (∈-[↦]-i r q) ↦ M `in ↓ op (V-rename wk₁ V) N
 
     await-promise   : (V : Γ ⊢V⦂ X)
                       (N : Γ ∷ X ⊢M⦂ C) →
                       --------------------
                       await ⟨ V ⟩ until N
-                      ↝
+                      ↝↝
                       N [ id-subst [ V ]s ]m
 
     -- INLINED EVALUATION CONTEXT RULES
 
-    context-let     : M ↝ M' → 
+    context-let     : M ↝↝ M' → 
                       -------------
                       let= M `in N
-                      ↝
+                      ↝↝
                       let= M' `in N
 
-    context-↑       : M ↝ N →
+    context-↑       : M ↝↝ N →
                       ----------
                       ↑ op V M
-                      ↝
+                      ↝↝
                       ↑ op V N
 
-    context-↓       : M ↝ N →
+    context-↓       : M ↝↝ N →
                       ---------
                       ↓ op V M
-                      ↝
+                      ↝↝
                       ↓ op V N
 
-    context-promise : N ↝ N' →
+    context-promise : N ↝↝ N' →
                       ---------------------
                       promise op ∣ x , y ↦ M `in N
-                      ↝
+                      ↝↝
                       promise op ∣ x , y ↦ M `in N'
 
-    context-coerce  : M ↝ M' →
+    context-coerce  : M ↝↝ M' →
                       -----------
                       coerce {isf' = isf'} x M
-                      ↝
+                      ↝↝
                       coerce x M'
 
     -- COERCION RULES
@@ -342,14 +342,14 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
     coerce-return   : (V : Γ ⊢V⦂ X) →
                       --------------------------------
                       coerce {isf = isf} {isf' = isf'} x (return V)
-                      ↝
+                      ↝↝
                       return V
 
     coerce-↑        : (V : Γ ⊢V⦂ ```(payload op))
                       (M : Γ ⊢M⦂ X ! (i , isf)) →
                       -------------------------------
                       coerce {isf' = isf'} x (↑ op V M)
-                      ↝
+                      ↝↝
                       ↑ op V (coerce x M)
 
     coerce-promise  : (x : i ⊑ i'')
@@ -359,7 +359,7 @@ data _↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
                       ------------------------------------------------------------------
                       coerce {isf' = isf''} x (promise op ∣ p , q ↦ M `in N)
-                      ↝
+                      ↝↝
                       promise op ∣ ⊑-trans p (lkp-mono x) , ∈ᵢ-⊑ x q ↦ M `in coerce x N
 
 type-of : Γ ⊢M⦂ C → CType
@@ -377,36 +377,36 @@ variable
 ↓ₜ op V [] = []
 ↓ₜ op V (M ∥ P) = ↓ op V M ∥ ↓ₜ op V P
 
-infix 10 _↝ₚ-[_,_]_
-data _↝ₚ-[_,_]_ : Γ ⊢P⦂ → (op : Σₛ) → Γ ⊢V⦂ ```(payload op) → Γ ⊢P⦂ → Set where
+infix 10 _↝↝ₚ-[_,_]_
+data _↝↝ₚ-[_,_]_ : Γ ⊢P⦂ → (op : Σₛ) → Γ ⊢V⦂ ```(payload op) → Γ ⊢P⦂ → Set where
 
   ↑-∥ₗ : --------------
          ↑ op V M ∥ P
-         ↝ₚ-[ op , V ]
+         ↝↝ₚ-[ op , V ]
          M ∥ ↓ₜ op V P
 
-  ↑-∥ᵣ : P ↝ₚ-[ op , V ] Q →
+  ↑-∥ᵣ : P ↝↝ₚ-[ op , V ] Q →
          -------------
          M ∥ P
-         ↝ₚ-[ op , V ]
+         ↝↝ₚ-[ op , V ]
          ↓ op V M ∥ Q
 
-infix 10 _↝ₚ-↝_
-data _↝ₚ-↝_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where
+infix 10 _↝↝ₚ-↝_
+data _↝↝ₚ-↝_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where
 
-  context-∥ₗ : M ↝ N →
+  context-∥ₗ : M ↝↝ N →
                -----
                M ∥ P
-               ↝ₚ-↝
+               ↝↝ₚ-↝
                N ∥ P
 
-  context-∥ᵣ : P ↝ₚ-↝ Q →
+  context-∥ᵣ : P ↝↝ₚ-↝ Q →
                -----
                M ∥ P
-               ↝ₚ-↝
+               ↝↝ₚ-↝
                M ∥ Q
 
-infix 10 _↝ₚ_
-data _↝ₚ_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where
-  ↑-∥ : P ↝ₚ-[ op , V ] Q → P ↝ₚ Q
-  run : P ↝ₚ-↝ Q → P ↝ₚ Q
+infix 10 _↝↝ₚ_
+data _↝↝ₚ_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where
+  ↑-∥ : P ↝↝ₚ-[ op , V ] Q → P ↝↝ₚ Q
+  run : P ↝↝ₚ-↝ Q → P ↝↝ₚ Q

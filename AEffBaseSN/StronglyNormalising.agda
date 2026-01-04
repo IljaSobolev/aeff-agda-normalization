@@ -1,6 +1,8 @@
-open import AEffStarSN.AEffStar
+open import AEffBaseSN.AEffBase.Types
+open import AEffBaseSN.AEffBase.AEff
+open import AEffBaseSN.AEffBase.Finality
 
-open import EffectAnnotations using (decₛ)
+open import AEff.EffectAnnotations using (decₛ)
 
 open import Data.Empty using (⊥-elim)
 open import Data.Nat using (ℕ; zero; suc; _≤_; s≤s; _<_; _⊔_)
@@ -11,7 +13,7 @@ open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Relation.Nullary.Decidable using (yes; no)
 open import Relation.Binary.PropositionalEquality using (refl)
 
-module AEffStarSN.StronglyNormalising where
+module AEffBaseSN.StronglyNormalising where
 
 variable
   B C : Set
@@ -39,7 +41,7 @@ map-∈ₗ (Tl x) = Tl (map-∈ₗ x)
 ⊔-∈ₗ-≤ (Tl p) = m≤n⇒m≤o⊔n _ (⊔-∈ₗ-≤ p)
 
 data Reduct (M : Γ ⊢M⦂ X) : Set where
-  r↝ : M ↝ N → Reduct M
+  r↝ : M ↝↝ N → Reduct M
 
 reducts-base : (M : Γ ⊢M⦂ X) → List (Reduct M)
 reducts-base (ƛ _ · _) = [ r↝ (apply _ _) ]ₗ
@@ -107,10 +109,10 @@ reducts-complete : (R : Reduct M) → R ∈ₗ reducts M
 reducts-complete R = ++-∈ₗ (reducts-complete' R)
 
 data SN (M : Γ ⊢M⦂ X) : Set where
-  sn : ({N : Γ ⊢M⦂ X} → M ↝ N → SN N) → SN M
+  sn : ({N : Γ ⊢M⦂ X} → M ↝↝ N → SN N) → SN M
 
 SN' : (M : Γ ⊢M⦂ X) → Set
-SN' {Γ} {X} M = {N : Γ ⊢M⦂ X} → M ↝ N → SN N
+SN' {Γ} {X} M = {N : Γ ⊢M⦂ X} → M ↝↝ N → SN N
 
 sn'→sn : SN' M → SN M
 sn'→sn s = sn s
@@ -119,7 +121,7 @@ sn→sn' : SN M → SN' M
 sn→sn' (sn f) = f
 
 data SNi (M : Γ ⊢M⦂ X) : ℕ → Set where
-  sn : ({N : Γ ⊢M⦂ X} → M ↝ N → SNi N n) → SNi M (suc n)
+  sn : ({N : Γ ⊢M⦂ X} → M ↝↝ N → SNi N n) → SNi M (suc n)
 
 max : SN M → ℕ
 max (sn sM) = suc (foldrₗ _⊔_ 0 (mapₗ (λ {(r↝ r) → max (sM r)}) (reducts _)))
@@ -135,7 +137,7 @@ sn→sni (sn sM) = sn (λ r → sni-≤ (⊔-∈ₗ-≤ (map-∈ₗ (reducts-com
 #↑ _ = 0
 
 data SN↑ (M : Γ ⊢M⦂ X) (n : ℕ) : Set where
-  sn : ({N : Γ ⊢M⦂ X} → M ↝ N → SN↑ N n) → #↑ M ≤ n → SN↑ M n
+  sn : ({N : Γ ⊢M⦂ X} → M ↝↝ N → SN↑ N n) → #↑ M ≤ n → SN↑ M n
 
 max↑ : SN M → ℕ
 max↑ {M = M} (sn sM) = #↑ M ⊔ foldrₗ _⊔_ 0 (mapₗ (λ {(r↝ r) → max↑ (sM r)}) (reducts _))

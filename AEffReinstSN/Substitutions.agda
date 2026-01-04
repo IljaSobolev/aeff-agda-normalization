@@ -1,11 +1,13 @@
-open import AEff
-open import EffectAnnotations
-open import Renamings
-open import Types
+{-# OPTIONS --guardedness #-}
+
+open import AEffReinstSN.AEff
+open import AEffReinstSN.CoinductiveEffectAnnotations
+open import AEffReinstSN.Renamings
+open import AEffReinstSN.Types
 
 open import Relation.Binary.PropositionalEquality hiding ([_])
 
-module Substitutions where
+module AEffReinstSN.Substitutions where
 
 -- SET OF SUBSTITUTIONS BETWEEN CONTEXTS
 
@@ -44,6 +46,12 @@ mutual
     `` c
   (ƛ M) [ s ]v =
     ƛ (M [ lift s ]m)
+  inl V [ s ]v =
+    inl (V [ s ]v)
+  inr V [ s ]v =
+    inr (V [ s ]v)
+  u [ s ]v =
+    u
   ⟨ V ⟩ [ s ]v =
     ⟨ V [ s ]v ⟩
 
@@ -58,8 +66,10 @@ mutual
     ↑ op p (V [ s ]v) (M [ s ]m)
   (↓ op V M) [ s ]m =
     ↓ op (V [ s ]v) (M [ s ]m)
-  (promise op ∣ p ↦ M `in N) [ s ]m =
-    promise op ∣ p ↦ (M [ lift s ]m) `in (N [ lift s ]m)
+  (promise op ∣ p , q ↦ M `in N) [ s ]m =
+    promise op ∣ p , q ↦ (M [ lift s ]m) `in (N [ lift s ]m)
+  (match+ V M N) [ s ]m =
+    match+ (V [ s ]v) (M [ lift s ]m) (N [ lift s ]m)
   (await V until M) [ s ]m =
     await (V [ s ]v) until (M [ lift s ]m)
   (coerce p q M) [ s ]m =

@@ -3,17 +3,17 @@ open import Data.Maybe
 open import Data.Product
 open import Data.Sum
 
-open import AEff
-open import EffectAnnotations
-open import Preservation
-open import Renamings
-open import Substitutions
-open import Types
+open import AEff.AEff
+open import AEff.EffectAnnotations
+open import AEff.Preservation
+open import AEff.Renamings
+open import AEff.Substitutions
+open import AEff.Types
 
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Relation.Nullary
 
-module ProcessPreservation where
+module AEff.ProcessPreservation where
 
 -- REDUCTION OF PROCESS TYPES
 

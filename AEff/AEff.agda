@@ -6,10 +6,10 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 
-open import EffectAnnotations
-open import Types
+open import AEff.EffectAnnotations
+open import AEff.Types
 
-module AEff where
+module AEff.AEff where
 
 -- ARITY ASSIGNMENT TO SIGNATURES OF SIGNALS, INTERRUPTS, AND BASE CONSTANTS
 

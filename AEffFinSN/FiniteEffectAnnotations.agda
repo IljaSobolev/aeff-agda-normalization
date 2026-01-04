@@ -12,7 +12,7 @@ open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl; subs
 
 open import Function using (_∘_)
 
-open import EffectAnnotations using (Σₛ; decₛ)
+open import AEff.EffectAnnotations using (Σₛ; decₛ)
 
 module AEffFinSN.FiniteEffectAnnotations where
 

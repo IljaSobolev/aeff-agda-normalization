@@ -5,23 +5,23 @@ open import Data.Product
 open import Data.Sum
 open import Data.Unit
 
-open import AEff
-open import AwaitingComputations
-open import EffectAnnotations
-open import Finality
-open import Preservation
-open import ProcessPreservation
-open import ProcessProgress
-open import Progress
-open import Renamings
-open import Substitutions
-open import Types
+open import AEff.AEff
+open import AEff.AwaitingComputations
+open import AEff.EffectAnnotations
+open import AEff.Finality
+open import AEff.Preservation
+open import AEff.ProcessPreservation
+open import AEff.ProcessProgress
+open import AEff.Progress
+open import AEff.Renamings
+open import AEff.Substitutions
+open import AEff.Types
 
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 
-module ProcessFinality where
+module AEff.ProcessFinality where
 
 -- SMALL-STEP OPERATIONAL SEMANTICS FOR WELL-TYPED PROCESSES
 -- WITH INLINED EVALUATION CONTEXT RULES

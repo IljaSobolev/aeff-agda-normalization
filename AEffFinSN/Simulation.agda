@@ -8,13 +8,18 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; cong
 
 open import Induction.WellFounded using (Acc; acc)
 
-open import AEffFinSN.AEffFin
+open import AEffFinSN.AEff
 open import AEffFinSN.StronglyNormalising using (SN; sn)
-import AEffStarSN.AEffStar as B
-open import AEffStarSN.StronglyNormalising using () renaming (SN to SN*; sn to sn*)
-open import AEffStarSN.Main using () renaming (strong-norm to strong-norm*)
+import AEffBaseSN.AEffBase.Types as B
+import AEffBaseSN.AEffBase.AEff as B
+import AEffBaseSN.AEffBase.Renamings as B
+import AEffBaseSN.AEffBase.Substitutions as B
+import AEffBaseSN.AEffBase.Preservation as B
+import AEffBaseSN.AEffBase.Finality as B
+open import AEffBaseSN.StronglyNormalising using () renaming (SN to SN*; sn to sn*)
+open import AEffBaseSN.Main using () renaming (strong-norm to strong-norm*)
 
-open import Types using (GType)
+open import AEff.Types using (GType)
 
 module AEffFinSN.Simulation where
 
@@ -140,7 +145,7 @@ s ~ₛ s† = {X : VType} (x : X ∈ _) → emb-tm-v (s x) ≡ s† (emb-∈ x)
 
 ~ₛᵣ-m : (M : Γ ∷ X ⊢M⦂ C) (V : Γ ⊢V⦂ X) →
         -----------
-        emb-tm-m (M [ id-subst [ V ]s ]m) ≡ emb-tm-m M B.[ B.ids B.[ emb-tm-v V ]s ]m
+        emb-tm-m (M [ id-subst [ V ]s ]m) ≡ emb-tm-m M B.[ B.id-subst B.[ emb-tm-v V ]s ]m
 ~ₛᵣ-m M V = ~ₛ-m M (λ {Hd → refl; (Tl x) → refl})
 
 ~-strengthen : {A : GType} (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A) →
@@ -173,7 +178,7 @@ find-ctx (promise _ ∣ _ , _ ↦ _ `in N) = other (find-ctx N)
 find-ctx (await _ until M) = [-]
 find-ctx (coerce _ M) = coe (find-ctx M)
 
-sim : M ↝ N → emb-tm-m M B.↝ emb-tm-m N ⊎ (emb-tm-m M ≡ emb-tm-m N) × find-ctx M ↝c find-ctx N
+sim : M ↝↝ N → emb-tm-m M B.↝↝ emb-tm-m N ⊎ (emb-tm-m M ≡ emb-tm-m N) × find-ctx M ↝c find-ctx N
 sim (apply M V) rewrite ~ₛᵣ-m M V = inj₁ (B.apply _ _)
 sim (let-return V N) rewrite ~ₛᵣ-m N V = inj₁ (B.let-return _ _)
 sim (let-↑ V M N) = inj₁ (B.let-↑ _ _ _)
@@ -227,7 +232,7 @@ size-mono-↝ coe-↓ = s≤s (≤-reflexive (sym (+-suc _ _)))
 size-mono-↝ (coe-ctx r) = +-mono-≤-< (height-mono-↝ r) (s≤s (size-mono-↝ r))
 size-mono-↝ (other-ctx r) = s≤s (size-mono-↝ r)
 
-sn*→sn : Acc _<_ ∣ find-ctx M ∣c → SN* (emb-tm-m M) → M ↝ N → SN N
+sn*→sn : Acc _<_ ∣ find-ctx M ∣c → SN* (emb-tm-m M) → M ↝↝ N → SN N
 sn*→sn aM sM r with sim r
 sn*→sn aM (sn* f) _ | inj₁ r = sn (sn*→sn (<-wellFounded _) (f r))
 sn*→sn (acc aM) sM _ | inj₂ (e , r) rewrite e = sn (sn*→sn (aM (size-mono-↝ r)) sM)

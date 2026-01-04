@@ -1,17 +1,19 @@
+{-# OPTIONS --guardedness #-}
+
 open import Data.Empty
 open import Data.Maybe
 open import Data.Product
 open import Data.Sum
 
-open import AEff
-open import EffectAnnotations
-open import Types
+open import AEffReinstSN.AEff
+open import AEffReinstSN.CoinductiveEffectAnnotations
+open import AEffReinstSN.Types
 
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 
-module AwaitingComputations where
+module AEffReinstSN.AwaitingComputations where
 
 -- COMPUTATIONS THAT ARE TEMPORARILY STUCK DUE TO AWAITING FOR A PARTICULAR PROMISE
     

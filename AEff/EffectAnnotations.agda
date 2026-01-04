@@ -11,7 +11,7 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Relation.Nullary
 open import Relation.Nullary.Negation
 
-module EffectAnnotations where
+module AEff.EffectAnnotations where
 
 open import Axiom.Extensionality.Propositional
 open import Axiom.UniquenessOfIdentityProofs

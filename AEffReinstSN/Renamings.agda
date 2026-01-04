@@ -1,11 +1,12 @@
-open import AEff
-open import EffectAnnotations
-open import Types
+{-# OPTIONS --guardedness #-}
+
+open import AEffReinstSN.AEff
+open import AEffReinstSN.CoinductiveEffectAnnotations
+open import AEffReinstSN.Types
 
 open import Relation.Binary.PropositionalEquality hiding ([_])
---open ≡-Reasoning
 
-module Renamings where
+module AEffReinstSN.Renamings where
 
 -- SET OF RENAMINGS BETWEEN CONTEXTS
 
@@ -54,6 +55,9 @@ mutual
   V-rename f (` x) = ` f x
   V-rename f (`` c) = `` c
   V-rename f (ƛ M) = ƛ (M-rename (wk₂ f) M)
+  V-rename f (inl V) = inl (V-rename f V)
+  V-rename f (inr V) = inr (V-rename f V)
+  V-rename f u = u
   V-rename f ⟨ V ⟩ = ⟨ V-rename f V ⟩
 
   M-rename : {C : CType} {Γ Γ' : Ctx} → Ren Γ Γ' → Γ ⊢M⦂ C → Γ' ⊢M⦂ C
@@ -67,8 +71,10 @@ mutual
     ↑ op p (V-rename f V) (M-rename f M)
   M-rename f (↓ op V M) =
     ↓ op (V-rename f V) (M-rename f M)
-  M-rename f (promise op ∣ p ↦ M `in N) =
-    promise op ∣ p ↦ M-rename (wk₂ f) M `in M-rename (wk₂ f) N
+  M-rename f (promise op ∣ p , q ↦ M `in N) =
+    promise op ∣ p , q ↦ M-rename (wk₂ f) M `in M-rename (wk₂ f) N
+  M-rename f (match+ V M N) =
+    match+ (V-rename f V) (M-rename (wk₂ f) M) (M-rename (wk₂ f) N)
   M-rename f (await V until M) =
     await (V-rename f V) until (M-rename (wk₂ f) M)
   M-rename f (coerce p q M) =
