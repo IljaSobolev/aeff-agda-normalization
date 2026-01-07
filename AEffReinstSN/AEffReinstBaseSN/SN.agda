@@ -76,8 +76,8 @@ vred-ƛ f rV K rK r with aK→`aK K r
 ... | `aK↓ _ (context-T _ (apply _ _)) = sn'→sn (f rV K rK)
 ... | `aKc _ (context-T _ (apply _ _)) = sn'→sn (f rV K rK)
 
-cred→sn : CRed M → SN' M
-cred→sn rM = rM id tt
+cred→sn' : CRed M → SN' M
+cred→sn' rM = rM id tt
 
 sn-★-await : (K : Γ ⊢K⦂ Y ⊸ Z [ n ]) →
              ----------------
@@ -355,4 +355,4 @@ all-terms-red : (M : Γ ⊢M⦂ X) → CRed M
 all-terms-red M rewrite sym ⌊ sub-id {TT = ⊢M M} ⌋m = fund-m M vred-var
 
 strong-norm : (M : Γ ⊢M⦂ X) → SN M
-strong-norm M = sn'→sn (cred→sn (all-terms-red M))
+strong-norm M = sn'→sn (cred→sn' (all-terms-red M))
