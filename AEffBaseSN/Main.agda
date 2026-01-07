@@ -252,8 +252,8 @@ cred-promise rM rN K rK =
   sn-promise K (kred-let K rK (credsub'-r rN)) (credsub'-r rM)
     (sn→sn↑ (sn'→sn (cred-kred (K-rename _ K) (kred-r K rK) (credsub'→cred rN))))
 
-cred→sn : CRed M → SN' M
-cred→sn rM = subst SN' ren-id-m (rM id (λ _ ()))
+cred→sn' : CRed M → SN' M
+cred→sn' rM = subst SN' ren-id-m (rM id (λ _ ()))
 
 cred-return : VRed V → CRed (return V)
 cred-return rV K rK = subst (λ z → SN' (z aₖ return _)) (ren-id-k K) (rK (vred-r rV))
@@ -331,4 +331,4 @@ all-terms-red : (M : Γ ⊢M⦂ X) → CRed M
 all-terms-red M rewrite sym (sub-id-m {M = M}) = fund-m M vred-var
 
 strong-norm : (M : Γ ⊢M⦂ X) → SN M
-strong-norm M = sn'→sn (cred→sn (all-terms-red M))
+strong-norm M = sn'→sn (cred→sn' (all-terms-red M))
