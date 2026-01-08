@@ -21,6 +21,8 @@ module AEffFinSN.StronglyNormalising where
 variable
   n m k : ℕ
 
+-- EACH TERM CAN ONLY HAVE FINITELY MANY REDUCTS
+
 data Reduct (M : Γ ⊢M⦂ C) : Set where
   r↝ : M ↝↝ N → Reduct M
 
@@ -116,8 +118,14 @@ reducts M = reducts-base M ++ₗ reducts-ctx M
 reducts-complete : (R : Reduct M) → R ∈ₗ reducts M
 reducts-complete R = ++-∈ₗ (reducts-complete' R)
 
+
+-- STRONG NORMALISATION PREDICATE
+
 data SN (M : Γ ⊢M⦂ C) : Set where
   sn : ({N : Γ ⊢M⦂ C} → M ↝↝ N → SN N) → SN M
+
+
+-- STRONG NORMALISATION PREDICATE INDEXED BY MAXIMUM REDUCTION LENGTH
 
 data SNi (M : Γ ⊢M⦂ C) : ℕ → Set where
   sn : ({N : Γ ⊢M⦂ C} → M ↝↝ N → SNi N n) → SNi M (suc n)
@@ -130,6 +138,9 @@ sni-≤ (s≤s p) (sn sM) = sn (sni-≤ p ∘ sM)
 
 sn→sni : (s : SN M) → SNi M (max s)
 sn→sni {_} {_ ! _} (sn sM) = sn (λ r → sni-≤ (⊔-∈ₗ-≤ (map-∈ₗ (reducts-complete (r↝ r)))) (sn→sni (sM r)))
+
+
+-- STRONG NORMALISATION PREDICATE INDEXED BY MAXIMUM NUMBER OF OUTGOING SIGNALS
 
 #↑ : Γ ⊢M⦂ C → ℕ
 #↑ (↑ _ _ M) = suc (#↑ M)
@@ -146,6 +157,9 @@ sn↑-≤ p (sn sM q) = sn (sn↑-≤ p ∘ sM) (≤-trans q p)
 
 sn→sn↑ : (s : SN M) → SN↑ M (max↑ s)
 sn→sn↑ {_} {_ ! _} (sn sM) = sn (λ r → sn↑-≤ (m≤n⇒m≤o⊔n _ (⊔-∈ₗ-≤ (map-∈ₗ (reducts-complete (r↝ r))))) (sn→sn↑ (sM r))) (m≤m⊔n _ _)
+
+
+-- STRONG NORMALISATION PREDICATE INDEXED BY BOTH MAXIMUM REDUCTION LENGTH AND MAXIMUM NUMBER OF OUTGOING SIGNALS
 
 data SNi↑ (M : Γ ⊢M⦂ C) (n : ℕ) : ℕ → Set where
   sn : ({N : Γ ⊢M⦂ C} → M ↝↝ N → SNi↑ N n m) → #↑ M ≤ n → SNi↑ M n (suc m)
@@ -170,6 +184,9 @@ strong-norm-Σ s = _ , _ , sn↑×sni→sni↑ (sn→sn↑ s) (sn→sni s)
 
 sn-#↑ : SN↑ M n → #↑ M ≤ n
 sn-#↑ (sn _ le) = le
+
+
+-- STRONG NORMALISATION PREDICATE FOR PARALLEL COMPUTATIONS
 
 data SNₚ (P : Γ ⊢P⦂) : Set where
   sn : ({Q : Γ ⊢P⦂} → P ↝↝ₚ Q → SNₚ Q) → SNₚ P

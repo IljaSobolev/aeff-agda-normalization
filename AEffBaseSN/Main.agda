@@ -19,6 +19,8 @@ open import AEff.AEff using (payload)
 
 module AEffBaseSN.Main where
 
+-- DEFINITION OF KRIPKE-STYLE LOGICAL RELATION
+
 VRed : Γ ⊢V⦂ X → Set
 
 CRed : Γ ⊢M⦂ X → Set
@@ -47,6 +49,9 @@ CRedSub' : Γ ∷ X ⊢M⦂ Y → Set
 CRedSub' {Γ} {X} M =
   {Γ' : Ctx} {r : Ren Γ Γ'} {V : Γ' ⊢V⦂ X} → VRed V → CRed (M-rename (wk₂ r) M [ id-subst [ V ]s ]m)
 
+
+-- THE LOGICAL RELATION IS PRESERVED UNDER RENAMINGS
+
 vred-r : VRed V → VRed (V-rename r V)
 vred-r {_} {``` x} rV = tt
 vred-r {_} {X ⇒ Y} rV rW K rK = subst SN' (cong (λ z → K aₖ V-rename _ z · _) (sym ren-ren-v)) (rV rW K rK)
@@ -54,6 +59,9 @@ vred-r {_} {⟨ X ⟩} rV K N rA = subst SN' (cong (λ z → K aₖ await z unti
 
 kred-r : (K : Γ ⊢K⦂ X ⊸ Y) → KRed K → KRed (K-rename r K)
 kred-r K rK rV = subst SN' (cong (_aₖ _) (sym (ren-ren-k K))) (rK rV)
+
+
+-- PROOFS OF THE REDUCIBILITY LEMMAS FOR EACH TERM CONSTRUCTOR
 
 sn-var-await : {x : ⟨ X ⟩ ∈ Γ} (K : Γ ⊢K⦂ Y ⊸ Z) → SN' (K aₖ await ` x until N)
 sn-var-await K r with aₖ→`aₖ K r
@@ -275,6 +283,9 @@ cred-await rV rN K rK = rV K _ (ared-await K rK (credsub'-r rN))
 vred-⟨⟩ : VRed V → VRed ⟨ V ⟩
 vred-⟨⟩ rV K N rK = subst₂ (λ z w → SN' (z aₖ await ⟨ V-rename _ _ ⟩ until w)) (ren-id-k K) ren-id-l (rK (vred-r rV))
 
+
+-- THE FUNDAMENTAL THEOREM OF LOGICAL RELATIONS
+
 SubRed : (s : Sub Γ Γ') → Set
 SubRed {Γ} s = {X : Type} (x : X ∈ Γ) → VRed (s x)
 
@@ -326,6 +337,9 @@ fund-m (promise op ↦ M `in N) rs = cred-promise (cred-⨟ rs (fund-m M)) (cred
 fund-m (await V until M) rs = cred-await (fund-v V rs) (cred-⨟ rs (fund-m M))
 fund-m (let= M `in N) rs = cred-let (fund-m M rs) (cred-⨟ rs (fund-m N))
 fund-m (↓ op V M) rs = cred-↓ (fund-m M rs)
+
+
+-- ALL TERMS ARE REDUCIBLE AND STRONGLY NORMALISING
 
 all-terms-red : (M : Γ ⊢M⦂ X) → CRed M
 all-terms-red M rewrite sym (sub-id-m {M = M}) = fund-m M vred-var

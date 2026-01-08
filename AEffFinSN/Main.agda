@@ -25,6 +25,8 @@ open import AEff.AEff using (payload)
 
 module AEffFinSN.Main where
 
+-- FORM M N SAYS THAT M AND N ARE OF FORMS E [ L ] AND E [ ↓ op V L ] RESPECTIVELY
+
 data Form {op} {i} {isf} : Γ ⊢M⦂ X ! (i , isf) → Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf) → Set where
   [-]     : Form M (↓ op V M)
   return  : Form (return V) (return V)
@@ -43,6 +45,9 @@ form-sub s return = return
 form-sub s (↑ ff) = ↑ (form-sub _ ff)
 form-sub s (await ff) = await (form-sub _ ff)
 form-sub s (promise ff) = promise (form-sub _ ff)
+
+
+-- IF M DOES NOT HAVE A HANDLER FOR op, THEN AN INTERRUPT op PRESERVES THE STRUCTURE OF M
 
 form-↝ : {M : Γ ⊢M⦂ X ! (i , isf)}
          {N : Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)} →
@@ -85,8 +90,15 @@ form-#↑ (promise ff) = z≤n
 ... | inj₁ ff = sn (≡-↓-sn' u (sn sM le) (sN r) ff) (≤-trans (form-#↑ ff) le)
 ... | inj₂ (_ , ff , r') = sn (≡-↓-sn' u (sM r') (sN r) ff) (≤-trans (form-#↑ ff) (sn-#↑ (sM r')))
 
+
+-- AS A RESULT, ACTING WITH op ON A TERM THAT HAS NO HANDLER FOR op
+-- DOES NOT INCREASE THE MAXIMUM NUMBER OF OUTGOING SIGNALS
+
 ≡-↓-sn : ¬ [ op ]ₗ ∈ᵢ i-of (type-of M) → SN↑ M n → SN↑ (↓ op V M) n
 ≡-↓-sn {_} {_} {_ ! _} u s = sn (≡-↓-sn' u s (sn→sn↑ (strong-norm _)) [-]) z≤n
+
+
+-- THE PROOF OF STRONG NORMALISATION FOR PARALLEL PROCESSES
 
 sn-strip-↑ : SNi↑ (↑ op V M) (suc n) m → SNi↑ M n m
 sn-strip-↑ (sn sM le) = sn (λ r → sn-strip-↑ (sM (context-↑ r))) (≤-pred le)

@@ -18,10 +18,13 @@ import AEffBaseSN.AEffBase.Preservation as B
 import AEffBaseSN.AEffBase.Finality as B
 open import AEffBaseSN.StronglyNormalising using () renaming (SN to SN*; sn to sn*)
 open import AEffBaseSN.Main using () renaming (strong-norm to strong-norm*)
+open import AEff.Simulation using (Context; [-]; coe; other; _↝c_; coe-ctx; other-ctx; coe-[-]; coe-↓; ∣_∣; size-mono-↝)
 
 open import AEff.Types using (GType)
 
 module AEffFinSN.Simulation where
+
+-- EMBEDDING OF AEFF TYPES, CONTEXT, VARIABLES, TERMS INTO AEFFBASE
 
 emb-ty-v : VType → B.Type
 
@@ -59,9 +62,15 @@ emb-tm-m (promise op ∣ p , q ↦ M `in N) = B.promise op ↦ emb-tm-m M `in em
 emb-tm-m (await V until N) = B.await emb-tm-v V until emb-tm-m N
 emb-tm-m (coerce p M) = emb-tm-m M
 
+
+-- RELATION BETWEEN AEFF RENAMINGS AND AEFFBASE RENAMINGS
+
 infix 4 _~ᵣ_
 _~ᵣ_ : (r : Ren Γ Δ) (r† : B.Ren (emb-ctx Γ) (emb-ctx Δ)) → Set
 r ~ᵣ r† = {X : VType} (x : X ∈ _) → emb-∈ (r x) ≡ r† (emb-∈ x)
+
+
+-- RELATED RENAMINGS ACT THE SAME ON EMBEDDED TERMS
 
 ~ᵣ-v : (V : Γ ⊢V⦂ X) →
        {r : Ren Γ Δ} {r† : B.Ren (emb-ctx Γ) (emb-ctx Δ)} →
@@ -96,9 +105,15 @@ r ~ᵣ r† = {X : VType} (x : X ∈ _) → emb-∈ (r x) ≡ r† (emb-∈ x)
 ~ᵣ-m (await V until N) ~r = cong₂ (B.await_until_) (~ᵣ-v V ~r) (~ᵣ-lift N ~r)
 ~ᵣ-m (coerce p M) ~r = ~ᵣ-m M ~r
 
+
+-- RELATION BETWEEN AEFF SUBSTITUTIONS AND AEFFBASE SUBSTITUTIONS
+
 infix 4 _~ₛ_
 _~ₛ_ : (s : Sub Γ Δ) (s† : B.Sub (emb-ctx Γ) (emb-ctx Δ)) → Set
 s ~ₛ s† = {X : VType} (x : X ∈ _) → emb-tm-v (s x) ≡ s† (emb-∈ x)
+
+
+-- RELATED SUBSTITUTIONS ACT THE SAME ON EMBEDDED TERMS
 
 ~ₛ-v : (V : Γ ⊢V⦂ X)
        {s : Sub Γ Δ} {s† : B.Sub (emb-ctx Γ) (emb-ctx Δ)} →
@@ -154,19 +169,9 @@ s ~ₛ s† = {X : VType} (x : X ∈ _) → emb-tm-v (s x) ≡ s† (emb-∈ x)
 ~-strengthen (` Tl x) = refl
 ~-strengthen (`` c) = refl
 
-data Context : Set where
-  [-] : Context
-  coe other : Context → Context
 
-variable
-  CC CC' : Context
-
-infix 4 _↝c_
-data _↝c_ : Context → Context → Set where
-  coe-[-] : coe [-] ↝c [-]
-  coe-↓ : coe (other CC) ↝c other (coe CC)
-  coe-ctx : CC ↝c CC' → coe CC ↝c coe CC'
-  other-ctx : CC ↝c CC' → other CC ↝c other CC'
+-- SINCE AEFFBASE DOESN'T HAVE COERCION, WE HAVE TO KEEP TRACK OF REDUCTIONS
+-- INVOLVING COERCE TERMS USING EVALUATION CONTEXTS
 
 find-ctx : {Γ : Ctx} {X : CType} → Γ ⊢M⦂ X → Context
 find-ctx (return _) = [-]
@@ -177,6 +182,10 @@ find-ctx (↓ _ _ M) = other (find-ctx M)
 find-ctx (promise _ ∣ _ , _ ↦ _ `in N) = other (find-ctx N)
 find-ctx (await _ until M) = [-]
 find-ctx (coerce _ M) = coe (find-ctx M)
+
+
+-- THE SIMULATION RESULT: A REDUCTION IN AEFFFIN EITHER CORRESPONDS TO A REDUCTION IN AEFFBASE
+-- OR IT IS THE REDUCTION OF THE EVALUATION CONTEXT
 
 sim : M ↝↝ N → emb-tm-m M B.↝↝ emb-tm-m N ⊎ (emb-tm-m M ≡ emb-tm-m N) × find-ctx M ↝c find-ctx N
 sim (apply M V) rewrite ~ₛᵣ-m M V = inj₁ (B.apply _ _)
@@ -210,29 +219,10 @@ sim (coerce-return V) = inj₂ (refl , coe-[-])
 sim (coerce-↑ V M) = inj₂ (refl , coe-↓)
 sim (coerce-promise x p q M N) = inj₂ (refl , coe-↓)
 
-height : Context → ℕ
-height [-] = zero
-height (coe CC) = suc (height CC)
-height (other CC) = suc (height CC)
 
-∣_∣c : Context → ℕ
-∣ [-] ∣c = 0
-∣ coe CC ∣c = height CC + suc ∣ CC ∣c
-∣ other CC ∣c = suc ∣ CC ∣c
+-- STRONG NORMALISATION PROOF BY MEANS OF THE SIMULATION
 
-height-mono-↝ : CC ↝c CC' → height CC' ≤ height CC
-height-mono-↝ coe-[-] = z≤n
-height-mono-↝ coe-↓ = ≤-refl
-height-mono-↝ (coe-ctx r) = s≤s (height-mono-↝ r)
-height-mono-↝ (other-ctx r) = s≤s (height-mono-↝ r)
-
-size-mono-↝ : CC ↝c CC' → ∣ CC' ∣c < ∣ CC ∣c
-size-mono-↝ coe-[-] = s≤s z≤n
-size-mono-↝ coe-↓ = s≤s (≤-reflexive (sym (+-suc _ _)))
-size-mono-↝ (coe-ctx r) = +-mono-≤-< (height-mono-↝ r) (s≤s (size-mono-↝ r))
-size-mono-↝ (other-ctx r) = s≤s (size-mono-↝ r)
-
-sn*→sn : Acc _<_ ∣ find-ctx M ∣c → SN* (emb-tm-m M) → M ↝↝ N → SN N
+sn*→sn : Acc _<_ ∣ find-ctx M ∣ → SN* (emb-tm-m M) → M ↝↝ N → SN N
 sn*→sn aM sM r with sim r
 sn*→sn aM (sn* f) _ | inj₁ r = sn (sn*→sn (<-wellFounded _) (f r))
 sn*→sn (acc aM) sM _ | inj₂ (e , r) rewrite e = sn (sn*→sn (aM (size-mono-↝ r)) sM)

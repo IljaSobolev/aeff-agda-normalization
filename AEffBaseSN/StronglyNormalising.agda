@@ -21,6 +21,9 @@ variable
   x y : B
   xs ys : List B
 
+
+-- MEMBERSHIP RELATION ON LISTS AND ITS PROPERTIES
+
 infix 4 _∈ₗ_
 data _∈ₗ_ (x : B) : List B → Set where
   Hd : x ∈ₗ x ∷ₗ xs
@@ -39,6 +42,9 @@ map-∈ₗ (Tl x) = Tl (map-∈ₗ x)
 ⊔-∈ₗ-≤ : x ∈ₗ xs → x ≤ foldrₗ _⊔_ 0 xs
 ⊔-∈ₗ-≤ Hd = m≤m⊔n _ _
 ⊔-∈ₗ-≤ (Tl p) = m≤n⇒m≤o⊔n _ (⊔-∈ₗ-≤ p)
+
+
+-- EACH TERM CAN ONLY HAVE FINITELY MANY REDUCTS
 
 data Reduct (M : Γ ⊢M⦂ X) : Set where
   r↝ : M ↝↝ N → Reduct M
@@ -108,6 +114,9 @@ reducts M = reducts-base M ++ₗ reducts-ctx M
 reducts-complete : (R : Reduct M) → R ∈ₗ reducts M
 reducts-complete R = ++-∈ₗ (reducts-complete' R)
 
+
+-- STRONG NORMALISATION PREDICATE
+
 data SN (M : Γ ⊢M⦂ X) : Set where
   sn : ({N : Γ ⊢M⦂ X} → M ↝↝ N → SN N) → SN M
 
@@ -120,6 +129,9 @@ sn'→sn s = sn s
 sn→sn' : SN M → SN' M
 sn→sn' (sn f) = f
 
+
+-- STRONG NORMALISATION PREDICATE INDEXED BY MAXIMUM REDUCTION LENGTH
+
 data SNi (M : Γ ⊢M⦂ X) : ℕ → Set where
   sn : ({N : Γ ⊢M⦂ X} → M ↝↝ N → SNi N n) → SNi M (suc n)
 
@@ -131,6 +143,9 @@ sni-≤ (s≤s p) (sn sM) = sn (λ r → sni-≤ p (sM r))
 
 sn→sni : (s : SN M) → SNi M (max s)
 sn→sni (sn sM) = sn (λ r → sni-≤ (⊔-∈ₗ-≤ (map-∈ₗ (reducts-complete (r↝ r)))) (sn→sni (sM r)))
+
+
+-- STRONG NORMALISATION PREDICATE INDEXED BY MAXIMUM NUMBER OF OUTGOING SIGNALS
 
 #↑ : Γ ⊢M⦂ X → ℕ
 #↑ (↑ _ _ M) = suc (#↑ M)

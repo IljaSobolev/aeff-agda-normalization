@@ -365,6 +365,9 @@ data _↝↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
 type-of : Γ ⊢M⦂ C → CType
 type-of {C = C} _ = C
 
+
+-- FLATTENED PARALLEL PROCESSES
+
 infix 10 _⊢P⦂
 data _⊢P⦂ Γ : Set where
   []  : Γ ⊢P⦂
@@ -376,6 +379,9 @@ variable
 ↓ₜ : (op : Σₛ) → Γ ⊢V⦂ ```(payload op) → Γ ⊢P⦂ → Γ ⊢P⦂
 ↓ₜ op V [] = []
 ↓ₜ op V (M ∥ P) = ↓ op V M ∥ ↓ₜ op V P
+
+
+-- THE REDUCTION THAT SENDS A SIGNAL FROM A COMPUTATION TO ALL THE OTHER COMPUTATIONS IN ONE STEP
 
 infix 10 _↝↝ₚ-[_,_]_
 data _↝↝ₚ-[_,_]_ : Γ ⊢P⦂ → (op : Σₛ) → Γ ⊢V⦂ ```(payload op) → Γ ⊢P⦂ → Set where
@@ -391,6 +397,9 @@ data _↝↝ₚ-[_,_]_ : Γ ⊢P⦂ → (op : Σₛ) → Γ ⊢V⦂ ```(payload 
          ↝↝ₚ-[ op , V ]
          ↓ op V M ∥ Q
 
+
+-- THE REDUCTION THAT RUNS ONE OF THE COMPUTATION IN A PARALLEL PROCESS
+
 infix 10 _↝↝ₚ-↝_
 data _↝↝ₚ-↝_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where
 
@@ -405,6 +414,10 @@ data _↝↝ₚ-↝_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where
                M ∥ P
                ↝↝ₚ-↝
                M ∥ Q
+
+
+-- A REDUCTION OF A PARALLEL PROCESS IS EITHER A REDUCTION IN ONE OF THE COMPUTATION
+-- OR THE SENDING OF A SIGNALS FROM ONE COMPUTATION TO ALL THE OTHERS
 
 infix 10 _↝↝ₚ_
 data _↝↝ₚ_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where

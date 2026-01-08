@@ -414,6 +414,9 @@ p ∈ᵢ? leaf = no (λ ())
 ∈ᵢ-↓↓-i []ₗ i u = u
 ∈ᵢ-↓↓-i (_ ∷ₗ q) i u = ∈ᵢ-↓-i (∈ᵢ-↓↓-i q i u)
 
+
+-- THE FINITENESS PREDICATE
+
 record isfin i : Set where
   field
     paths : Paths

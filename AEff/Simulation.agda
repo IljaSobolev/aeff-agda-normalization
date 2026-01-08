@@ -28,6 +28,8 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong;
 
 module AEff.Simulation where
 
+-- EMBEDDING OF AEFF TYPES, CONTEXT, VARIABLES, TERMS INTO AEFFBASE
+
 emb-ty-v : VType → B.Type
 
 emb-ty-c : CType → B.Type
@@ -64,13 +66,22 @@ emb-tm-m (promise op ∣ p ↦ M `in N) = B.promise op ↦ emb-tm-m M `in emb-tm
 emb-tm-m (await V until M) = B.await emb-tm-v V until emb-tm-m M
 emb-tm-m (coerce p q M) = emb-tm-m M
 
+
+-- RELATION BETWEEN AEFF RENAMINGS AND AEFFBASE RENAMINGS
+
 infix 4 _~-ren_
 _~-ren_ : {Γ Δ : Ctx} (r : Ren Γ Δ) (r† : B.Ren (emb-ctx Γ) (emb-ctx Δ)) → Set
 _~-ren_ {Γ} r r† = {X : VType} (x : X ∈ Γ) → emb-∈ (r x) ≡ r† (emb-∈ x)
 
+
+-- RELATION BETWEEN AEFF SUBSTITUTIONS AND AEFFBASE SUBSTITUTIONS
+
 infix 4 _~-sub_
 _~-sub_ : {Γ Δ : Ctx} (s : Sub Γ Δ) (r† : B.Sub (emb-ctx Γ) (emb-ctx Δ)) → Set
 _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (emb-∈ x)
+
+
+-- RELATED RENAMINGS ACT THE SAME ON EMBEDDED TERMS
 
 ~-ren-v : {Γ Δ : Ctx} {X : VType} (V : Γ ⊢V⦂ X)
           {r : Ren Γ Δ} {r† : B.Ren (emb-ctx Γ) (emb-ctx Δ)} →
@@ -104,6 +115,9 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
 ~-ren-m (promise op ∣ p ↦ M `in N) ~r = cong₂ (B.promise op ↦_`in_) (~-ren-lift M ~r) (~-ren-lift N ~r)
 ~-ren-m (await V until M) ~r = cong₂ B.await_until_ (~-ren-v V ~r) (~-ren-lift M ~r)
 ~-ren-m (coerce p q M) ~r = ~-ren-m M ~r
+
+
+-- RELATED SUBSTITUTIONS ACT THE SAME ON EMBEDDED TERMS
 
 ~-sub-v : {Γ Δ : Ctx} {X : VType} (V : Γ ⊢V⦂ X)
           {s : Sub Γ Δ} {s† : B.Sub (emb-ctx Γ) (emb-ctx Δ)} →
@@ -171,6 +185,10 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
 ~-strengthen (` Tl x) = refl
 ~-strengthen (`` c) = refl
 
+
+-- SINCE AEFFBASE DOESN'T HAVE COERCION, WE HAVE TO KEEP TRACK OF REDUCTIONS
+-- INVOLVING COERCE TERMS USING EVALUATION CONTEXTS
+
 data Context : Set where
   [-] : Context
   coe other : Context → Context
@@ -194,6 +212,10 @@ find-ctx (↓ _ _ M) = other (find-ctx M)
 find-ctx (promise _ ∣ _ ↦ _ `in N) = other (find-ctx N)
 find-ctx (await _ until M) = [-]
 find-ctx (coerce _ _ M) = coe (find-ctx M)
+
+
+-- THE SIMULATION RESULT: A REDUCTION IN AEFF EITHER CORRESPONDS TO A REDUCTION IN AEFFBASE
+-- OR IT IS THE REDUCTION OF THE EVALUATION CONTEXT
 
 sim : {Γ : Ctx} {X : CType} {M N : Γ ⊢M⦂ X} →
       M ↝↝ N →
@@ -228,6 +250,9 @@ sim (coerce-return V) = inj₂ (refl , coe-[-])
 sim (coerce-↑ r V M) = inj₂ (refl , coe-↓)
 sim (coerce-promise r M N) = inj₂ (refl , coe-↓)
 
+
+-- REDUCTION OF EVALUATION CONTEXT DECREASES ITS HEIGHT
+
 height : Context → ℕ
 height [-] = zero
 height (coe CC) = suc (height CC)
@@ -249,6 +274,9 @@ size-mono-↝ coe-[-] = s≤s z≤n
 size-mono-↝ coe-↓ = s≤s (≤-reflexive (sym (+-suc _ _)))
 size-mono-↝ (coe-ctx r) = +-mono-≤-< (height-mono-↝ r) (s≤s (size-mono-↝ r))
 size-mono-↝ (other-ctx r) = s≤s (size-mono-↝ r)
+
+
+-- STRONG NORMALISATION PROOF BY MEANS OF THE SIMULATION
 
 data SN {Γ : Ctx} {X : CType} (M : Γ ⊢M⦂ X) : Set where
   sn : ({N : Γ ⊢M⦂ X} → M ↝↝ N → SN N) → SN M
