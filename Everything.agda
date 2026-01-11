@@ -38,8 +38,9 @@ import AEff.Simulation
 
 import AEffReinstSN.AEffReinstBaseSN.AEff
 import AEffReinstSN.AEffReinstBaseSN.SubstitutionProperties
+import AEffReinstSN.AEffReinstBaseSN.StronglyNormalising
 import AEffReinstSN.AEffReinstBaseSN.Continuations
-import AEffReinstSN.AEffReinstBaseSN.SN
+import AEffReinstSN.AEffReinstBaseSN.Main
 
 import AEffReinstSN.AEff
 import AEffReinstSN.AwaitingComputations
