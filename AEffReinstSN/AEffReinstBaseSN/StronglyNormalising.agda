@@ -128,6 +128,9 @@ sni-≤ (s≤s p) (sn sM) = sn (λ r → sni-≤ p (sM r))
 sn→sni : (s : SN M) → SNi M (max s)
 sn→sni (sn sM) = sn (λ r → sni-≤ (⊔-∈ₗ-≤ (map-∈ₗ (reducts-complete (r↝ r)))) (sn→sni (sM r)))
 
+sni→sn : SNi M n → SN M
+sni→sn (sn sM) = sn (λ r → sni→sn (sM r))
+
 #↑ : Γ ⊢M⦂ X → ℕ
 #↑ (↑ _ _ M) = suc (#↑ M)
 #↑ _ = 0
