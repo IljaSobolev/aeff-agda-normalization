@@ -50,8 +50,8 @@ mutual
     inl (V [ s ]v)
   inr V [ s ]v =
     inr (V [ s ]v)
-  u [ s ]v =
-    u
+  ★ [ s ]v =
+    ★
   ⟨ V ⟩ [ s ]v =
     ⟨ V [ s ]v ⟩
 

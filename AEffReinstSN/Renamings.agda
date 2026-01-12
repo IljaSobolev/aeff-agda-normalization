@@ -57,7 +57,7 @@ mutual
   V-rename f (ƛ M) = ƛ (M-rename (wk₂ f) M)
   V-rename f (inl V) = inl (V-rename f V)
   V-rename f (inr V) = inr (V-rename f V)
-  V-rename f u = u
+  V-rename f ★ = ★
   V-rename f ⟨ V ⟩ = ⟨ V-rename f V ⟩
 
   M-rename : {C : CType} {Γ Γ' : Ctx} → Ren Γ Γ' → Γ ⊢M⦂ C → Γ' ⊢M⦂ C

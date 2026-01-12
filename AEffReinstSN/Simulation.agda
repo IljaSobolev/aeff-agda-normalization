@@ -1,7 +1,8 @@
 {-# OPTIONS --guardedness #-}
 
 import AEffReinstSN.AEffReinstBaseSN.AEff as B
-open import AEffReinstSN.AEffReinstBaseSN.SN renaming (SN to SN*; strong-norm to strong-norm*)
+open import AEffReinstSN.AEffReinstBaseSN.StronglyNormalising renaming (SN to SN*; sn to sn*)
+open import AEffReinstSN.AEffReinstBaseSN.Main renaming (strong-norm to strong-norm*)
 
 open import AEffReinstSN.Types
 open import AEffReinstSN.AEff
@@ -11,7 +12,17 @@ open import AEffReinstSN.Renamings
 open import AEffReinstSN.Substitutions
 open import AEffReinstSN.CoinductiveEffectAnnotations
 
+open import AEff.Simulation using (Context; [-]; coe; other; _↝c_; coe-ctx; other-ctx; coe-[-]; coe-↓; ∣_∣; size-mono-↝)
+
+open import Data.Nat using (ℕ; zero; suc; _≤_; z≤n; s≤s; _<_) renaming (_+_ to _+n_)
+open import Data.Nat.Properties using (≤-refl; ≤-reflexive; +-mono-≤-<; +-suc)
+open import Data.Nat.Induction using (<-wellFounded)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Product using (_×_; _,_)
 open import Data.List renaming (_∷_ to _∷ₗ_)
+
+open import Induction.WellFounded using (Acc; acc)
+
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂; subst)
 
 module AEffReinstSN.Simulation where
@@ -49,7 +60,7 @@ emb-tm-v (ƛ M) = B.ƛ (emb-tm-m M)
 emb-tm-v (inl V) = B.inl (emb-tm-v V)
 emb-tm-v (inr V) = B.inr (emb-tm-v V)
 emb-tm-v ⟨ V ⟩ = B.⟨ emb-tm-v V ⟩
-emb-tm-v u = B.u
+emb-tm-v ★ = B.★
 
 emb-tm-m (return V) = B.return (emb-tm-v V)
 emb-tm-m (let= M `in N) = B.let= emb-tm-m M `in emb-tm-m N
@@ -59,7 +70,7 @@ emb-tm-m (↓ op V M) = B.↓ op (emb-tm-v V) (emb-tm-m M)
 emb-tm-m (promise op ∣ p , q ↦ M `in N) = B.promise op ↦ emb-tm-m M `in emb-tm-m N
 emb-tm-m (match+ V M N) = B.match+ (emb-tm-v V) (emb-tm-m M) (emb-tm-m N)
 emb-tm-m (await V until M) = B.await emb-tm-v V until emb-tm-m M
-emb-tm-m (coerce p q M) = B.coerce (emb-tm-m M)
+emb-tm-m (coerce p q M) = emb-tm-m M
 
 infix 4 _~-ren_
 
@@ -96,7 +107,7 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
 ~-ren-v (inl V) ~r = cong B.inl (~-ren-v V ~r)
 ~-ren-v (inr V) ~r = cong B.inr (~-ren-v V ~r)
 ~-ren-v ⟨ V ⟩ ~r = cong B.⟨_⟩ (~-ren-v V ~r)
-~-ren-v u ~r = refl
+~-ren-v ★ ~r = refl
 
 ~-ren-m (return V) ~r = cong B.return (~-ren-v V ~r)
 ~-ren-m (let= M `in N) ~r = cong₂ B.let=_`in_ (~-ren-m M ~r) (~-ren-lift N ~r)
@@ -106,7 +117,7 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
 ~-ren-m (promise op ∣ p , q ↦ M `in N) ~r = cong₂ (B.promise op ↦_`in_) (~-ren-lift M ~r) (~-ren-lift N ~r)
 ~-ren-m (match+ V M N) ~r = cong₃ B.match+ (~-ren-v V ~r) (~-ren-lift M ~r) (~-ren-lift N ~r)
 ~-ren-m (await V until M) ~r = cong₂ B.await_until_ (~-ren-v V ~r) (~-ren-lift M ~r)
-~-ren-m (coerce p q M) ~r = cong B.coerce (~-ren-m M ~r)
+~-ren-m (coerce p q M) ~r = ~-ren-m M ~r
 
 ~-sub-v : {Γ Δ : Ctx} {X : VType} (V : Γ ⊢V⦂ X)
           {s : Sub Γ Δ} {s† : B.Sub (emb-ctx Γ) (emb-ctx Δ)} →
@@ -141,7 +152,7 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
 ~-sub-v (inl V) ~r = cong B.inl (~-sub-v V ~r)
 ~-sub-v (inr V) ~r = cong B.inr (~-sub-v V ~r)
 ~-sub-v ⟨ V ⟩ ~r = cong B.⟨_⟩ (~-sub-v V ~r)
-~-sub-v u ~r = refl
+~-sub-v ★ ~r = refl
 
 ~-sub-m (return V) ~r = cong B.return (~-sub-v V ~r)
 ~-sub-m (let= M `in N) ~r = cong₂ B.let=_`in_ (~-sub-m M ~r) (~-sub-lift N ~r)
@@ -151,7 +162,7 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
 ~-sub-m (promise op ∣ p , q ↦ M `in N) ~r = cong₂ (B.promise op ↦_`in_) (~-sub-lift M ~r) (~-sub-lift N ~r)
 ~-sub-m (match+ V M N) ~r = cong₃ B.match+ (~-sub-v V ~r) (~-sub-lift M ~r) (~-sub-lift N ~r)
 ~-sub-m (await V until M) ~r = cong₂ B.await_until_ (~-sub-v V ~r) (~-sub-lift M ~r)
-~-sub-m (coerce p q M) ~r = cong B.coerce (~-sub-m M ~r)
+~-sub-m (coerce p q M) ~r = ~-sub-m M ~r
 
 ~-rename-v : {Γ : Ctx} {X Z : VType}
              (V : Γ ⊢V⦂ X) →
@@ -168,7 +179,7 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
 ~-subst-m : {Γ : Ctx} {X : VType} {Y : CType}
             (M : Γ ∷ X ⊢M⦂ Y) (V : Γ ⊢V⦂ X) →
             -----------
-            emb-tm-m (M [ id-subst [ V ]s ]m) ≡ (emb-tm-m M) B.[ B.ids B.[ emb-tm-v V ]s ]m
+            emb-tm-m (M [ id-subst [ V ]s ]m) ≡ (emb-tm-m M) B.[ B.id-subst B.[ emb-tm-v V ]s ]m
 ~-subst-m M V = ~-sub-m M (λ {Hd → refl; (Tl x) → refl})
 
 ~-strengthen : {Γ : Ctx} {X : VType} {A : BType}
@@ -178,43 +189,81 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
 ~-strengthen (` Tl x) = refl
 ~-strengthen (`` c) = refl
 
+
+-- SINCE AEFFBASE DOESN'T HAVE COERCION, WE HAVE TO KEEP TRACK OF REDUCTIONS
+-- INVOLVING COERCE TERMS USING EVALUATION CONTEXTS
+
+find-ctx : {Γ : Ctx} {X : CType} → Γ ⊢M⦂ X → Context
+find-ctx (return _) = [-]
+find-ctx (let= M `in _) = other (find-ctx M)
+find-ctx (_ · _) = [-]
+find-ctx (↑ _ _ _ M) = other (find-ctx M)
+find-ctx (↓ _ _ M) = other (find-ctx M)
+find-ctx (promise _ ∣ _ , _ ↦ _ `in N) = other (find-ctx N)
+find-ctx (await _ until M) = [-]
+find-ctx (match+ _ _ _) = [-]
+find-ctx (coerce _ _ M) = coe (find-ctx M)
+
+
+-- THE SIMULATION RESULT: A REDUCTION IN AEFFFIN EITHER CORRESPONDS TO A REDUCTION IN AEFFBASE
+-- OR IT IS THE REDUCTION OF THE EVALUATION CONTEXT
+
 sim : {Γ : Ctx} {X : CType} {M N : Γ ⊢M⦂ X} →
       M ↝↝ N →
-      ------
-      emb-tm-m M B.↝ emb-tm-m N
-sim (apply M V) rewrite ~-subst-m M V = B.apply _ _
-sim (let-return V N) rewrite ~-subst-m N V = B.let-return _ _
-sim (let-↑ p V M N) = B.T-↑ _ _ _
-sim (let-promise {X} p q M₁ M₂ N) rewrite ~-rename-m {Z = ⟨ X ⟩} N = B.T-promise _ _ _
-sim (promise-↑ p q r V M N) rewrite ~-strengthen V = B.promise-↑ _ _ _
-sim (↓-return V W) = B.↓-return _ _
-sim (↓-↑ p V W M) = B.T-↑ _ _ _
+      -----------------------------
+      emb-tm-m M B.↝↝ emb-tm-m N ⊎ (emb-tm-m M ≡ emb-tm-m N) × find-ctx M ↝c find-ctx N
+sim (apply M V) rewrite ~-subst-m M V = inj₁ (B.apply _ _)
+sim (let-return V N) rewrite ~-subst-m N V = inj₁ (B.let-return _ _)
+sim (let-↑ p V M N) = inj₁ (B.let-↑ _ _ _)
+sim (let-promise {X} p q M₁ M₂ N) rewrite ~-rename-m {Z = ⟨ X ⟩} N = inj₁ (B.let-promise _ _ _)
+sim (promise-↑ p q r V M N) rewrite ~-strengthen V = inj₁ (B.promise-↑ _ _ _)
+sim (↓-return V W) = inj₁ (B.↓-return _ _)
+sim (↓-↑ p V W M) = inj₁ (B.↓-↑ _ _ _)
 sim (↓-promise-op {X} p q V M N)
   rewrite ~-subst-m M V |
   ~-rename-v {Z = ⟨ X ⟩} V |
   ~-rename-m {Z = 𝟙} (M-rename (wk₂ (wk₁ {X = ⟨ X ⟩ + 𝟙})) M) |
   ~-rename-m {Z = ⟨ X ⟩ + 𝟙} M =
-  B.↓-promise-op _ _ _
-sim (↓-promise-op' {X} p q r V M N) rewrite ~-rename-v {Z = ⟨ X ⟩} V = B.T-promise _ _ _
-sim (match+-inl V M N) rewrite ~-subst-m M V = B.match+-inl _ _ _
-sim (match+-inr V M N) rewrite ~-subst-m N V = B.match+-inr _ _ _
-sim (await-promise V M) rewrite ~-subst-m M V = B.await-promise _ _
-sim (context-let r) = B.context-T _ (sim r)
-sim (context-↑ r) = B.context-↑ (sim r)
-sim (context-↓ r) = B.context-T _ (sim r)
-sim (context-promise r) = B.context-promise (sim r)
-sim (context-coerce r) = B.context-T _ (sim r)
-sim (coerce-return V) = B.coerce-return _
-sim (coerce-↑ r V M) = B.T-↑ _ _ _
-sim (coerce-promise r q M N) = B.T-promise _ _ _
+  inj₁ (B.↓-promise-op _ _ _)
+sim (↓-promise-op' {X} p q r V M N) rewrite ~-rename-v {Z = ⟨ X ⟩} V = inj₁ (B.↓-promise-op' (λ x → p (sym x)) _ _ _)
+sim (match+-inl V M N) rewrite ~-subst-m M V = inj₁ (B.match+-inl _ _ _)
+sim (match+-inr V M N) rewrite ~-subst-m N V = inj₁ (B.match+-inr _ _ _)
+sim (await-promise V M) rewrite ~-subst-m M V = inj₁ (B.await-promise _ _)
+sim (context-let r) with sim r
+... | inj₁ r = inj₁ (B.context-let r)
+... | inj₂ (e , r) rewrite e = inj₂ (refl , other-ctx r)
+sim (context-↑ r) with sim r
+... | inj₁ r = inj₁ (B.context-↑ r)
+... | inj₂ (e , r) rewrite e = inj₂ (refl , other-ctx r)
+sim (context-↓ r) with sim r
+... | inj₁ r = inj₁ (B.context-↓ r)
+... | inj₂ (e , r) rewrite e = inj₂ (refl , other-ctx r)
+sim (context-promise r) with sim r
+... | inj₁ r = inj₁ (B.context-promise r)
+... | inj₂ (e , r) rewrite e = inj₂ (refl , other-ctx r)
+sim (context-coerce r) with sim r
+... | inj₁ r = inj₁ r
+... | inj₂ (e , r) rewrite e = inj₂ (refl , coe-ctx r)
+sim (coerce-return V) = inj₂ (refl , coe-[-])
+sim (coerce-↑ _ V M) = inj₂ (refl , coe-↓)
+sim (coerce-promise _ _ _ _) = inj₂ (refl , coe-↓)
+
+
+-- STRONG NORMALISATION PREDICATE
 
 data SN {Γ : Ctx} {X : CType} (M : Γ ⊢M⦂ X) : Set where
   sn : ({N : Γ ⊢M⦂ X} → M ↝↝ N → SN N) → SN M
 
+
+-- STRONG NORMALISATION PROOF BY MEANS OF THE SIMULATION
+
 sn*→sn : {Γ : Ctx} {X : CType} {M N : Γ ⊢M⦂ X} →
-         ----------------------------
+         Acc _<_ ∣ find-ctx M ∣ →
+         ---------------------
          SN* (emb-tm-m M) → M ↝↝ N → SN N
-sn*→sn (sn f) r = sn (sn*→sn (f (sim r)))
+sn*→sn aM sM r with sim r
+sn*→sn aM (sn* f) _ | inj₁ r = sn (sn*→sn (<-wellFounded _) (f r))
+sn*→sn (acc aM) sM _ | inj₂ (e , r) rewrite e = sn (sn*→sn (aM (size-mono-↝ r)) sM)
 
 strong-norm : {Γ : Ctx} {X : CType} (M : Γ ⊢M⦂ X) → SN M
-strong-norm M = sn (sn*→sn (strong-norm* (emb-tm-m M)))
+strong-norm M = sn (sn*→sn (<-wellFounded _) (strong-norm* (emb-tm-m M)))
