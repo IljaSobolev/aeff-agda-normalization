@@ -9,6 +9,7 @@ open import AEffBaseSN.Continuations
 
 open import Data.Unit using (⊤; tt)
 open import Data.Nat using (ℕ; zero; suc; _≤_; z≤n; s≤s)
+open import Data.Nat.Properties using (n≤1+n)
 open import Data.Product using (Σ-syntax; _,_)
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst; subst₂) renaming (module ≡-Reasoning to Eq)
@@ -184,28 +185,17 @@ kred-↝ K r rK rV =
       (rK rV (context-K (K-rename _ K) (let-return _ _)))
       (context-K (K-rename _ K) (sub-↝↝ _ (ren-↝↝ _ r))))
 
-sn-↑-e : SN (↑ op V M) → SN M
-sn-↑-e (sn sM) = sn (λ r → sn-↑-e (sM (context-↑ r)))
+sn↑-k-↑-e : (K : Γ ⊢K⦂ Y ⊸ Z) → SN↑ (K aₖ ↑ op V M) (suc n) → ∀ {N} → K aₖ M ↝↝ N → SN↑ N n
+sn↑-k-↑-e K (sn sM le) r with aₖ→`aₖ K r
+... | ↝id r with sn sM (s≤s le) ← sM (context-↑ r) = sn (sn↑-k-↑-e id (sn sM (s≤s le))) le
+... | ↝∘l K r = sn↑-k-↑-e K (sM (context-K K (let-↑ _ _ _))) (context-K K r)
+... | ↝∘↓ K r = sn↑-k-↑-e K (sM (context-K K (↓-↑ _ _ _))) (context-K K r)
 
 sn-k-↑-e : (K : Γ ⊢K⦂ Y ⊸ Z) → SN (K aₖ ↑ op V M) → SN' (K aₖ M)
 sn-k-↑-e K (sn sM) r with aₖ→`aₖ K r
 ... | ↝id r = sn'→sn (sn-k-↑-e id (sM (context-↑ r)))
 ... | ↝∘l K r = sn-k-↑-e K (sM (context-K K (let-↑ _ _ _))) (context-K K r)
 ... | ↝∘↓ K r = sn-k-↑-e K (sM (context-K K (↓-↑ _ _ _))) (context-K K r)
-
-sn↑-↑-e : SN↑ (↑ op V M) (suc n) → SN↑ M n
-sn↑-↑-e (sn sM (s≤s le)) = sn (λ r → sn↑-↑-e (sM (context-↑ r))) le
-
-sn↑-k-↑-suc : (K : Γ ⊢K⦂ Y ⊸ Z) → SN↑ (K aₖ ↑ op V M) n → Σ[ m ∈ ℕ ] n ≡ suc m
-sn↑-k-↑-suc id (sn sM (s≤s le)) = _ , refl
-sn↑-k-↑-suc (K ∘l _) (sn sM _) = sn↑-k-↑-suc K (sM (context-K K (let-↑ _ _ _)))
-sn↑-k-↑-suc (K ∘↓ _ [ _ ]) (sn sM _) = sn↑-k-↑-suc K (sM (context-K K (↓-↑ _ _ _)))
-
-sn↑-k-↑-e : (K : Γ ⊢K⦂ Y ⊸ Z) → SN↑ (K aₖ ↑ op V M) (suc n) → ∀ {N} → K aₖ M ↝↝ N → SN↑ N n
-sn↑-k-↑-e K (sn sM le) r with aₖ→`aₖ K r
-... | ↝id r with sn sM (s≤s le) ← sM (context-↑ r) = sn (sn↑-k-↑-e id (sn sM (s≤s le))) le
-... | ↝∘l K r = sn↑-k-↑-e K (sM (context-K K (let-↑ _ _ _))) (context-K K r)
-... | ↝∘↓ K r = sn↑-k-↑-e K (sM (context-K K (↓-↑ _ _ _))) (context-K K r)
 
 kred-↑ : (K : Γ ⊢K⦂ Y ⊸ Z) →
          KRed (K ∘l ↑ op V M) →
@@ -215,50 +205,46 @@ kred-↑ K rK rV =
   sn-let (K-rename _ K)
     (sn'→sn (sn-k-↑-e (K-rename _ K) (rK rV (context-K (K-rename _ K) (let-return _ _)))))
 
-k-#↑-let : (K : Γ ⊢K⦂ Y ⊸ Z) → #↑ (K aₖ let= N `in L) ≡ 0
+sni-k-↑-e' : (K : Γ ⊢K⦂ Y ⊸ Z) → SNi (K aₖ ↑ op V M) (suc n) → {L : Γ ⊢M⦂ Z} → K aₖ M ↝↝ L → SNi L n
 
-k-#↑-↓ : (K : Γ ⊢K⦂ Y ⊸ Z) → #↑ (K aₖ ↓ op V N) ≡ 0
+sni-k-↑-e : (K : Γ ⊢K⦂ Y ⊸ Z) → SNi (K aₖ ↑ op V M) n → SNi (K aₖ M) n
 
-k-#↑-let id = refl
-k-#↑-let (K ∘l _) = k-#↑-let K
-k-#↑-let (K ∘↓ _ [ _ ]) = k-#↑-↓ K
+sni-k-↑-e' K (sn sM) r with aₖ→`aₖ K r
+... | ↝id r = sni-k-↑-e id (sM (context-↑ r))
+... | ↝∘l K r with sn sM ← sni-k-↑-e K (sM (context-K K (let-↑ _ _ _))) = sni-≤ (n≤1+n _) (sM (context-K K r))
+... | ↝∘↓ K r with sn sM ← sni-k-↑-e K (sM (context-K K (↓-↑ _ _ _))) = sni-≤ (n≤1+n _) (sM (context-K K r))
 
-k-#↑-↓ id = refl
-k-#↑-↓ (K ∘l _) = k-#↑-let K
-k-#↑-↓ (K ∘↓ _ [ _ ]) = k-#↑-↓ K
+sni-k-↑-e {n = suc n} K sM = sn (sni-k-↑-e' K sM)
 
 sn-promise : (K : Γ ⊢K⦂ Y ⊸ Z) →
              KRed (K ∘l N) →
              CRedSub' M →
-             SN↑ (K-rename wk₁ K aₖ N) n →
+             SNi (K-rename wk₁ K aₖ N) n →
              ---------------------------
-             SN' (K aₖ promise op ↦ M `in N)
-sn-promise K rK rM (sn h le) r with aₖ→`aₖ K r
-... | ↝id (promise-↑ _ _ _) with s≤s le ← le =
-  sn'→sn (sn-↑ id (sn'→sn (sn-promise id (kred-↑ id rK) rM (sn↑-↑-e (sn h (s≤s le))))))
-... | ↝id (context-promise r) =
-  sn'→sn (sn-promise id (kred-↝ id r rK) rM (h r))
-... | ↝∘l K (let-promise _ _ _) =
-  sn'→sn (sn-promise K (kred-comm-let K rK) rM (sn h le))
-... | ↝∘↓ K (↓-promise-op _ _ _) =
+             {L : Γ ⊢M⦂ Z} → K `aₖ promise op ↦ M `in N ↝↝ L → SN L
+sn-promise K rK rM (sn h) (↝id (promise-↑ _ _ _)) =
+  sn'→sn (sn-↑ id (sn'→sn (λ r → sn-promise id (kred-↑ id rK) rM (sni-k-↑-e id (sn h)) (aₖ→`aₖ id r))))
+sn-promise K rK rM (sn h) (↝id (context-promise r)) =
+  sn'→sn (λ r' → sn-promise id (kred-↝ id r rK) rM (h r) (aₖ→`aₖ id r'))
+sn-promise _ rK rM (sn h) (↝∘l K (let-promise _ _ _)) =
+  sn'→sn (λ r → sn-promise K (kred-comm-let K rK) rM (sn h) (aₖ→`aₖ K r))
+sn-promise K rK rM (sn h) (↝∘l K' (context-let (promise-↑ _ _ _))) =
+  sn'→sn (sn-↑ K (sn'→sn (λ r → sn-promise K (kred-↑ K rK) rM (sni-k-↑-e (K-rename _ (K' ∘l _)) (sn h)) (aₖ→`aₖ K r))))
+sn-promise K rK rM (sn h) (↝∘l _ (context-let (context-promise r))) =
+  sn'→sn (λ r' → sn-promise K (kred-↝ K r rK) rM (h (context-K (K-rename wk₁ K) r)) (aₖ→`aₖ K r'))
+sn-promise _ rK rM (sn h) (↝∘↓ K (↓-promise-op _ _ _)) =
   sn'→sn (cred-kred (K ∘l _) (kred-comm-↓ K rK) (subst (λ z → CRed (z [ id-subst [ _ ]s ]m)) ren-id-l (rM tt)))
-... | ↝∘↓ K (↓-promise-op' _ _ _ _) =
-  sn'→sn (sn-promise K (kred-comm-↓ K rK) rM (sn h le))
-... | ↝∘l K' (context-let (promise-↑ _ _ _))
-  with _ , refl ← sn↑-k-↑-suc (K-rename _ K) (sn h le) =
-  sn'→sn (sn-↑ K (sn'→sn (sn-promise K (kred-↑ K rK) rM (sn (sn↑-k-↑-e (K-rename _ K) (sn h le)) (subst (_≤ _) (sym (k-#↑-let (K-rename _ K'))) z≤n)))))
-... | ↝∘↓ K' (context-↓ (promise-↑ _ _ _))
-  with _ , refl ← sn↑-k-↑-suc (K-rename _ K) (sn h le) =
-  sn'→sn (sn-↑ K (sn'→sn (sn-promise K (kred-↑ K rK) rM (sn (sn↑-k-↑-e (K-rename _ K) (sn h le)) (subst (_≤ _) (sym (k-#↑-↓ (K-rename _ K'))) z≤n)))))
-... | ↝∘l _ (context-let (context-promise r)) =
-  sn'→sn (sn-promise K (kred-↝ K r rK) rM (h (context-K (K-rename wk₁ K) r)))
-... | ↝∘↓ _ (context-↓ (context-promise r)) =
-  sn'→sn (sn-promise K (kred-↝ K r rK) rM (h (context-K (K-rename wk₁ K) r)))
+sn-promise _ rK rM (sn h) (↝∘↓ K (↓-promise-op' _ _ _ _)) =
+  sn'→sn (λ r → sn-promise K (kred-comm-↓ K rK) rM (sn h) (aₖ→`aₖ K r))
+sn-promise K rK rM (sn h) (↝∘↓ K' (context-↓ (promise-↑ _ _ _))) = 
+  sn'→sn (sn-↑ K (sn'→sn (λ r → sn-promise K (kred-↑ K rK) rM (sni-k-↑-e (K-rename _ (K' ∘↓ _ [ _ ])) (sn h)) (aₖ→`aₖ K r))))
+sn-promise K rK rM (sn h) (↝∘↓ _ (context-↓ (context-promise r))) =
+  sn'→sn (λ r' → sn-promise K (kred-↝ K r rK) rM (h (context-K (K-rename wk₁ K) r)) (aₖ→`aₖ K r'))
 
 cred-promise : CRedSub' M → CRedSub' N → CRed (promise op ↦ M `in N)
-cred-promise rM rN K rK =
+cred-promise rM rN K rK r =
   sn-promise K (kred-let K rK (credsub'-r rN)) (credsub'-r rM)
-    (sn→sn↑ (sn'→sn (cred-kred (K-rename _ K) (kred-r K rK) (credsub'→cred rN))))
+    (sn→sni (sn'→sn (cred-kred (K-rename _ K) (kred-r K rK) (credsub'→cred rN)))) (aₖ→`aₖ K r)
 
 cred→sn' : CRed M → SN' M
 cred→sn' rM = subst SN' ren-id-m (rM id (λ _ ()))
