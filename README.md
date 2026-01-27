@@ -46,15 +46,23 @@
 
 - `AEffFinSN/` - definition of AEff with finite interrupt annotations and the proof of strong normalisation for its sequential and parallel part
 
-    - `AEffFinSN/AEff.agda` - definition of AEffFin
-    
     - `AEffFinSN/FiniteEffectAnnotations.agda` - definition of finite (of finite width and height) interrupt annotations and proofs of their properties
+
+    - `AEffFinSN/AEffSequential.agda` - definition of the sequential part of AEffFin
+
+    - `AEffFinSN/AEffParallelFlat.agda` - definition of the flattened parallel part of AEffFin
+
+    - `AEffFinSN/AEffParallelTree.agda` - definition of the tree shaped parallel part of AEffFin
+
+    - `AEffFinSN/ParallelShape.agda` - definition of abstract parallel shapes and their reduction, proof that this reduction is terminating
 
     - `AEffFinSN/StronglyNormalising.agda` - definition of the strong normalisation predicates and proof that they are equivalent
 
     - `AEffFinSN/Simulation.agda` - proof that AEffBase simulates AEffFin and that the sequential part of AEffFin is strongly normalising
 
-    - `AEffFinSN/Main.agda` - proof of strong normalisation for the parallel part of AEffFin
+    - `AEffFinSN/MainFlat.agda` - proof of strong normalisation for the flat parallel part of AEffFin
+
+    - `AEffFinSN/MainTree.agda` - proof of strong normalisation for the tree shaped parallel part of AEffFin
 
 - `AEffReinstSN/` - definition of AEff with reinstallable interrupt handlers (their variant that preserves strong normalisation)
     
