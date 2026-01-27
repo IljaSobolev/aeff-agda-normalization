@@ -8,7 +8,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; cong
 
 open import Induction.WellFounded using (Acc; acc)
 
-open import AEffFinSN.AEff
+open import AEffFinSN.AEffSequential
 open import AEffFinSN.StronglyNormalising using (SN; sn)
 import AEffBaseSN.AEffBase.Types as B
 import AEffBaseSN.AEffBase.AEff as B

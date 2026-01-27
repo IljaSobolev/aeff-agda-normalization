@@ -1,5 +1,5 @@
 open import AEffFinSN.FiniteEffectAnnotations
-open import AEffFinSN.AEff
+open import AEffFinSN.AEffSequential
 open import AEffBaseSN.StronglyNormalising using (_∈ₗ_; Hd; Tl; map-∈ₗ; ⊔-∈ₗ-≤; ++-∈ₗ)
 
 open import AEff.EffectAnnotations using (decₛ)
@@ -184,9 +184,3 @@ strong-norm-Σ s = _ , _ , sn↑×sni→sni↑ (sn→sn↑ s) (sn→sni s)
 
 sn-#↑ : SN↑ M n → #↑ M ≤ n
 sn-#↑ (sn _ le) = le
-
-
--- STRONG NORMALISATION PREDICATE FOR PARALLEL COMPUTATIONS
-
-data SNₚ (P : Γ ⊢P⦂) : Set where
-  sn : ({Q : Γ ⊢P⦂} → P ↝↝ₚ Q → SNₚ Q) → SNₚ P

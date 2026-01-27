@@ -17,10 +17,14 @@ import AEffBaseSN.Continuations
 import AEffBaseSN.Main
 
 import AEffFinSN.FiniteEffectAnnotations
-import AEffFinSN.AEff
+import AEffFinSN.AEffSequential
+import AEffFinSN.AEffParallelFlat
+import AEffFinSN.AEffParallelTree
 import AEffFinSN.StronglyNormalising
 import AEffFinSN.Simulation
-import AEffFinSN.Main
+import AEffFinSN.ParallelShape
+import AEffFinSN.MainFlat
+import AEffFinSN.MainTree
 
 import AEff.AEff
 import AEff.AwaitingComputations

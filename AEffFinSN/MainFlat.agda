@@ -15,7 +15,8 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong;
 
 open import Function using (_∘_)
 
-open import AEffFinSN.AEff
+open import AEffFinSN.AEffSequential
+open import AEffFinSN.AEffParallelFlat
 open import AEffFinSN.FiniteEffectAnnotations
 open import AEffFinSN.Simulation
 open import AEffFinSN.StronglyNormalising
@@ -23,7 +24,7 @@ open import AEffFinSN.StronglyNormalising
 open import AEff.EffectAnnotations using (Σₛ)
 open import AEff.AEff using (payload)
 
-module AEffFinSN.Main where
+module AEffFinSN.MainFlat where
 
 -- FORM M N SAYS THAT M AND N ARE OF FORMS E [ L ] AND E [ ↓ op V L ] RESPECTIVELY
 
@@ -212,6 +213,15 @@ module _ (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) where
   ... | inj₂ (eq , le) with [ op ]ₗ ∈ᵢ? i-of (type-of M)
   ...   | yes a rewrite eq = inj₁ (+-monoˡ-< _ (∣∣ₘ-↓-< M a))
   ...   | no  a rewrite eq = inj₂ (cong (_+ _) (∣∣ₘ-↓-≡ M a) , +-monoʳ-< _ le)
+
+
+-- STRONG NORMALISATION PREDICATE FOR PARALLEL COMPUTATIONS
+
+data SNₚ (P : Γ ⊢P⦂) : Set where
+  sn : ({Q : Γ ⊢P⦂} → P ↝↝ₚ Q → SNₚ Q) → SNₚ P
+
+
+-- STRONG NORMALISATION PROOF
 
 strong-normₚ' : (sP : sn* P) →
                 Acc _<_ ∣ sP ∣i →
