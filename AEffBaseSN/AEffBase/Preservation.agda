@@ -69,8 +69,6 @@ hole-ty-e (promise op ↦ M `in E) = hole-ty-e E
 
 -- FILLING A WELL-TYPED EVALUATION CONTEXT
 
-{- LEMMA 3.5 -}
-
 infix 30 _[_]
 _[_] : (E : Γ ⊢E[ Δb ]⦂ X) → Γ ⋈ Δb ⊢M⦂ hole-ty-e E → Γ ⊢M⦂ X
 [-] [ M ] =
@@ -94,8 +92,6 @@ strengthen-val (`` c) = `` c
 
 -- SMALL-STEP OPERATIONAL SEMANTICS FOR WELL-TYPED COMPUTATIONS
 -- (ADDITIONALLY SERVES AS THE PRESERVATION THEOREM)
-
-{- THEOREM 3.6 -}
 
 infix 10 _↝_
 data _↝_ : Γ ⊢M⦂ Y → Γ ⊢M⦂ Y → Set where

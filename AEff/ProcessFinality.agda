@@ -343,8 +343,6 @@ proc-finality-↝↝ (signal R) r (context-↑ r') =
   proc-finality-↝↝ R r r'
 
 
-{- LEMMA 4.2 -}
-
 proc-finality : {o o' : O}
                 {PP : PType o}
                 {QQ : PType o'}

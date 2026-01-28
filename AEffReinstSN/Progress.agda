@@ -89,8 +89,6 @@ data CompResult⟨_∣_⟩ (Γ : Ctx) : {C : CType} → ⟨⟨ Γ ⟩⟩ ⊢M⦂
   +-not-in-ctx x
 
 
-{- THEOREM 3.3 -}  
-
 progress : {Γ : Ctx}
            {C : CType} →
            (M : ⟨⟨ Γ ⟩⟩ ⊢M⦂ C) →

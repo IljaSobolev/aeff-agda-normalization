@@ -244,8 +244,6 @@ comp-finality-↝↝ (signal R) (context-↑ r) =
   comp-finality-↝↝ R r
 
 
-{- LEMMA 3.2 -}
-
 comp-finality : CompResult⟨ Γ ∣ M ⟩ →
                 M ↝ N →
                 -----

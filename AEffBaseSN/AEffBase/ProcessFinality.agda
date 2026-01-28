@@ -195,8 +195,6 @@ proc-finality-↝↝ₚ (signal R) (context-↑ r') =
   proc-finality-↝↝ₚ R r'
 
 
-{- LEMMA 4.2 -}
-
 proc-finality : ProcResult⟨ P ⟩ →
                 P ↝ₚ Q →
                 -------

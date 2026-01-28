@@ -67,8 +67,6 @@ _[_]f : (F : Γ ⊢F⦂ PP) → Γ ⊢P⦂ hole-ty-f F → Γ ⊢P⦂ PP
 -- SMALL-STEP OPERATIONAL SEMANTICS FOR WELL-TYPED PROCESSES
 -- (ADDITIONALLY SERVES AS THE PRESERVATION THEOREM)
 
-{- THEOREM 4.7 -}
-
 infix 10 _↝ₚ_
 data _↝ₚ_ : Γ ⊢P⦂ PP → Γ ⊢P⦂ PP → Set where
 

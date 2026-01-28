@@ -37,8 +37,6 @@ data ProcResult⟨_⟩ : [] ⊢P⦂ PP → Set where
 
 -- PROGRESS THEOREM FOR PROCESSES
 
-{- THEOREM 4.3 -}
-
 proc-progress : (P : [] ⊢P⦂ PP) →
                 -------------------------
                 Σ[ Q ∈ [] ⊢P⦂ PP ] P ↝ₚ Q

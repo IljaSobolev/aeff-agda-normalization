@@ -52,8 +52,6 @@ data CompResult⟨_∣_⟩ (Γ : Ctx) : ⟨⟨ Γ ⟩⟩ ⊢M⦂ X → Set where
 ⇒-not-in-ctx : X ⇒ Y ∈ ⟨⟨ Γ ⟩⟩ → ⊥
 ⇒-not-in-ctx {Γ = _ ∷ _} (Tl x) = ⇒-not-in-ctx x
 
-{- THEOREM 3.3 -}  
-
 progress : (M : ⟨⟨ Γ ⟩⟩ ⊢M⦂ X) →
            -------------------------------
            Σ[ N ∈ ⟨⟨ Γ ⟩⟩ ⊢M⦂ X ] M ↝ N

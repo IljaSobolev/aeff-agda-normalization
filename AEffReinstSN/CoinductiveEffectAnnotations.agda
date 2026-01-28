@@ -272,15 +272,11 @@ rel (∪ᵢ-copair p q) op = ∪-aux-copair _ _ _ (rel p op) (rel q op)
 
 -- INCLUSION INTO ACTED UPON EFFECT ANNOTATION
 
-{- LEMMA 3.1 (1) -}
-
 ↓ₑ-⊑ₒ : o ⊑ₒ pr₁ (op ↓ₑ (o , i))
 ↓ₑ-⊑ₒ {omap o} {op} {i} op' p with imap i op
 ... | nothing = p
 ... | just (o' , i') = ∪ₒ-inl op' p
 
-
-{- LEMMA 3.1 (2) - the O part -}
 
 inj-just : {A : Set} {a b : A} → just a ≡ just b → a ≡ b
 inj-just refl = refl
@@ -298,8 +294,6 @@ inj-pair₂ refl = refl
 ... | just (_ , _) rewrite inj-pair₁ (inj-just p) = ∪ₒ-inr
 
 
-{- LEMMA 3.1 (2) - the I part -}
-
 ↓ₑ-⊑ₒ-i' : imap i op ≡ just (o' , i') → 
            ---------------------------
            i' ⊑ᵢ pr₂ (op ↓ₑ (o , i))
@@ -308,8 +302,6 @@ inj-pair₂ refl = refl
 
 
 -- EFFECT ANNOTATION OF AN INTERRUPT THAT WAS NOT ACTED WITH
-
-{- LEMMA 3.1 (3) -}
 
 lkpᵢ-↓ₑ-neq-⊑ : ¬ op ≡ op' →
                 -------------------------
@@ -534,8 +526,6 @@ data _⊆_ : List Σₛ → List Σₛ → Set where
 
 
 -- ENVELOPING THE EFFECT ANNOTATION REDUCTION WITH MLTIPLE INTERRUPT ACTIONS
-
-{- LEMMA 4.5 -}
 
 ↓↓ₑ-⊑ₒ-act : (ops : List Σₛ) →
              (op : Σₛ) →
