@@ -1,10 +1,10 @@
-open import AEffFinSN.AEffSequential
-open import AEffFinSN.FiniteEffectAnnotations using (op)
+open import AEffFinFlatSN.AEffSequential
+open import AEffFinFlatSN.FiniteEffectAnnotations using (op)
 
 open import AEff.EffectAnnotations using (Σₛ)
 open import AEff.AEff using (payload)
 
-module AEffFinSN.AEffParallelFlat where
+module AEffFinFlatSN.AEffParallelFlat where
 
 -- FLATTENED PARALLEL PROCESSES
 

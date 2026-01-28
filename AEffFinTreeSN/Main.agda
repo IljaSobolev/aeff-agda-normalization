@@ -12,17 +12,17 @@ open import Relation.Nullary.Decidable using (yes; no)
 open import Relation.Nullary.Negation using (¬_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
 
-open import AEffFinSN.AEffSequential
-open import AEffFinSN.AEffParallelTree
-open import AEffFinSN.FiniteEffectAnnotations
-open import AEffFinSN.Simulation
-open import AEffFinSN.StronglyNormalising
-open import AEffFinSN.ParallelShape
+open import AEffFinTreeSN.AEffSequential
+open import AEffFinTreeSN.AEffParallelTree
+open import AEffFinTreeSN.FiniteEffectAnnotations
+open import AEffFinTreeSN.Simulation
+open import AEffFinTreeSN.StronglyNormalising
+open import AEffFinTreeSN.ParallelShape
 
 open import AEff.EffectAnnotations using (Σₛ)
 open import AEff.AEff using (payload)
 
-module AEffFinSN.MainTree where
+module AEffFinTreeSN.Main where
 
 -- FORM M N SAYS THAT M AND N ARE OF FORMS E [ L ] AND E [ ↓ op V L ] RESPECTIVELY
 

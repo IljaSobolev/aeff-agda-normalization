@@ -1,10 +1,10 @@
-open import AEffFinSN.AEffSequential
-open import AEffFinSN.FiniteEffectAnnotations using (op; op')
+open import AEffFinTreeSN.AEffSequential
+open import AEffFinTreeSN.FiniteEffectAnnotations using (op; op')
 
 open import AEff.EffectAnnotations using (Σₛ)
 open import AEff.AEff using (payload)
 
-module AEffFinSN.AEffParallelTree where
+module AEffFinTreeSN.AEffParallelTree where
 
 -- TREE SHAPED PARALLEL PROCESSES
 

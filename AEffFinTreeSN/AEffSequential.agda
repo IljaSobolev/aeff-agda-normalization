@@ -4,13 +4,13 @@ open import Data.Unit using (⊤; tt)
 
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_)
 
-open import AEffFinSN.FiniteEffectAnnotations
+open import AEffFinTreeSN.FiniteEffectAnnotations
 
 open import AEff.EffectAnnotations using (Σₛ)
 open import AEff.AEff using (payload; Σ-base; ar-base)
 open import AEff.Types using (GType)
 
-module AEffFinSN.AEffSequential where
+module AEffFinTreeSN.AEffSequential where
 
 data VType : Set
 

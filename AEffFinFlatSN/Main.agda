@@ -15,16 +15,16 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong;
 
 open import Function using (_∘_)
 
-open import AEffFinSN.AEffSequential
-open import AEffFinSN.AEffParallelFlat
-open import AEffFinSN.FiniteEffectAnnotations
-open import AEffFinSN.Simulation
-open import AEffFinSN.StronglyNormalising
+open import AEffFinFlatSN.AEffSequential
+open import AEffFinFlatSN.AEffParallelFlat
+open import AEffFinFlatSN.FiniteEffectAnnotations
+open import AEffFinFlatSN.Simulation
+open import AEffFinFlatSN.StronglyNormalising
 
 open import AEff.EffectAnnotations using (Σₛ)
 open import AEff.AEff using (payload)
 
-module AEffFinSN.MainFlat where
+module AEffFinFlatSN.Main where
 
 -- FORM M N SAYS THAT M AND N ARE OF FORMS E [ L ] AND E [ ↓ op V L ] RESPECTIVELY
 

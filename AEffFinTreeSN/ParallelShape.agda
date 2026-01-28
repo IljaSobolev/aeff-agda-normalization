@@ -8,7 +8,7 @@ open import Induction.WellFounded using (Acc; acc)
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym)
 
-module AEffFinSN.ParallelShape where
+module AEffFinTreeSN.ParallelShape where
 
 -- LEXICOGRAPHIC ORDERING ON PAIRS OF NATURAL NUMBERS AND PROOF THAT IT IS WELL FOUNDED
 

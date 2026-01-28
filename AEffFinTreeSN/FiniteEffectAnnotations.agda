@@ -14,7 +14,7 @@ open import Function using (_∘_)
 
 open import AEff.EffectAnnotations using (Σₛ; decₛ)
 
-module AEffFinSN.FiniteEffectAnnotations where
+module AEffFinTreeSN.FiniteEffectAnnotations where
 
 variable
   A B : Set

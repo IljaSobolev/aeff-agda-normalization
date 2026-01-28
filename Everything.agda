@@ -16,15 +16,20 @@ import AEffBaseSN.StronglyNormalising
 import AEffBaseSN.Continuations
 import AEffBaseSN.Main
 
-import AEffFinSN.FiniteEffectAnnotations
-import AEffFinSN.AEffSequential
-import AEffFinSN.AEffParallelFlat
-import AEffFinSN.AEffParallelTree
-import AEffFinSN.StronglyNormalising
-import AEffFinSN.Simulation
-import AEffFinSN.ParallelShape
-import AEffFinSN.MainFlat
-import AEffFinSN.MainTree
+import AEffFinFlatSN.FiniteEffectAnnotations
+import AEffFinFlatSN.AEffSequential
+import AEffFinFlatSN.AEffParallelFlat
+import AEffFinFlatSN.StronglyNormalising
+import AEffFinFlatSN.Simulation
+import AEffFinFlatSN.Main
+
+import AEffFinTreeSN.FiniteEffectAnnotations
+import AEffFinTreeSN.AEffSequential
+import AEffFinTreeSN.AEffParallelTree
+import AEffFinTreeSN.StronglyNormalising
+import AEffFinTreeSN.Simulation
+import AEffFinTreeSN.ParallelShape
+import AEffFinTreeSN.Main
 
 import AEff.AEff
 import AEff.AwaitingComputations

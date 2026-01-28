@@ -1,5 +1,5 @@
-open import AEffFinSN.FiniteEffectAnnotations
-open import AEffFinSN.AEffSequential
+open import AEffFinFlatSN.FiniteEffectAnnotations
+open import AEffFinFlatSN.AEffSequential
 open import AEffBaseSN.StronglyNormalising using (_∈ₗ_; Hd; Tl; map-∈ₗ; ⊔-∈ₗ-≤; ++-∈ₗ)
 
 open import AEff.EffectAnnotations using (decₛ)
@@ -16,7 +16,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 open import Function using (_∘_)
 
-module AEffFinSN.StronglyNormalising where
+module AEffFinFlatSN.StronglyNormalising where
 
 variable
   n m k : ℕ

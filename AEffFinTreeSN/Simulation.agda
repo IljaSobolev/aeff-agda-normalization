@@ -8,8 +8,8 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; cong
 
 open import Induction.WellFounded using (Acc; acc)
 
-open import AEffFinSN.AEffSequential
-open import AEffFinSN.StronglyNormalising using (SN; sn)
+open import AEffFinTreeSN.AEffSequential
+open import AEffFinTreeSN.StronglyNormalising using (SN; sn)
 import AEffBaseSN.AEffBase.Types as B
 import AEffBaseSN.AEffBase.AEff as B
 import AEffBaseSN.AEffBase.Renamings as B
@@ -22,7 +22,7 @@ open import AEff.Simulation using (Context; [-]; coe; other; _↝c_; coe-ctx; ot
 
 open import AEff.Types using (GType)
 
-module AEffFinSN.Simulation where
+module AEffFinTreeSN.Simulation where
 
 -- EMBEDDING OF AEFF TYPES, CONTEXT, VARIABLES, TERMS INTO AEFFBASE
 
