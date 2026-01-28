@@ -57,6 +57,7 @@ progress : (M : ⟨⟨ Γ ⟩⟩ ⊢M⦂ X) →
            Σ[ N ∈ ⟨⟨ Γ ⟩⟩ ⊢M⦂ X ] M ↝ N
            ⊎
            CompResult⟨ Γ ∣ M ⟩
+
 progress (return V) =
   inj₂ (comp (return V))
 progress (let= M `in N) with progress M
@@ -114,4 +115,5 @@ closed-progress : (M : [] ⊢M⦂ X) →
                   Σ[ N ∈ [] ⊢M⦂ X ] M ↝ N
                    ⊎
                    CompResult⟨ [] ∣ M ⟩
+                   
 closed-progress M = progress M

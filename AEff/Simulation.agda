@@ -100,6 +100,7 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
              r ~-ren r† →
              ------------
              emb-tm-m (M-rename (wk₂ r) M) ≡ B.M-rename (B.wk₂ r†) (emb-tm-m M)
+
 ~-ren-lift M ~r = ~-ren-m M (λ {Hd → refl; (Tl x) → cong B.Tl (~r x)})
 
 ~-ren-v (` x) ~r = cong B.`_ (~r x)
@@ -136,6 +137,7 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
          s ~-sub s† →
          ----------
          lift {X = X} s ~-sub B.lift s†
+
 ~-lift ~s Hd = refl
 ~-lift {s = s} ~s (Tl x) rewrite sym (~s x) = ~-ren-v (s x) (λ {Hd → refl; (Tl x) → refl})
 
@@ -144,6 +146,7 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
              s ~-sub s† →
              ------------
              emb-tm-m (M [ lift s ]m) ≡ (emb-tm-m M) B.[ B.lift s† ]m
+
 ~-sub-lift M ~s = ~-sub-m M (~-lift ~s)
 
 ~-sub-v (` x) ~s = ~s x
@@ -164,24 +167,28 @@ _~-sub_ {Γ} s s† = {X : VType} (x : X ∈ Γ) → emb-tm-v (s x) ≡ s† (em
              (V : Γ ⊢V⦂ X) →
              -----------
              emb-tm-v (V-rename (wk₁ {X = Z}) V) ≡ B.V-rename (B.wk₁) (emb-tm-v V)
+             
 ~-rename-v V = ~-ren-v V (λ {Hd → refl; (Tl x) → refl})
 
 ~-rename-m : {Γ : Ctx} {X Z : VType} {Y : CType}
              (M : Γ ∷ X ⊢M⦂ Y) →
              -----------
              emb-tm-m (M-rename (wk₂ (wk₁ {X = Z})) M) ≡ B.M-rename (B.wk₂ B.wk₁) (emb-tm-m M)
+
 ~-rename-m M = ~-ren-m M (λ {Hd → refl; (Tl x) → refl})
 
 ~-subst-m : {Γ : Ctx} {X : VType} {Y : CType}
             (M : Γ ∷ X ⊢M⦂ Y) (V : Γ ⊢V⦂ X) →
             -----------
             emb-tm-m (M [ id-subst [ V ]s ]m) ≡ (emb-tm-m M) B.[ B.id-subst B.[ emb-tm-v V ]s ]m
+
 ~-subst-m M V = ~-sub-m M (λ {Hd → refl; (Tl x) → refl})
 
 ~-strengthen : {Γ : Ctx} {X : VType} {A : BType}
                (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A) →
                -----------------------
                emb-tm-v (strengthen-val {Δ = X ∷ₗ []} V) ≡ B.strengthen-val {X = emb-ty-v X} (emb-tm-v V)
+
 ~-strengthen (` Tl x) = refl
 ~-strengthen (`` c) = refl
 
@@ -221,6 +228,7 @@ sim : {Γ : Ctx} {X : CType} {M N : Γ ⊢M⦂ X} →
       M ↝↝ N →
       ------------------------
       emb-tm-m M B.↝↝ emb-tm-m N ⊎ (emb-tm-m M ≡ emb-tm-m N) × find-ctx M ↝c find-ctx N
+
 sim (apply M V) rewrite ~-subst-m M V = inj₁ (B.apply _ _)
 sim (let-return V N) rewrite ~-subst-m N V = inj₁ (B.let-return _ _)
 sim (let-↑ p V M N) = inj₁ (B.let-↑ _ _ _)
@@ -285,6 +293,7 @@ sn*→sn : {Γ : Ctx} {X : CType} {M N : Γ ⊢M⦂ X} →
          Acc _<_ ∣ find-ctx M ∣ →
          --------------------------------
          SN* (emb-tm-m M) → M ↝↝ N → SN N
+
 sn*→sn aM sM r with sim r
 sn*→sn aM (sn f) _ | inj₁ r = sn (sn*→sn (<-wellFounded _) (f r))
 sn*→sn (acc aM) sM _ | inj₂ (e , r) rewrite e = sn (sn*→sn (aM (size-mono-↝ r)) sM)

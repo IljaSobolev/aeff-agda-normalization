@@ -41,6 +41,7 @@ form-sub : {M : Γ ⊢M⦂ X ! (i , isf)}
            Form M N →
            --------------------------
            Form (M [ s ]m) (N [ s ]m)
+
 form-sub s [-] = [-]
 form-sub s return = return
 form-sub s (↑ ff) = ↑ (form-sub _ ff)
@@ -57,6 +58,7 @@ form-↝ : {M : Γ ⊢M⦂ X ! (i , isf)}
          N ↝↝ N' →
          ----------------------------
          Form M N' ⊎ Σ[ M' ∈ _ ] Form M' N' × M ↝↝ M'
+
 form-↝ u [-] (↓-return V W) = inj₁ return
 form-↝ u [-] (↓-↑ V W M) = inj₁ (↑ [-])
 form-↝ u [-] (↓-promise-op p q V M N) = ⊥-elim (u q)
@@ -87,6 +89,7 @@ form-#↑ (promise ff) = z≤n
           Form M N →
           --------------------------
           ∀ {N'} → N ↝↝ N' → SN↑ N' n
+
 ≡-↓-sn' u (sn sM le) (sn sN le') ff r with form-↝ u ff r
 ... | inj₁ ff = sn (≡-↓-sn' u (sn sM le) (sN r) ff) (≤-trans (form-#↑ ff) le)
 ... | inj₂ (_ , ff , r') = sn (≡-↓-sn' u (sM r') (sN r) ff) (≤-trans (form-#↑ ff) (sn-#↑ (sM r')))
@@ -205,6 +208,7 @@ module _ (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) where
             ∣ sn*-↑-∥ r sP ∣i < ∣ sP ∣i
             ⊎
             ∣ sn*-↑-∥ r sP ∣i ≡ ∣ sP ∣i × ∣ sn*-↑-∥ r sP ∣↑ < ∣ sP ∣↑
+
   ↑-∥-i-< (↑-∥ₗ {M = M} {P = P}) ((suc _ , _ , sn _ _) , sP) with has? op P
   ... | yes a = inj₁ (+-monoʳ-< _ (sn*-↓ₜ-i-< sP a))
   ... | no  a rewrite sym (sn*-↓ₜ-↑-≡ sP a) = inj₂ (cong (_ +_) (sn*-↓ₜ-i-≡ sP a) , ≤-refl)
@@ -229,6 +233,7 @@ strong-normₚ' : (sP : sn* P) →
                 Acc _<_ ∣ sP ∣↝ →
                 ---------------------------
                 {Q : Γ ⊢P⦂} → P ↝↝ₚ Q → SNₚ Q
+
 strong-normₚ' sP _ _ _ (↑-∥ r) with ↑-∥-i-< _ _ r sP
 strong-normₚ' sP (acc ai) _ _ (↑-∥ r)  | inj₁ le = sn (strong-normₚ' (sn*-↑-∥ r sP) (ai le) (<-wellFounded _) (<-wellFounded _))
 strong-normₚ' sP ai (acc a↑) _ (↑-∥ r) | inj₂ (eq , le) rewrite sym eq = sn (strong-normₚ' _ ai (a↑ le) (<-wellFounded _))

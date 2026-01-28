@@ -138,6 +138,7 @@ wk₂ f (Tl v) = Tl (f v)
 -- ACTION OF RENAMING ON WELL-TYPED VALUES AND COMPUTATIONS
 
 V-rename : Ren Γ Γ' → Γ ⊢V⦂ X → Γ' ⊢V⦂ X
+
 M-rename : Ren Γ Γ' → Γ ⊢M⦂ X → Γ' ⊢M⦂ X
 
 V-rename f (` x) =
@@ -201,6 +202,7 @@ infix 40 _[_]v
 infix 40 _[_]m
 
 _[_]v : Γ ⊢V⦂ X → Sub Γ Γ' → Γ' ⊢V⦂ X
+
 _[_]m : Γ ⊢M⦂ X → Sub Γ Γ' → Γ' ⊢M⦂ X
 
 (` x) [ s ]v =

@@ -39,6 +39,7 @@ form-sub : {M : Γ ⊢M⦂ X ! (i , isf)}
            Form M N →
            --------------------------
            Form (M [ s ]m) (N [ s ]m)
+
 form-sub s [-] = [-]
 form-sub s return = return
 form-sub s (↑ ff) = ↑ (form-sub _ ff)
@@ -55,6 +56,7 @@ form-↝ : {M : Γ ⊢M⦂ X ! (i , isf)}
          N ↝↝ N' →
          ----------------------------
          Form M N' ⊎ Σ[ M' ∈ _ ] Form M' N' × M ↝↝ M'
+
 form-↝ u [-] (↓-return V W) = inj₁ return
 form-↝ u [-] (↓-↑ V W M) = inj₁ (↑ [-])
 form-↝ u [-] (↓-promise-op p q V M N) = ⊥-elim (u q)
@@ -85,6 +87,7 @@ form-#↑ (promise ff) = z≤n
           Form M N →
           --------------------------
           ∀ {N'} → N ↝↝ N' → SN↑ N' n
+
 ≡-↓-sn' u (sn sM le) (sn sN le') ff r with form-↝ u ff r
 ... | inj₁ ff = sn (≡-↓-sn' u (sn sM le) (sN r) ff) (≤-trans (form-#↑ ff) le)
 ... | inj₂ (_ , ff , r') = sn (≡-↓-sn' u (sM r') (sN r) ff) (≤-trans (form-#↑ ff) (sn-#↑ (sM r')))
@@ -200,6 +203,7 @@ data ↝-type : Set where
            ↝-type-of r ≡ ↑-run →
            ------------------------
            ∣ sn*↝ r sP ∣i ≡ ∣ sP ∣i
+
 ↑-run-≡i (↑ _ _) (run _) _ = refl
 ↑-run-≡i (context-∥ₗ r) (sP ∥ _) eq = cong (_+ _) (↑-run-≡i r sP eq)
 ↑-run-≡i (context-∥ᵣ r) (_ ∥ sQ) eq = cong (_ +_) (↑-run-≡i r sQ eq)
@@ -210,6 +214,7 @@ data ↝-type : Set where
            ↝-type-of r ≡ ↑-run →
            ------------------------
            ∣ sn*↝ r sP ∣↑ < ∣ sP ∣↑
+
 ↑-run-<↑ (↑ _ _) (run sM) _ = sn-strip-↑-< sM
 ↑-run-<↑ (context-∥ₗ r) (sP ∥ _) eq = +-monoˡ-< _ (↑-run-<↑ r sP eq)
 ↑-run-<↑ (context-∥ᵣ r) (_ ∥ sQ) eq = +-monoʳ-< _ (↑-run-<↑ r sQ eq)
@@ -225,6 +230,7 @@ data ↝-type : Set where
           ∣ sn*↝ r sP ∣i < ∣ sP ∣i
           ⊎
           ∣ sn*↝ r sP ∣i ≡ ∣ sP ∣i × ∣ sn*↝ r sP ∣↑ ≡ ∣ sP ∣↑
+
 ↓-run-< (↓-run {op = op} _ M) (↓ (run sM)) _ with [ op ]ₗ ∈ᵢ? i-of (type-of M)
 ... | yes a = inj₁ (size-↓ₑ-< (isf-of (type-of M)) a)
 ... | no  a = inj₂ (size-↓ₑ-≡ (isf-of (type-of M)) a , refl)
@@ -243,6 +249,7 @@ data ↝-type : Set where
           ↝-type-of r ≡ ↓-run →
           -------------------------------
           par-shape-of P ⇝ par-shape-of Q
+
 ↓-run-⇝ (↓-run _ _) _ = ↓-run
 ↓-run-⇝ (context-∥ₗ r) eq = context-∥ₗ (↓-run-⇝ r eq)
 ↓-run-⇝ (context-∥ᵣ r) eq = context-∥ᵣ (↓-run-⇝ r eq)
@@ -253,6 +260,7 @@ data ↝-type : Set where
            ↝-type-of r ≡ ↓-run →
            ------------------------
            ∣ par-shape-of Q ∣p <ₗₑₓ ∣ par-shape-of P ∣p
+
 ↓-run-<p r eq = maxs-< (↓-run-⇝ r eq)
 
 
@@ -262,6 +270,7 @@ data ↝-type : Set where
              ↝-type-of r ≡ ↝-shape →
              ------------------------
              ∣ sn*↝ r sP ∣i ≡ ∣ sP ∣i
+
 ↝-shape-≡i (↑-∥ₗ _ _ _) (↑ _ ∥ _) _ = refl
 ↝-shape-≡i (↑-∥ᵣ _ _ _) (_ ∥ ↑ _) _ = refl
 ↝-shape-≡i (↓-∥ _ _ _) (↓ (_ ∥ _)) _ = refl
@@ -275,6 +284,7 @@ data ↝-type : Set where
              ↝-type-of r ≡ ↝-shape →
              ------------------------
              ∣ sn*↝ r sP ∣↑ ≡ ∣ sP ∣↑
+
 ↝-shape-≡↑ (↑-∥ₗ _ _ _) (↑ _ ∥ _) _ = refl
 ↝-shape-≡↑ (↑-∥ᵣ _ _ _) (_ ∥ ↑ _) _ = refl
 ↝-shape-≡↑ (↓-∥ _ _ _) (↓ (_ ∥ _)) _ = refl
@@ -288,6 +298,7 @@ data ↝-type : Set where
             ↝-type-of r ≡ ↝-shape →
             ------------------------
             par-shape-of P ⇝ par-shape-of Q
+
 ↝-shape-⇝ (↑-∥ₗ _ _ _) _ = ↑-∥ₗ
 ↝-shape-⇝ (↑-∥ᵣ _ _ _) _ = ↑-∥ᵣ
 ↝-shape-⇝ (↓-∥ _ _ _) _ = ↓-∥
@@ -301,6 +312,7 @@ data ↝-type : Set where
              ↝-type-of r ≡ ↝-shape →
              ------------------------
              ∣ par-shape-of Q ∣p <ₗₑₓ ∣ par-shape-of P ∣p
+
 ↝-shape-<p r eq = maxs-< (↝-shape-⇝ r eq)
 
 
@@ -310,6 +322,7 @@ data ↝-type : Set where
            ↝-type-of r ≡ ↝-run →
            ------------------------
            ∣ sn*↝ r sP ∣i ≡ ∣ sP ∣i
+
 ↝-run-≡i (run _) (run (_ , _ , sn _ _)) _ = refl
 ↝-run-≡i (context-∥ₗ r) (sP ∥ _) eq = cong (_+ _) (↝-run-≡i r sP eq)
 ↝-run-≡i (context-∥ᵣ r) (_ ∥ sQ) eq = cong (_ +_) (↝-run-≡i r sQ eq)
@@ -320,6 +333,7 @@ data ↝-type : Set where
            ↝-type-of r ≡ ↝-run →
            ------------------------
            ∣ sn*↝ r sP ∣↑ ≡ ∣ sP ∣↑
+
 ↝-run-≡↑ (run _) (run (_ , _ , sn _ _)) _ = refl
 ↝-run-≡↑ (context-∥ₗ r) (sP ∥ _) eq = cong (_+ _) (↝-run-≡↑ r sP eq)
 ↝-run-≡↑ (context-∥ᵣ r) (_ ∥ sQ) eq = cong (_ +_) (↝-run-≡↑ r sQ eq)
@@ -330,6 +344,7 @@ data ↝-type : Set where
            ↝-type-of r ≡ ↝-run →
            -------------------------------
            par-shape-of Q ≡ par-shape-of P
+
 ↝-run-≡s (run _) _ = refl
 ↝-run-≡s (context-∥ₗ r) eq = cong (_∥ _) (↝-run-≡s r eq)
 ↝-run-≡s (context-∥ᵣ r) eq = cong (_ ∥_) (↝-run-≡s r eq)
@@ -340,12 +355,14 @@ data ↝-type : Set where
            ↝-type-of r ≡ ↝-run →
            -----------------------------------------
            ∣ par-shape-of Q ∣p ≡ ∣ par-shape-of P ∣p
+
 ↝-run-≡p r eq = cong ∣_∣p (↝-run-≡s r eq)
 
 ↝-run-<↝ : (r : P ↝↝ₚ Q) (sP : sn* P) →
            ↝-type-of r ≡ ↝-run →
            ------------------------
            ∣ sn*↝ r sP ∣↝ < ∣ sP ∣↝
+
 ↝-run-<↝ (run _) (run (_ , _ , sn _ _)) _ = ≤-refl
 ↝-run-<↝ (context-∥ₗ r) (sP ∥ _) eq = +-monoˡ-< _ (↝-run-<↝ r sP eq)
 ↝-run-<↝ (context-∥ᵣ r) (_ ∥ sQ) eq = +-monoʳ-< _ (↝-run-<↝ r sQ eq)
@@ -368,6 +385,7 @@ strong-normₚ' : (sP : sn* P) →
                 Acc _<_ (∣ sP ∣↝) →
                 ---------------------------
                 {Q : Γ ⊢P⦂} → P ↝↝ₚ Q → SNₚ Q
+
 strong-normₚ' sP ai a↑ ap a↝ r with ↝-type-of r in eq
 strong-normₚ' sP ai (acc a↑) _ _ r | ↑-run
   rewrite

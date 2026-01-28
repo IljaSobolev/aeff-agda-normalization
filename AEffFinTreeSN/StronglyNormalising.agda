@@ -27,6 +27,7 @@ data Reduct (M : Γ ⊢M⦂ C) : Set where
   r↝ : M ↝↝ N → Reduct M
 
 reducts-base : (M : Γ ⊢M⦂ X ! (i , isf)) → List (Reduct M)
+
 reducts-base (ƛ _ · _) =
   [ r↝ (apply _ _) ]ₗ
 reducts-base (await ⟨ _ ⟩ until _) =
@@ -77,6 +78,7 @@ ctx-coerce : Reduct M → Reduct (coerce {isf' = isf'} x M)
 ctx-coerce (r↝ r) = r↝ (context-coerce r)
 
 reducts-ctx : (M : Γ ⊢M⦂ X ! (i , isf)) → List (Reduct M)
+
 reducts-ctx (return _) = []ₗ
 reducts-ctx (_ · _) = []ₗ
 reducts-ctx (let= M `in _) = mapₗ ctx-let (reducts-base M ++ₗ reducts-ctx M)
@@ -87,6 +89,7 @@ reducts-ctx (coerce _ M) = mapₗ ctx-coerce (reducts-base M ++ₗ reducts-ctx M
 reducts-ctx (await _ until _) = []ₗ
 
 reducts-complete' : (R : Reduct M) → R ∈ₗ reducts-base M ⊎ R ∈ₗ reducts-ctx M
+
 reducts-complete' (r↝ (apply M V)) = inj₁ Hd
 reducts-complete' (r↝ (let-return V N)) = inj₁ Hd
 reducts-complete' (r↝ (let-↑ N V M)) = inj₁ Hd

@@ -136,6 +136,7 @@ kred-comm-let : (K : Γ ⊢K⦂ Z ⊸ U) →
                 KRed (K ∘l L ∘l N) →
                 ---------------------------------------------
                 KRed (K ∘l (let= N `in M-rename (wk₂ wk₁) L))
+
 kred-comm-let K rK rV =
   sn-let (K-rename _ K)
     (subst (λ z → SN (K-rename _ K aₖ let= _ `in z))
@@ -144,6 +145,7 @@ kred-comm-let K rK rV =
   eq : M-rename (wk₂ r) L
        ≡
        M-rename (wk₂ (wk₂ r)) (M-rename (wk₂ wk₁) L) [ lift (id-subst [ V ]s) ]m
+
   eq {r = r} {L = L} {V = V} = 
     begin
       M-rename (wk₂ r) L
@@ -157,6 +159,7 @@ kred-comm-↓ : (K : Γ ⊢K⦂ Z ⊸ U) →
               KRed (K ∘↓ op [ V ] ∘l N) →
               ----------------------
               KRed (K ∘l ↓ op (V-rename wk₁ V) N)
+
 kred-comm-↓ K rK rV =
   sn-let (K-rename _ K)
     (subst (λ z → SN (K-rename _ K aₖ ↓ _ z _))
@@ -165,6 +168,7 @@ kred-comm-↓ K rK rV =
   eq : V-rename r W
        ≡
        V-rename (wk₂ r) (V-rename wk₁ W) [ id-subst [ V ]s ]v
+
   eq {r = r} {W = W} {V = V} = 
     begin
       V-rename r W
@@ -179,6 +183,7 @@ kred-↝ : (K : Γ ⊢K⦂ Y ⊸ Z) →
          KRed (K ∘l M) →
          --------------
          KRed (K ∘l N)
+
 kred-↝ K r rK rV =
   sn-let (K-rename _ K)
     (sn→sn'
@@ -201,6 +206,7 @@ kred-↑ : (K : Γ ⊢K⦂ Y ⊸ Z) →
          KRed (K ∘l ↑ op V M) →
          -------------
          KRed (K ∘l M)
+
 kred-↑ K rK rV =
   sn-let (K-rename _ K)
     (sn'→sn (sn-k-↑-e (K-rename _ K) (rK rV (context-K (K-rename _ K) (let-return _ _)))))
@@ -222,6 +228,7 @@ sn-promise : (K : Γ ⊢K⦂ Y ⊸ Z) →
              SNi (K-rename wk₁ K aₖ N) n →
              ---------------------------
              {L : Γ ⊢M⦂ Z} → K `aₖ promise op ↦ M `in N ↝↝ L → SN L
+
 sn-promise K rK rM (sn h) (↝id (promise-↑ _ _ _)) =
   sn'→sn (sn-↑ id (sn'→sn (λ r → sn-promise id (kred-↑ id rK) rM (sni-k-↑-e id (sn h)) (aₖ→`aₖ id r))))
 sn-promise K rK rM (sn h) (↝id (context-promise r)) =
@@ -294,6 +301,7 @@ cred-⨟ rs rM rV K rK = subst (λ z → SN' (K aₖ M-rename _ z)) eq (rM (subr
   eq : M [ (s ⨟ ren r) [ V ]s ]m
        ≡
        M-rename (wk₂ r) (M [ lift s ]m) [ id-subst [ V ]s ]m
+
   eq {M = M} {s = s} {r = r} {V = V} =
     begin
       M [ (s ⨟ ren r) [ V ]s ]m

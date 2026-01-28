@@ -232,12 +232,14 @@ run-finality-↝↝ : RunResult⟨ Γ ∣ M ⟩ →
                   M ↝↝ N →
                   -----
                   ⊥
+
 run-finality-↝↝ (promise R) (context-promise r) = run-finality-↝↝ R r
 
 comp-finality-↝↝ : CompResult⟨ Γ ∣ M ⟩ →
                    M ↝↝ N →
                    -----
                    ⊥
+
 comp-finality-↝↝ (comp R) r =
   run-finality-↝↝ R r
 comp-finality-↝↝ (signal R) (context-↑ r) =
@@ -248,5 +250,6 @@ comp-finality : CompResult⟨ Γ ∣ M ⟩ →
                 M ↝ N →
                 -----
                 ⊥
+
 comp-finality R r =
   comp-finality-↝↝ R (↝-to-↝↝ r)

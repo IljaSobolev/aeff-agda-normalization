@@ -89,6 +89,7 @@ r ~ᵣ r† = {X : VType} (x : X ∈ _) → emb-∈ (r x) ≡ r† (emb-∈ x)
           r ~ᵣ r† →
           ------------
           emb-tm-m (M-rename (wk₂ r) M) ≡ B.M-rename (B.wk₂ r†) (emb-tm-m M)
+
 ~ᵣ-lift M ~r = ~ᵣ-m M (λ {Hd → refl; (Tl x) → cong B.Tl (~r x)})
 
 ~ᵣ-v (` x) ~r = cong B.`_ (~r x)
@@ -132,6 +133,7 @@ s ~ₛ s† = {X : VType} (x : X ∈ _) → emb-tm-v (s x) ≡ s† (emb-∈ x)
           s ~ₛ s† →
           ------------
           emb-tm-m (M [ lift s ]m) ≡ (emb-tm-m M) B.[ B.lift s† ]m
+
 ~ₛ-lift M ~s = ~ₛ-m M (λ {Hd → refl; (Tl x) → trans (~ᵣ-v _ (λ _ → refl)) (cong (B.V-rename B.Tl) (~s x))})
 
 ~ₛ-v (` x) ~s = ~s x
@@ -151,21 +153,25 @@ s ~ₛ s† = {X : VType} (x : X ∈ _) → emb-tm-v (s x) ≡ s† (emb-∈ x)
 ~ᵣ-wk₁-v : (V : Γ ⊢V⦂ X) →
            -----------
            emb-tm-v (V-rename (wk₁ {X = Z}) V) ≡ B.V-rename B.wk₁ (emb-tm-v V)
+
 ~ᵣ-wk₁-v V = ~ᵣ-v V (λ _ → refl)
 
 ~ᵣ-wk₂-wk₁-m : (M : Γ ∷ X ⊢M⦂ C) →
                -----------
                emb-tm-m (M-rename (wk₂ (wk₁ {X = Z})) M) ≡ B.M-rename (B.wk₂ B.wk₁) (emb-tm-m M)
+
 ~ᵣ-wk₂-wk₁-m M = ~ᵣ-m M (λ {Hd → refl; (Tl x) → refl})
 
 ~ₛᵣ-m : (M : Γ ∷ X ⊢M⦂ C) (V : Γ ⊢V⦂ X) →
         -----------
         emb-tm-m (M [ id-subst [ V ]s ]m) ≡ emb-tm-m M B.[ B.id-subst B.[ emb-tm-v V ]s ]m
+
 ~ₛᵣ-m M V = ~ₛ-m M (λ {Hd → refl; (Tl x) → refl})
 
 ~-strengthen : {A : GType} (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A) →
                -----------------------
                emb-tm-v (strengthen-val V) ≡ B.strengthen-val (emb-tm-v V)
+
 ~-strengthen (` Tl x) = refl
 ~-strengthen (`` c) = refl
 
@@ -187,7 +193,12 @@ find-ctx (coerce _ M) = coe (find-ctx M)
 -- THE SIMULATION RESULT: A REDUCTION IN AEFFFIN EITHER CORRESPONDS TO A REDUCTION IN AEFFBASE
 -- OR IT IS THE REDUCTION OF THE EVALUATION CONTEXT
 
-sim : M ↝↝ N → emb-tm-m M B.↝↝ emb-tm-m N ⊎ (emb-tm-m M ≡ emb-tm-m N) × find-ctx M ↝c find-ctx N
+sim : M ↝↝ N →
+      ---------------------
+      emb-tm-m M B.↝↝ emb-tm-m N ⊎
+      (emb-tm-m M ≡ emb-tm-m N)
+        × find-ctx M ↝c find-ctx N
+
 sim (apply M V) rewrite ~ₛᵣ-m M V = inj₁ (B.apply _ _)
 sim (let-return V N) rewrite ~ₛᵣ-m N V = inj₁ (B.let-return _ _)
 sim (let-↑ V M N) = inj₁ (B.let-↑ _ _ _)
@@ -222,7 +233,12 @@ sim (coerce-promise x p q M N) = inj₂ (refl , coe-↓)
 
 -- STRONG NORMALISATION PROOF BY MEANS OF THE SIMULATION
 
-sn*→sn : Acc _<_ ∣ find-ctx M ∣ → SN* (emb-tm-m M) → M ↝↝ N → SN N
+sn*→sn : Acc _<_ ∣ find-ctx M ∣ →
+         SN* (emb-tm-m M) →
+         M ↝↝ N →
+         -------
+         SN N
+
 sn*→sn aM sM r with sim r
 sn*→sn aM (sn* f) _ | inj₁ r = sn (sn*→sn (<-wellFounded _) (f r))
 sn*→sn (acc aM) sM _ | inj₂ (e , r) rewrite e = sn (sn*→sn (aM (size-mono-↝ r)) sM)

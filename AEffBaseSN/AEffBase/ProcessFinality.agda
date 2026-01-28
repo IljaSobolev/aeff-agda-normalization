@@ -176,6 +176,7 @@ par-finality-↝↝ₚ : ParResult⟨ P ⟩ →
                    P ↝↝ₚ Q →
                    --------
                    ⊥
+
 par-finality-↝↝ₚ (run R) (run r) =
   run-finality-↝↝ R r 
 par-finality-↝↝ₚ (run ()) (↑ V M)
@@ -189,6 +190,7 @@ proc-finality-↝↝ₚ : ProcResult⟨ P ⟩ →
                     P ↝↝ₚ Q →
                     -----
                     ⊥
+
 proc-finality-↝↝ₚ (proc R) r' =
   par-finality-↝↝ₚ R r'
 proc-finality-↝↝ₚ (signal R) (context-↑ r') =
@@ -199,5 +201,6 @@ proc-finality : ProcResult⟨ P ⟩ →
                 P ↝ₚ Q →
                 -------
                 ⊥
+                
 proc-finality R r =
   proc-finality-↝↝ₚ R (↝ₚ-to-↝↝ₚ r)

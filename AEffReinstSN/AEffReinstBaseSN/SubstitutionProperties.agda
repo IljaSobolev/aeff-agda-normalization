@@ -32,6 +32,7 @@ cong-ren-v : r ≈ᵣ r' → V-rename r V ≡ V-rename r' V
 cong-ren-m : r ≈ᵣ r' → M-rename r M ≡ M-rename r' M
 
 cong-ren-l : r ≈ᵣ r' → M-rename (wk₂ r) M ≡ M-rename (wk₂ r') M
+
 cong-ren-l f = cong-ren-m (λ {Hd → refl; (Tl x) → cong Tl (f x)})
 
 cong-ren-v {V = ` x} f = cong `_ (f x)
@@ -56,6 +57,7 @@ cong-sub-v : s ≈ₛ s' → V [ s ]v ≡ V [ s' ]v
 cong-sub-m : s ≈ₛ s' → M [ s ]m ≡ M [ s' ]m
 
 cong-sub-l : s ≈ₛ s' → M [ lift s ]m ≡ M [ lift s' ]m
+
 cong-sub-l f = cong-sub-m (λ {Hd → refl; (Tl x) → cong (V-rename Tl) (f x)})
 
 cong-sub-v {V = ` x} f = f x
@@ -80,6 +82,7 @@ ren-id-v : V-rename id-ren V ≡ V
 ren-id-m : M-rename id-ren M ≡ M
 
 ren-id-l : M-rename (wk₂ id-ren) M ≡ M
+
 ren-id-l = trans (cong-ren-m (λ {Hd → refl; (Tl x) → refl})) ren-id-m
 
 ren-id-v {V = ` x} = refl
@@ -104,6 +107,7 @@ sub-id-v : V [ id-subst ]v ≡ V
 sub-id-m : M [ id-subst ]m ≡ M
 
 sub-id-l : M [ lift id-subst ]m ≡ M
+
 sub-id-l = trans (cong-sub-m (λ {Hd → refl; (Tl x) → refl})) sub-id-m
 
 sub-id-v {V = ` x} = refl
@@ -128,6 +132,7 @@ ren-ren-v : V-rename r (V-rename r' V) ≡ V-rename (r ∘ r') V
 ren-ren-m : M-rename r (M-rename r' M) ≡ M-rename (r ∘ r') M
 
 ren-ren-l : M-rename (wk₂ r) (M-rename (wk₂ r') M) ≡ M-rename (wk₂ (r ∘ r')) M
+
 ren-ren-l = trans ren-ren-m (cong-ren-m (λ {Hd → refl; (Tl x) → refl}))
 
 ren-ren-v {V = ` x} = refl
@@ -147,15 +152,16 @@ ren-ren-m {M = promise op ↦ M `in N} = cong₂ (promise op ↦_`in_) ren-ren-l
 ren-ren-m {M = await V until M} = cong₂ await_until_ ren-ren-v ren-ren-l
 ren-ren-m {M = match+ V M N} = cong₃ match+ ren-ren-v ren-ren-l ren-ren-l
 
-sub-ren-v : s' ∘ r ≈ₛ V-rename r' ∘ s → V-rename r V [ s' ]v ≡ V-rename r' (V [ s ]v)
-
-sub-ren-m : s' ∘ r ≈ₛ V-rename r' ∘ s → M-rename r M [ s' ]m ≡ M-rename r' (M [ s ]m)
-
 sub-ren-var : s' ∘ r ≈ₛ V-rename r' ∘ s → lift {X = X} s' ∘ wk₂ r ≈ₛ V-rename (wk₂ r') ∘ lift s
 sub-ren-var f Hd = refl
 sub-ren-var f (Tl x) rewrite f x = trans ren-ren-v (sym ren-ren-v)
 
+sub-ren-v : s' ∘ r ≈ₛ V-rename r' ∘ s → V-rename r V [ s' ]v ≡ V-rename r' (V [ s ]v)
+
+sub-ren-m : s' ∘ r ≈ₛ V-rename r' ∘ s → M-rename r M [ s' ]m ≡ M-rename r' (M [ s ]m)
+
 sub-ren-l : s' ∘ r ≈ₛ V-rename r' ∘ s → M-rename (wk₂ r) M [ lift s' ]m ≡ M-rename (wk₂ r') (M [ lift s ]m)
+
 sub-ren-l f = sub-ren-m (sub-ren-var f)
 
 sub-ren-v {V = ` x} f = f x
@@ -188,6 +194,7 @@ sub-sub-v : V [ s ]v [ s' ]v ≡ V [ s ⨟ s' ]v
 sub-sub-m : M [ s ]m [ s' ]m ≡ M [ s ⨟ s' ]m
 
 sub-sub-l : M [ lift s ]m [ lift s' ]m ≡ M [ lift (s ⨟ s') ]m
+
 sub-sub-l {s = s} = trans sub-sub-m (cong-sub-m (λ {Hd → refl; (Tl x) → sub-ren-v {V = s x} (λ _ → refl)}))
 
 sub-sub-v {V = ` x} = refl
@@ -212,6 +219,7 @@ wk₁V[id-subst[W]] : (V : Γ ⊢V⦂ X) (W : Γ ⊢V⦂ Y) →
                     V
                     ≡
                     V-rename wk₁ V [ id-subst [ W ]s ]v
+
 wk₁V[id-subst[W]] V W =
   begin
     V
@@ -228,6 +236,7 @@ wk₂wk₁M[liftid-subst[W]] : (M : Γ ∷ Z ⊢M⦂ X) (W : Γ ⊢V⦂ Y) →
                            M
                            ≡
                            M-rename (wk₂ wk₁) M [ lift (id-subst [ W ]s) ]m
+
 wk₂wk₁M[liftid-subst[W]] M W =
   begin
     M
@@ -244,6 +253,7 @@ M[lifts][id-subst[V]] : (M : Γ ∷ X ⊢M⦂ Y) (V : Γ' ⊢V⦂ X) →
                         M [ s [ V ]s ]m
                         ≡
                         M [ lift s ]m [ id-subst [ V ]s ]m
+
 M[lifts][id-subst[V]] {s = s} M V =
   begin
     M [ s [ V ]s ]m
@@ -258,6 +268,7 @@ M[id-subst[V]][s] : (s : Sub Γ Γ') (M : Γ ∷ X ⊢M⦂ Y) (V : Γ ⊢V⦂ X)
                     M [ id-subst [ V ]s ]m [ s ]m
                     ≡
                     M [ lift s ]m [ id-subst [ V [ s ]v ]s ]m
+
 M[id-subst[V]][s] s M V =
   begin
     M [ id-subst [ V ]s ]m [ s ]m
@@ -274,6 +285,7 @@ wk₁[V[s]] : (Z : Type) (s : Sub Γ Γ') (V : Γ ⊢V⦂ X) →
             V-rename (wk₁ {X = Z}) V [ lift s ]v
             ≡
             V-rename wk₁ (V [ s ]v)
+
 wk₁[V[s]] _ _ V = sub-ren-v {V = V} (λ _ → refl)
 
 wk₁[M[s]] : (Z : Type) (s : Sub Γ Γ') (M : Γ ⊢M⦂ X) →
@@ -281,6 +293,7 @@ wk₁[M[s]] : (Z : Type) (s : Sub Γ Γ') (M : Γ ⊢M⦂ X) →
             M-rename (wk₁ {X = Z}) M [ lift s ]m
             ≡
             M-rename wk₁ (M [ s ]m)
+
 wk₁[M[s]] _ _ M = sub-ren-m {M = M} (λ _ → refl)
 
 wk₂wk₁[M[lifts]] : (Z : Type) (s : Sub Γ Γ') (M : Γ ∷ X ⊢M⦂ Y) →
@@ -288,6 +301,7 @@ wk₂wk₁[M[lifts]] : (Z : Type) (s : Sub Γ Γ') (M : Γ ∷ X ⊢M⦂ Y) →
                    M-rename (wk₂ (wk₁ {X = Z})) M [ lift (lift s) ]m
                    ≡
                    M-rename (wk₂ wk₁) (M [ lift s ]m)
+
 wk₂wk₁[M[lifts]] _ _ _ = sub-ren-l (λ _ → refl)
 
 wk₁wk₁M[s] : (Z U : Type) (s : Sub Γ Γ') (M : Γ ⊢M⦂ X) →
@@ -295,6 +309,7 @@ wk₁wk₁M[s] : (Z U : Type) (s : Sub Γ Γ') (M : Γ ⊢M⦂ X) →
              M-rename (wk₁ {X = Z}) (M-rename (wk₁ {X = U}) M) [ lift (lift s) ]m
              ≡
              M-rename wk₁ (M-rename wk₁ (M [ s ]m))
+
 wk₁wk₁M[s] _ _ _ _ = trans (wk₁[M[s]] _ _ _) (cong (M-rename wk₁) (wk₁[M[s]] _ _ _))
 
 strengthenV[lifts] : (s : Sub Γ Γ') (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A) →
@@ -302,6 +317,7 @@ strengthenV[lifts] : (s : Sub Γ Γ') (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A) →
                      strengthen-val V [ s ]v
                      ≡
                      strengthen-val (V [ lift s ]v)
+
 strengthenV[lifts] s (` Tl x) with s x
 ... | ` y = refl
 ... | `` c = refl
@@ -312,10 +328,12 @@ ren-strengthenV : (r : Ren Γ Γ') (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A) →
                   V-rename r (strengthen-val V)
                   ≡
                   strengthen-val (V-rename (wk₂ r) V)
+
 ren-strengthenV r (` Tl x) = refl
 ren-strengthenV r (`` c) = refl
 
 sub-↝↝ : (s : Sub Γ Γ') → M ↝↝ M' → M [ s ]m ↝↝ M' [ s ]m
+
 sub-↝↝ s (apply M V) rewrite M[id-subst[V]][s] s M V = apply _ _
 sub-↝↝ s (let-return V N) rewrite M[id-subst[V]][s] s N V = let-return _ _
 sub-↝↝ s (let-↑ N T M) = let-↑ _ _ _
@@ -348,6 +366,7 @@ ren-rename-v : V [ ren r ]v ≡ V-rename r V
 ren-rename-m : M [ ren r ]m ≡ M-rename r M
 
 ren-rename-l : M [ lift (ren r) ]m ≡ M-rename (wk₂ r) M
+
 ren-rename-l = trans (cong-sub-m (λ {Hd → refl; (Tl x) → refl})) ren-rename-m
 
 ren-rename-v {V = ` x} = refl
@@ -368,6 +387,7 @@ ren-rename-m {M = await V until M} = cong₂ await_until_ ren-rename-v ren-renam
 ren-rename-m {M = match+ V M N} = cong₃ match+ ren-rename-v ren-rename-l ren-rename-l
 
 ren-↝↝ : (r : Ren Γ Γ') → M ↝↝ M' → M-rename r M ↝↝ M-rename r M'
+
 ren-↝↝ {M = M} {M' = M'} rn r
   rewrite
   sym (ren-rename-m {M = M} {r = rn}) |
@@ -375,6 +395,7 @@ ren-↝↝ {M = M} {M' = M'} rn r
   sub-↝↝ _ r
   
 ren-↝↝-Σ : (r : Ren Γ Γ') → M-rename r M ↝↝ M' → Σ[ M'' ∈ _ ] M' ≡ M-rename r M'' × M ↝↝ M''
+
 ren-↝↝-Σ {M = ƛ _ · _} r (apply _ _) = _ , sub-ren-m (λ {Hd → refl; (Tl x₂) → refl}) , apply _ _
 ren-↝↝-Σ {M = let= return _ `in _} r (let-return _ _) = _ , sub-ren-m (λ {Hd → refl; (Tl x₂) → refl}) , let-return _ _
 ren-↝↝-Σ {M = let= _ · _ `in _} r (context-let r') with ren-↝↝-Σ r r'

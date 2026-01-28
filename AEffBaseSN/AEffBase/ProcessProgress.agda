@@ -42,6 +42,7 @@ proc-progress : (P : [] ⊢P⦂ PP) →
                 Σ[ Q ∈ [] ⊢P⦂ PP ] P ↝ₚ Q
                 ⊎
                 ProcResult⟨ P ⟩
+
 proc-progress (run M) with progress M
 ... | inj₁ (_ , r) = inj₁ (_ , run r)
 ... | inj₂ (comp R) = inj₂ (proc (run R))
