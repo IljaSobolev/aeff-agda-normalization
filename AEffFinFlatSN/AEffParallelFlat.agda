@@ -16,6 +16,9 @@ data _⊢P⦂ Γ : Set where
 variable
   P P' Q Q' : Γ ⊢P⦂
 
+
+-- APPLYING AN INTERRUPT TO ALL COMPUTATIONS IN A PARALLEL PROCESS
+
 ↓ₜ : (op : Σₛ) → Γ ⊢V⦂ ```(payload op) → Γ ⊢P⦂ → Γ ⊢P⦂
 ↓ₜ op V [] = []
 ↓ₜ op V (M ∥ P) = ↓ op V M ∥ ↓ₜ op V P

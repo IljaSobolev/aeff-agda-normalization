@@ -48,6 +48,7 @@ data _∈_ (X : Type) : Ctx → Set where
   Hd : X ∈ (Γ ∷ X)
   Tl : X ∈ Γ → X ∈ (Γ ∷ Y)
 
+
 -- DERIVATIONS OF WELL-TYPED TERMS
 
 data _⊢V⦂_ (Γ : Ctx) : Type → Set
@@ -113,6 +114,7 @@ variable
   V V' W W' : Γ ⊢V⦂ X
   M M' N N' L L' : Γ ⊢M⦂ X
 
+
 -- SET OF RENAMINGS BETWEEN CONTEXTS
 
 Ren : Ctx → Ctx → Set
@@ -172,6 +174,7 @@ M-rename f (await V until M) =
   await (V-rename f V) until (M-rename (wk₂ f) M)
 M-rename f (match+ V M N) =
   match+ (V-rename f V) (M-rename (wk₂ f) M) (M-rename (wk₂ f) N)
+
 
 -- SET OF SUBSTITUTIONS BETWEEN CONTEXTS
 
@@ -237,11 +240,13 @@ inr V [ s ]v =
 (match+ V M N) [ s ]m =
   match+ (V [ s ]v) (M [ lift s ]m) (N [ lift s ]m)
 
+
 -- STRENGTHENING OF GROUND VALUES WRT BOUND PROMISES
 
 strengthen-val : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A → Γ ⊢V⦂ ``` A
 strengthen-val (` Tl x) = ` x
 strengthen-val (`` c) = `` c
+
 
 -- SMALL-STEP OPERATIONAL SEMANTICS FOR WELL-TYPED COMPUTATIONS
 -- WITH INLINED EVALUATION CONTEXT RULES

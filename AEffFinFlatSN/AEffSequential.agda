@@ -12,6 +12,8 @@ open import AEff.Types using (GType)
 
 module AEffFinFlatSN.AEffSequential where
 
+-- VALUE AND COMPUTATION TYPES
+
 data VType : Set
 
 data CType : Set
@@ -30,6 +32,9 @@ variable
   X Y Z : VType
   C D E : CType
 
+
+-- ACCESSING PARTS OF A COMPUTATION TYPE
+
 v-of : CType → VType
 v-of (X ! _) = X
 
@@ -38,6 +43,9 @@ i-of (_ ! (i , _)) = i
 
 isf-of : (C : CType) → isfin (i-of C)
 isf-of (_ ! (_ , isf)) = isf
+
+
+-- CONTEXTS AND VARIABLES IN THEM (I.E., DE BRUIJN INDICES)
 
 infixl 30 _∷_
 data Ctx : Set where
@@ -50,6 +58,9 @@ variable
 data _∈_ (X : VType) : Ctx → Set where
   Hd : X ∈ Γ ∷ X
   Tl : X ∈ Γ → X ∈ Γ ∷ Y
+
+
+-- DERIVATIONS OF WELL-TYPED TERMS
 
 data _⊢V⦂_ : Ctx → VType → Set
 
@@ -114,11 +125,18 @@ variable
   V V' W W' U U' : Γ ⊢V⦂ X
   M M' N N' L L' : Γ ⊢M⦂ C
 
+
+-- SET OF RENAMINGS BETWEEN CONTEXTS
+
 Ren : Ctx → Ctx → Set
 Ren Γ Γ' = {X : VType} → X ∈ Γ → X ∈ Γ'
 
+-- IDENTITY RENAMINGS
+
 id-ren : Ren Γ Γ 
 id-ren x = x
+
+-- WEAKENING OF RENAMINGS
 
 wk₁ : Ren Γ (Γ ∷ X)
 wk₁ = Tl
@@ -126,6 +144,8 @@ wk₁ = Tl
 wk₂ : Ren Γ Γ' → Ren (Γ ∷ X) (Γ' ∷ X)
 wk₂ f Hd = Hd
 wk₂ f (Tl v) = Tl (f v)
+
+-- ACTION OF RENAMING ON WELL-TYPED VALUES AND COMPUTATIONS
 
 V-rename : Ren Γ Γ' → Γ ⊢V⦂ X → Γ' ⊢V⦂ X
 
@@ -153,8 +173,13 @@ M-rename r (await V until N) =
 M-rename r (coerce p M) =
   coerce p (M-rename r M)
 
+
+-- SET OF SUBSTITUTIONS BETWEEN CONTEXTS
+
 Sub : Ctx → Ctx → Set
 Sub Γ Γ' = {X : VType} → X ∈ Γ → Γ' ⊢V⦂ X
+
+-- IDENTITY AND EXTENSION SUBSTITUTIONS
 
 id-subst : Sub Γ Γ
 id-subst x = ` x
@@ -163,9 +188,13 @@ _[_]s : Sub Γ Γ' → Γ' ⊢V⦂ X → Sub (Γ ∷ X) Γ'
 (s [ V ]s) Hd = V
 (s [ V ]s) (Tl x) = s x
 
+-- LIFTING SUBSTITUTIONS
+
 lift : Sub Γ Γ' → Sub (Γ ∷ X) (Γ' ∷ X)
 lift s Hd = ` Hd
 lift s (Tl x) = V-rename Tl (s x)
+
+-- ACTION OF SUBSTITUTION ON WELL-TYPED VALUES AND COMPUTATIONS
 
 infix 40 _[_]v
 infix 40 _[_]m
@@ -200,167 +229,176 @@ _[_]m : Γ ⊢M⦂ C → Sub Γ Γ' → Γ' ⊢M⦂ C
 (coerce p M) [ s ]m =
   coerce p (M [ s ]m)
 
+
+-- STRENGTHENING OF GROUND VALUES WRT BOUND PROMISES
+
 strengthen-val : {A : GType} → Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A → Γ ⊢V⦂ ``` A
 strengthen-val (` Tl x) = ` x
 strengthen-val (`` c) = `` c
 
+
+-- SMALL-STEP OPERATIONAL SEMANTICS FOR WELL-TYPED COMPUTATIONS
+-- WITH INLINED EVALUATION CONTEXT RULES
+
 infix 10 _↝↝_
 data _↝↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
 
-    apply           : (M : Γ ∷ X ⊢M⦂ C)
-                      (V : Γ ⊢V⦂ X) →
-                      ----------------------
-                      ƛ M · V
-                      ↝↝
-                      M [ id-subst [ V ]s ]m
+  -- COMPUTATIONAL RULES
 
-    let-return      : (V : Γ ⊢V⦂ X)
-                      (N : Γ ∷ X ⊢M⦂ Y ! (i , isf)) →
-                      -----------------------------
-                      let= return V `in N
-                      ↝↝
-                      N [ id-subst [ V ]s ]m
+  apply           : (M : Γ ∷ X ⊢M⦂ C)
+                    (V : Γ ⊢V⦂ X) →
+                    ----------------------
+                    ƛ M · V
+                    ↝↝
+                    M [ id-subst [ V ]s ]m
 
-    let-↑           : (V : Γ ⊢V⦂ ```(payload op))
-                      (M : Γ ⊢M⦂ X ! (i , isf))
-                      (N : Γ ∷ X ⊢M⦂ Y ! (i , isf)) →
-                      -----------------------------
-                      let= ↑ op V M `in N
-                      ↝↝
-                      ↑ op V (let= M `in N)
+  let-return      : (V : Γ ⊢V⦂ X)
+                    (N : Γ ∷ X ⊢M⦂ Y ! (i , isf)) →
+                    -----------------------------
+                    let= return V `in N
+                    ↝↝
+                    N [ id-subst [ V ]s ]m
 
-    let-promise     : (p : i' ⊑ lkp op i)
-                      (q : [ op ]ₗ ∈ᵢ i)
-                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
-                      (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf))
-                      (L : Γ ∷ Y ⊢M⦂ Z ! (i , isf)) →
-                      ----------------------------------
-                      let= promise op ∣ p , q ↦ M `in N `in L
-                      ↝↝
-                      promise op ∣ p , q ↦ M `in let= N `in (M-rename (wk₂ wk₁) L)
+  let-↑           : (V : Γ ⊢V⦂ ```(payload op))
+                    (M : Γ ⊢M⦂ X ! (i , isf))
+                    (N : Γ ∷ X ⊢M⦂ Y ! (i , isf)) →
+                    -----------------------------
+                    let= ↑ op V M `in N
+                    ↝↝
+                    ↑ op V (let= M `in N)
 
-    let-await       : (V : Γ ⊢V⦂ ⟨ X ⟩)
-                      (M : Γ ∷ X ⊢M⦂ Y ! (i , isf))
-                      (N : Γ ∷ Y ⊢M⦂ Z ! (i , isf)) →
-                      --------------------------
-                      let= await V until M `in N
-                      ↝↝
-                      await V until let= M `in M-rename (wk₂ wk₁) N
+  let-promise     : (p : i' ⊑ lkp op i)
+                    (q : [ op ]ₗ ∈ᵢ i)
+                    (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
+                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf))
+                    (L : Γ ∷ Y ⊢M⦂ Z ! (i , isf)) →
+                    ----------------------------------
+                    let= promise op ∣ p , q ↦ M `in N `in L
+                    ↝↝
+                    promise op ∣ p , q ↦ M `in let= N `in (M-rename (wk₂ wk₁) L)
 
-    ↓-await         : (W : Γ ⊢V⦂ ```(payload op))
-                      (V : Γ ⊢V⦂ ⟨ X ⟩)
-                      (M : Γ ∷ X ⊢M⦂ C) →
-                      ------------------------
-                      ↓ op W (await V until M)
-                      ↝↝
-                      await V until ↓ op (V-rename (wk₁ {X = X}) W) M
+  let-await       : (V : Γ ⊢V⦂ ⟨ X ⟩)
+                    (M : Γ ∷ X ⊢M⦂ Y ! (i , isf))
+                    (N : Γ ∷ Y ⊢M⦂ Z ! (i , isf)) →
+                    --------------------------
+                    let= await V until M `in N
+                    ↝↝
+                    await V until let= M `in M-rename (wk₂ wk₁) N
 
-    promise-↑       : (p : i' ⊑ lkp op i)
-                      (q : [ op ]ₗ ∈ᵢ i)
-                      (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ```(payload op'))
-                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
-                      (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
-                      --------------------------------------------
-                      promise op ∣ p , q ↦ M `in (↑ op' V N)
-                      ↝↝
-                      ↑ op' (strengthen-val V) (promise op ∣ p , q ↦ M `in N)
+  ↓-await         : (W : Γ ⊢V⦂ ```(payload op))
+                    (V : Γ ⊢V⦂ ⟨ X ⟩)
+                    (M : Γ ∷ X ⊢M⦂ C) →
+                    ------------------------
+                    ↓ op W (await V until M)
+                    ↝↝
+                    await V until ↓ op (V-rename (wk₁ {X = X}) W) M
 
-    ↓-return        : (V : Γ ⊢V⦂ ```(payload op))
-                      (W : Γ ⊢V⦂ X) →
-                      ------------------------
-                      ↓ op V (return {i = i} {isf} W)
-                      ↝↝
-                      return W
+  promise-↑       : (p : i' ⊑ lkp op i)
+                    (q : [ op ]ₗ ∈ᵢ i)
+                    (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ```(payload op'))
+                    (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
+                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
+                    --------------------------------------------
+                    promise op ∣ p , q ↦ M `in (↑ op' V N)
+                    ↝↝
+                    ↑ op' (strengthen-val V) (promise op ∣ p , q ↦ M `in N)
 
-    ↓-↑             : (V : Γ ⊢V⦂ ```(payload op))
-                      (W : Γ ⊢V⦂ ```(payload op'))
-                      (M : Γ ⊢M⦂ X ! (i , isf)) →
-                      -------------------------------
-                      ↓ op V (↑ op' W M)
-                      ↝↝
-                      ↑ op' W (↓ op V M)
+  ↓-return        : (V : Γ ⊢V⦂ ```(payload op))
+                    (W : Γ ⊢V⦂ X) →
+                    ------------------------
+                    ↓ op V (return {i = i} {isf} W)
+                    ↝↝
+                    return W
 
-    ↓-promise-op    : (p : i' ⊑ lkp op i)
-                      (q : [ op ]ₗ ∈ᵢ i)
-                      (V : Γ ⊢V⦂ ```(payload op))
-                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
-                      (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
-                      --------------------------------
-                      ↓ op V (promise op ∣ p , q ↦ M `in N)
-                      ↝↝
-                      let= coerce (⊑-trans p ∪-inr) (M [ id-subst [ V ]s ]m) `in ↓ op (V-rename wk₁ V) N
+  ↓-↑             : (V : Γ ⊢V⦂ ```(payload op))
+                    (W : Γ ⊢V⦂ ```(payload op'))
+                    (M : Γ ⊢M⦂ X ! (i , isf)) →
+                    -------------------------------
+                    ↓ op V (↑ op' W M)
+                    ↝↝
+                    ↑ op' W (↓ op V M)
 
-    ↓-promise-op'   : (V : Γ ⊢V⦂ ```(payload op))
-                      (p : i' ⊑ lkp op' i)
-                      (q : [ op' ]ₗ ∈ᵢ i)
-                      (r : op ≢ op')
-                      (M : Γ ∷ ```(payload op') ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
-                      (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
-                      ------------------------------------------------------------------------
-                      ↓ op V (promise op' ∣ p , q ↦ M `in N)
-                      ↝↝
-                      promise op' ∣ ⊑-trans p (lkp-↓ₑ-≢ i r) , ∈-∪-i₁ (∈-[↦]-i r q) ↦ M `in ↓ op (V-rename wk₁ V) N
+  ↓-promise-op    : (p : i' ⊑ lkp op i)
+                    (q : [ op ]ₗ ∈ᵢ i)
+                    (V : Γ ⊢V⦂ ```(payload op))
+                    (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
+                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
+                    --------------------------------
+                    ↓ op V (promise op ∣ p , q ↦ M `in N)
+                    ↝↝
+                    let= coerce (⊑-trans p ∪-inr) (M [ id-subst [ V ]s ]m) `in ↓ op (V-rename wk₁ V) N
 
-    await-promise   : (V : Γ ⊢V⦂ X)
-                      (N : Γ ∷ X ⊢M⦂ C) →
-                      --------------------
-                      await ⟨ V ⟩ until N
-                      ↝↝
-                      N [ id-subst [ V ]s ]m
+  ↓-promise-op'   : (V : Γ ⊢V⦂ ```(payload op))
+                    (p : i' ⊑ lkp op' i)
+                    (q : [ op' ]ₗ ∈ᵢ i)
+                    (r : op ≢ op')
+                    (M : Γ ∷ ```(payload op') ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
+                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
+                    ------------------------------------------------------------------------
+                    ↓ op V (promise op' ∣ p , q ↦ M `in N)
+                    ↝↝
+                    promise op' ∣ ⊑-trans p (lkp-↓ₑ-≢ i r) , ∈-∪-i₁ (∈-[↦]-i r q) ↦ M `in ↓ op (V-rename wk₁ V) N
 
-    -- INLINED EVALUATION CONTEXT RULES
+  await-promise   : (V : Γ ⊢V⦂ X)
+                    (N : Γ ∷ X ⊢M⦂ C) →
+                    --------------------
+                    await ⟨ V ⟩ until N
+                    ↝↝
+                    N [ id-subst [ V ]s ]m
 
-    context-let     : M ↝↝ M' → 
-                      -------------
-                      let= M `in N
-                      ↝↝
-                      let= M' `in N
+  -- INLINED EVALUATION CONTEXT RULES
 
-    context-↑       : M ↝↝ N →
-                      ----------
-                      ↑ op V M
-                      ↝↝
-                      ↑ op V N
+  context-let     : M ↝↝ M' → 
+                    -------------
+                    let= M `in N
+                    ↝↝
+                    let= M' `in N
 
-    context-↓       : M ↝↝ N →
-                      ---------
-                      ↓ op V M
-                      ↝↝
-                      ↓ op V N
+  context-↑       : M ↝↝ N →
+                    ----------
+                    ↑ op V M
+                    ↝↝
+                    ↑ op V N
 
-    context-promise : N ↝↝ N' →
-                      ---------------------
-                      promise op ∣ x , y ↦ M `in N
-                      ↝↝
-                      promise op ∣ x , y ↦ M `in N'
+  context-↓       : M ↝↝ N →
+                    ---------
+                    ↓ op V M
+                    ↝↝
+                    ↓ op V N
 
-    context-coerce  : M ↝↝ M' →
-                      -----------
-                      coerce {isf' = isf'} x M
-                      ↝↝
-                      coerce x M'
+  context-promise : N ↝↝ N' →
+                    ---------------------
+                    promise op ∣ x , y ↦ M `in N
+                    ↝↝
+                    promise op ∣ x , y ↦ M `in N'
 
-    -- COERCION RULES
+  context-coerce  : M ↝↝ M' →
+                    -----------
+                    coerce {isf' = isf'} x M
+                    ↝↝
+                    coerce x M'
 
-    coerce-return   : (V : Γ ⊢V⦂ X) →
-                      --------------------------------
-                      coerce {isf = isf} {isf' = isf'} x (return V)
-                      ↝↝
-                      return V
+  -- COERCION RULES
 
-    coerce-↑        : (V : Γ ⊢V⦂ ```(payload op))
-                      (M : Γ ⊢M⦂ X ! (i , isf)) →
-                      -------------------------------
-                      coerce {isf' = isf'} x (↑ op V M)
-                      ↝↝
-                      ↑ op V (coerce x M)
+  coerce-return   : (V : Γ ⊢V⦂ X) →
+                    --------------------------------
+                    coerce {isf = isf} {isf' = isf'} x (return V)
+                    ↝↝
+                    return V
 
-    coerce-promise  : (x : i ⊑ i'')
-                      (p : i' ⊑ lkp op i)
-                      (q : [ op ]ₗ ∈ᵢ i)
-                      (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
-                      (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
-                      ------------------------------------------------------------------
-                      coerce {isf' = isf''} x (promise op ∣ p , q ↦ M `in N)
-                      ↝↝
-                      promise op ∣ ⊑-trans p (lkp-mono x) , ∈ᵢ-⊑ x q ↦ M `in coerce x N
+  coerce-↑        : (V : Γ ⊢V⦂ ```(payload op))
+                    (M : Γ ⊢M⦂ X ! (i , isf)) →
+                    -------------------------------
+                    coerce {isf' = isf'} x (↑ op V M)
+                    ↝↝
+                    ↑ op V (coerce x M)
+
+  coerce-promise  : (x : i ⊑ i'')
+                    (p : i' ⊑ lkp op i)
+                    (q : [ op ]ₗ ∈ᵢ i)
+                    (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (i' , isf'))
+                    (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (i , isf)) →
+                    ------------------------------------------------------------------
+                    coerce {isf' = isf''} x (promise op ∣ p , q ↦ M `in N)
+                    ↝↝
+                    promise op ∣ ⊑-trans p (lkp-mono x) , ∈ᵢ-⊑ x q ↦ M `in coerce x N

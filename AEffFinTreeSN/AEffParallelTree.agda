@@ -33,7 +33,7 @@ data _⊢P⦂ Γ : Set where
         Γ ⊢P⦂
 
 variable
-  P P' Q Q' R R' S S' : Γ ⊢P⦂
+  P P' Q Q' R R' : Γ ⊢P⦂
 
 
 -- SMALL-STEP OPERATIONAL SEMANTICS FOR WELL-TYPED PROCESSES
@@ -54,19 +54,19 @@ data _↝↝ₚ_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where
 
   ↑-∥ₗ    : (V : Γ ⊢V⦂ ```(payload op))
             (R : Γ ⊢P⦂)
-            (S : Γ ⊢P⦂) →
+            (Q : Γ ⊢P⦂) →
             ------------
-            ↑ op V R ∥ S
+            ↑ op V R ∥ Q
             ↝↝ₚ
-            ↑ op V (R ∥ ↓ op V S)
+            ↑ op V (R ∥ ↓ op V Q)
 
   ↑-∥ᵣ    : (V : Γ ⊢V⦂ ```(payload op))
             (R : Γ ⊢P⦂)
-            (S : Γ ⊢P⦂) →
+            (Q : Γ ⊢P⦂) →
             --------------
-            R ∥ ↑ op V S
+            R ∥ ↑ op V Q
             ↝↝ₚ
-            ↑ op V (↓ op V R ∥ S)
+            ↑ op V (↓ op V R ∥ Q)
 
   -- INTERRUPT PROPAGATION RULES
 
@@ -79,11 +79,11 @@ data _↝↝ₚ_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where
 
   ↓-∥     : (V : Γ ⊢V⦂ ```(payload op))
             (R : Γ ⊢P⦂)
-            (S : Γ ⊢P⦂) →
+            (Q : Γ ⊢P⦂) →
             ----------------
-            ↓ op V (R ∥ S)
+            ↓ op V (R ∥ Q)
             ↝↝ₚ
-            ↓ op V R ∥ ↓ op V S
+            ↓ op V R ∥ ↓ op V Q
 
   ↓-↑     : (V : Γ ⊢V⦂ ```(payload op))
             (W : Γ ⊢V⦂ ```(payload op'))
@@ -106,15 +106,15 @@ data _↝↝ₚ_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where
 
   context-∥ₗ : R ↝↝ₚ R' →
                -------
-               R ∥ S
+               R ∥ Q
                ↝↝ₚ
-               R' ∥ S
+               R' ∥ Q
 
-  context-∥ᵣ : S ↝↝ₚ S' →
+  context-∥ᵣ : Q ↝↝ₚ Q' →
                ------
-               R ∥ S
+               R ∥ Q
                ↝↝ₚ
-               R ∥ S'
+               R ∥ Q'
 
   context-↑ : R ↝↝ₚ R' →
               ---------

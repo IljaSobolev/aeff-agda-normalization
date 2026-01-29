@@ -95,7 +95,7 @@ form-#↑ (promise ff) = z≤n
 ... | inj₂ (_ , ff , r') = sn (≡-↓-sn' u (sM r') (sN r) ff) (≤-trans (form-#↑ ff) (sn-#↑ (sM r')))
 
 
--- AS A RESULT, ACTING WITH op ON A TERM THAT HAS NO HANDLER FOR op
+-- ACTING WITH op ON A TERM THAT HAS NO HANDLER FOR op
 -- DOES NOT INCREASE THE MAXIMUM NUMBER OF OUTGOING SIGNALS
 
 ≡-↓-sn : ¬ [ op ]ₗ ∈ᵢ i-of (type-of M) → SN↑ M n → SN↑ (↓ op V M) n
@@ -240,6 +240,9 @@ strong-normₚ' sP ai (acc a↑) _ (↑-∥ r) | inj₂ (eq , le) rewrite sym eq
 strong-normₚ' sP ai a↑ (acc a↝) (run r)
   rewrite sym (run-i-≡ r sP) | sym (run-↑-≡ r sP) =
   sn (strong-normₚ' _ ai a↑ (a↝ (run-↝-< r sP)))
+
+
+-- ALL PARALLEL PROCESSES ARE STRONGLY NORMALISING
 
 all-sn* : (P : Γ ⊢P⦂) → sn* P
 all-sn* [] = tt

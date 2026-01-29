@@ -33,6 +33,9 @@ data Form {op} {i} {isf} : Γ ⊢M⦂ X ! (i , isf) → Γ ⊢M⦂ X ! (op ↓�
   await   : Form M N → Form (await V until M) (await V until N)
   promise : ∀ {x y x' y'} → Form M N → Form (promise op' ∣ x , y ↦ L `in M) (promise op' ∣ x' , y' ↦ L `in N)
 
+
+-- FORM IS INVARIANT UNDER SUBSTITUTIONS
+
 form-sub : {M : Γ ⊢M⦂ X ! (i , isf)}
            {N : Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)}
            (s : Sub Γ Γ') →
@@ -93,7 +96,7 @@ form-#↑ (promise ff) = z≤n
 ... | inj₂ (_ , ff , r') = sn (≡-↓-sn' u (sM r') (sN r) ff) (≤-trans (form-#↑ ff) (sn-#↑ (sM r')))
 
 
--- AS A RESULT, ACTING WITH op ON A TERM THAT HAS NO HANDLER FOR op
+-- ACTING WITH op ON A TERM THAT HAS NO HANDLER FOR op
 -- DOES NOT INCREASE THE MAXIMUM NUMBER OF OUTGOING SIGNALS
 
 ≡-↓-sn : ¬ [ op ]ₗ ∈ᵢ i-of (type-of M) → SN↑ M n → SN↑ (↓ op V M) n
@@ -409,6 +412,9 @@ strong-normₚ' sP ai a↑ (acc ap) a↝ r | ↓-run with ↓-run-< r sP eq
 ... | inj₂ (x , y)
   rewrite sym x | sym y =
   sn (strong-normₚ' (sn*↝ r sP) ai a↑ (ap (↓-run-<p r eq)) (<-wf _))
+
+
+-- ALL PARALLEL PROCESSES ARE STRONGLY NORMALISING
 
 all-sn* : (P : Γ ⊢P⦂) → sn* P
 all-sn* (run M) = run (strong-norm-Σ (strong-norm M))

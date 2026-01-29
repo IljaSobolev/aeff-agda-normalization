@@ -16,7 +16,6 @@ open import Function.Base using (_∘_)
 
 module AEffBaseSN.SubstitutionProperties where
 
-
 -- POINTWISE EQUALITY OF RENAMINGS
 
 infix 4 _≈ᵣ_
@@ -31,7 +30,7 @@ _≈ₛ_ : Sub Γ Γ' → Sub Γ Γ' → Set
 s ≈ₛ s' = {Y : Type} (x : Y ∈ _) → s x ≡ s' x
 
 
--- ACTION POINTWISE EQUAL RENAMINGS RESULTS IN EQUAL TERMS
+-- ACTION OF POINTWISE EQUAL RENAMINGS RESULTS IN EQUAL TERMS
 
 cong-ren-v : r ≈ᵣ r' → V-rename r V ≡ V-rename r' V
 
@@ -55,7 +54,7 @@ cong-ren-m {M = promise op ↦ M `in N} f = cong₂ (promise op ↦_`in_) (cong-
 cong-ren-m {M = await V until M} f = cong₂ await_until_ (cong-ren-v f) (cong-ren-l f)
 
 
--- ACTION POINTWISE EQUAL SUBSTITUTIONS RESULTS IN EQUAL TERMS
+-- ACTION OF POINTWISE EQUAL SUBSTITUTIONS RESULTS IN EQUAL TERMS
 
 cong-sub-v : s ≈ₛ s' → V [ s ]v ≡ V [ s' ]v
 
@@ -180,15 +179,21 @@ sub-ren-m {M = promise op ↦ M `in N} f = cong₂ (promise op ↦_`in_) (sub-re
 sub-ren-m {M = await V until M} f = cong₂ await_until_ (sub-ren-v {V = V} f) (sub-ren-l f)
 
 
--- ACTION OF A COMPOSITION OF SUBSTITUTIONS IS THE SAME AS PERFORMING THE SUBSTITUTIONS ONE AFTER THE OTHER
+-- COMPOSITION OF SUBSTITUTIONS
 
 infixr 9 _⨟_
 _⨟_ : Sub Γ Γ' → Sub Γ' Γ'' → Sub Γ Γ''
 (s ⨟ s') x = s x [ s' ]v
 
+
+-- LIFTING A COMPOSITION OF SUBSTITUTIONS IS POINTWISE EQUAL TO A COMPOSITION OF LIFTED SUBSTITUTIONS
+
 lift-⨟ : lift {X = X} s ⨟ lift s' ≈ₛ lift (s ⨟ s')
 lift-⨟ Hd = refl
 lift-⨟ {s = s} (Tl x) = sub-ren-v {V = s x} (λ _ → refl)
+
+
+-- ACTION OF A COMPOSITION OF SUBSTITUTIONS IS THE SAME AS PERFORMING THE SUBSTITUTIONS ONE AFTER THE OTHER
 
 sub-sub-v : V [ s ]v [ s' ]v ≡ V [ s ⨟ s' ]v
 

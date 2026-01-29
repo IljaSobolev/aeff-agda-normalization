@@ -24,6 +24,9 @@ variable
   x y : B
   xs ys : List B
 
+
+-- EACH TERM CAN ONLY HAVE FINITELY MANY REDUCTS
+
 data Reduct (M : Γ ⊢M⦂ X) : Set where
   r↝ : M ↝↝ N → Reduct M
 
@@ -100,6 +103,9 @@ reducts M = reducts-base M ++ₗ reducts-ctx M
 reducts-complete : (R : Reduct M) → R ∈ₗ reducts M
 reducts-complete R = ++-∈ₗ (reducts-complete' R)
 
+
+-- STRONG NORMALISATION PREDICATE
+
 data SN (M : Γ ⊢M⦂ X) : Set where
   sn : ({N : Γ ⊢M⦂ X} → M ↝↝ N → SN N) → SN M
 
@@ -112,12 +118,18 @@ sn'→sn s = sn s
 sn→sn' : SN M → SN' M
 sn→sn' (sn f) = f
 
+
+-- STRONG NORMALISATION IS INVARIANT UNDER RENAMIINGS
+
 ren-sn' : SN M → SN' (M-rename r M)
 ren-sn' (sn h) r with ren-↝↝-Σ _ r
 ... | _ , refl , r = sn (ren-sn' (h r))
 
 ren-sn : SN M → SN (M-rename r M)
 ren-sn s = sn'→sn (ren-sn' s)
+
+
+-- STRONG NORMALISATION PREDICATE INDEXED BY MAXIMUM REDUCTION LENGTH
 
 data SNi (M : Γ ⊢M⦂ X) : ℕ → Set where
   sn : ({N : Γ ⊢M⦂ X} → M ↝↝ N → SNi N n) → SNi M (suc n)
@@ -133,6 +145,9 @@ sn→sni (sn sM) = sn (λ r → sni-≤ (⊔-∈ₗ-≤ (map-∈ₗ (reducts-com
 
 sni→sn : SNi M n → SN M
 sni→sn (sn sM) = sn (λ r → sni→sn (sM r))
+
+
+-- STRONG NORMALISATION PREDICATE INDEXED BY MAXIMUM NUMBER OF OUTGOING SIGNALS
 
 #↑ : Γ ⊢M⦂ X → ℕ
 #↑ (↑ _ _ M) = suc (#↑ M)

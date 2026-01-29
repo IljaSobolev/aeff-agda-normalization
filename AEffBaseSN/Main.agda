@@ -46,6 +46,10 @@ KRed {Γ} {X} K =
 ARed {Γ} {Y} {Z} {X} K N =
   {Γ' : Ctx} {r : Ren Γ Γ'} {V : Γ' ⊢V⦂ X} → VRed V → SN' (K-rename r K aₖ await ⟨ V ⟩ until M-rename (wk₂ r) N)
 
+
+-- AUXILIARY PREDICATE EXPRESSING THAT ALL ONE-VARIABLE SUBSTITUTIONS OF
+-- REDUCIBLE COMPUTATIONS WITH REDUCIBLE VALUES RESULTS IN REDUCIBLE COMPUTATIONS
+
 CRedSub' : Γ ∷ X ⊢M⦂ Y → Set
 CRedSub' {Γ} {X} M =
   {Γ' : Ctx} {r : Ren Γ Γ'} {V : Γ' ⊢V⦂ X} → VRed V → CRed (M-rename (wk₂ r) M [ id-subst [ V ]s ]m)
@@ -62,7 +66,15 @@ kred-r : (K : Γ ⊢K⦂ X ⊸ Y) → KRed K → KRed (K-rename r K)
 kred-r K rK rV = subst SN' (cong (_aₖ _) (sym (ren-ren-k K))) (rK rV)
 
 
+-- REDUCIBLE CONTINUATIONS APPLIED TO REDUCIBLE COMPUTATIONS RESULT IN STRONGLY NORMALISING TERMS
+
+cred-kred : (K : Γ ⊢K⦂ X ⊸ Y) → KRed K → CRed M → SN' (K aₖ M)
+cred-kred K rK rM = subst (λ z → SN' (K aₖ z)) ren-id-m (rM K rK)
+
+
 -- PROOFS OF THE REDUCIBILITY LEMMAS FOR EACH TERM CONSTRUCTOR
+
+-- VARIABLES ARE REDUCIBLE
 
 sn-var-await : {x : ⟨ X ⟩ ∈ Γ} (K : Γ ⊢K⦂ Y ⊸ Z) → SN' (K aₖ await ` x until N)
 sn-var-await K r with aₖ→`aₖ K r
@@ -76,8 +88,8 @@ vred-var {_ ⇒ _} _ _ K _ r with aₖ→`aₖ K r
 ... | ↝∘↓ _ (context-↓ ())
 vred-var {⟨ _ ⟩} _ K _ _ = sn-var-await K
 
-cred-kred : (K : Γ ⊢K⦂ X ⊸ Y) → KRed K → CRed M → SN' (K aₖ M)
-cred-kred K rK rM = subst (λ z → SN' (K aₖ z)) ren-id-m (rM K rK)
+
+-- CREDSUB IS ALSO PRESERVED UNDER RENAMINGS (USING REDUCIBILITY OF VARIABLES)
 
 credsub'→cred : CRedSub' M → CRed (M-rename (wk₂ r) M)
 credsub'→cred rM =
@@ -88,6 +100,9 @@ credsub'→cred rM =
 credsub'-r : CRedSub' M → CRedSub' (M-rename (wk₂ r) M)
 credsub'-r rM rV K rK = subst (λ z → SN' (K aₖ M-rename _ (z [ id-subst [ _ ]s ]m))) (sym ren-ren-l) (rM rV K rK)
 
+
+-- LAMBDA ABSTRACTIONS ARE REDUCIBLE
+
 sn-ƛ : (K : Γ ⊢K⦂ X ⊸ Y) → SN (K aₖ M [ id-subst [ W ]s ]m) → SN' (K aₖ ƛ M · W)
 sn-ƛ K s r with aₖ→`aₖ K r
 ... | ↝id (apply _ _) = s
@@ -96,6 +111,9 @@ sn-ƛ K s r with aₖ→`aₖ K r
 
 vred-ƛ : CRedSub' M → VRed (ƛ M)
 vred-ƛ rM rW K rK = sn-ƛ K (subst (λ z → SN (K aₖ z [ id-subst [ _ ]s ]m)) (sym ren-ren-l) (sn'→sn (cred-kred K rK (rM (vred-r rW)))))
+
+
+-- LET-TERMS ARE REDUCIBLE
 
 sn-let : (K : Γ ⊢K⦂ X ⊸ Y) → SN (K aₖ N [ id-subst [ V ]s ]m) → SN' (K aₖ let= return V `in N)
 sn-let K s r with aₖ→`aₖ K r
@@ -109,6 +127,9 @@ kred-let K rK rN rV = sn-let (K-rename _ K) (sn'→sn (cred-kred (K-rename _ K) 
 cred-let : CRed M → CRedSub' N → CRed (let= M `in N)
 cred-let rM rN K rK = rM (K ∘l _) (kred-let K rK (credsub'-r rN))
 
+
+-- INTERRUPTS ARE REDUCIBLE
+
 sn-↓ : (K : Γ ⊢K⦂ X ⊸ Y) → SN (K aₖ return V) → SN' (K aₖ ↓ op W (return V))
 sn-↓ K s r with aₖ→`aₖ K r
 ... | ↝id (↓-return _ _) = s
@@ -121,6 +142,15 @@ kred-↓ K rK rV = sn-↓ (K-rename _ K) (sn'→sn (rK rV))
 cred-↓ : CRed M → CRed (↓ op V M)
 cred-↓ rM K rK = rM (K ∘↓ _ [ _ ]) (kred-↓ K rK)
 
+
+-- RETURN IS REDUCIBLE
+
+cred-return : VRed V → CRed (return V)
+cred-return rV K rK = subst (λ z → SN' (z aₖ return _)) (ren-id-k K) (rK (vred-r rV))
+
+
+-- SIGNALS ARE REDUCIBLE
+
 sn-↑ : (K : Γ ⊢K⦂ X ⊸ Y) → SN (K aₖ M) → SN' (K aₖ ↑ op V M)
 sn-↑ K (sn f) r with aₖ→`aₖ K r
 ... | ↝id (context-↑ r) = sn'→sn (sn-↑ id (f r))
@@ -131,6 +161,53 @@ sn-↑ K (sn f) r with aₖ→`aₖ K r
 
 cred-↑ : CRed M → CRed (↑ op V M)
 cred-↑ rM K rK = sn-↑ K (sn'→sn (rM K rK))
+
+
+-- AWAIT-TERMS ARE REDUCIBLE
+
+sn-await : (K : Γ ⊢K⦂ Y ⊸ Z) → SN (K aₖ N [ id-subst [ V ]s ]m) → SN' (K aₖ await ⟨ V ⟩ until N)
+sn-await K s r with aₖ→`aₖ K r
+... | ↝id (await-promise _ _) = s
+... | ↝∘l K (let-await _ _ _) = sn'→sn (sn-await K (subst (λ z → SN (K aₖ let= _ `in z)) (wk₂wk₁M[liftid-subst[W]] _ _) s))
+... | ↝∘↓ K (↓-await _ _ _) = sn'→sn (sn-await K (subst (λ z → SN (K aₖ ↓ _ z _)) (wk₁V[id-subst[W]] _ _) s))
+... | ↝∘l _ (context-let (await-promise _ _)) = s
+... | ↝∘↓ _ (context-↓ (await-promise _ _)) = s
+
+ared-await : (K : Γ ⊢K⦂ X ⊸ Y) → KRed K → CRedSub' N → ARed K N
+ared-await K rK rN rV = sn-await (K-rename _ K) (sn'→sn (cred-kred (K-rename _ K) (kred-r K rK) (rN rV)))
+
+cred-await : VRed V → CRedSub' N → CRed (await V until N)
+cred-await rV rN K rK = rV K _ (ared-await K rK (credsub'-r rN))
+
+
+-- PROMISE VALUES ARE REDUCIBLE
+
+vred-⟨⟩ : VRed V → VRed ⟨ V ⟩
+vred-⟨⟩ rV K N rK = subst₂ (λ z w → SN' (z aₖ await ⟨ V-rename _ _ ⟩ until w)) (ren-id-k K) ren-id-l (rK (vred-r rV))
+
+
+-- REMOVING A SIGNAL FROM A COMPUTATIONS KEEPS IT STRONGLY NORMALISING
+-- AND DOES NOT INCREASE THE MAXIMUM REDUCTION LENGTH
+
+sn-k-↑-e : (K : Γ ⊢K⦂ Y ⊸ Z) → SN (K aₖ ↑ op V M) → SN' (K aₖ M)
+sn-k-↑-e K (sn sM) r with aₖ→`aₖ K r
+... | ↝id r = sn'→sn (sn-k-↑-e id (sM (context-↑ r)))
+... | ↝∘l K r = sn-k-↑-e K (sM (context-K K (let-↑ _ _ _))) (context-K K r)
+... | ↝∘↓ K r = sn-k-↑-e K (sM (context-K K (↓-↑ _ _ _))) (context-K K r)
+
+sni-k-↑-e' : (K : Γ ⊢K⦂ Y ⊸ Z) → SNi (K aₖ ↑ op V M) (suc n) → {L : Γ ⊢M⦂ Z} → K aₖ M ↝↝ L → SNi L n
+
+sni-k-↑-e : (K : Γ ⊢K⦂ Y ⊸ Z) → SNi (K aₖ ↑ op V M) n → SNi (K aₖ M) n
+
+sni-k-↑-e' K (sn sM) r with aₖ→`aₖ K r
+... | ↝id r = sni-k-↑-e id (sM (context-↑ r))
+... | ↝∘l K r with sn sM ← sni-k-↑-e K (sM (context-K K (let-↑ _ _ _))) = sni-≤ (n≤1+n _) (sM (context-K K r))
+... | ↝∘↓ K r with sn sM ← sni-k-↑-e K (sM (context-K K (↓-↑ _ _ _))) = sni-≤ (n≤1+n _) (sM (context-K K r))
+
+sni-k-↑-e {n = suc n} K sM = sn (sni-k-↑-e' K sM)
+
+
+-- AUXILIARY LEMMAS ON REDUCIBILITY OF CERTAIN EXTENSIONS OF CONTINUATIONS
 
 kred-comm-let : (K : Γ ⊢K⦂ Z ⊸ U) →
                 KRed (K ∘l L ∘l N) →
@@ -190,18 +267,6 @@ kred-↝ K r rK rV =
       (rK rV (context-K (K-rename _ K) (let-return _ _)))
       (context-K (K-rename _ K) (sub-↝↝ _ (ren-↝↝ _ r))))
 
-sn↑-k-↑-e : (K : Γ ⊢K⦂ Y ⊸ Z) → SN↑ (K aₖ ↑ op V M) (suc n) → ∀ {N} → K aₖ M ↝↝ N → SN↑ N n
-sn↑-k-↑-e K (sn sM le) r with aₖ→`aₖ K r
-... | ↝id r with sn sM (s≤s le) ← sM (context-↑ r) = sn (sn↑-k-↑-e id (sn sM (s≤s le))) le
-... | ↝∘l K r = sn↑-k-↑-e K (sM (context-K K (let-↑ _ _ _))) (context-K K r)
-... | ↝∘↓ K r = sn↑-k-↑-e K (sM (context-K K (↓-↑ _ _ _))) (context-K K r)
-
-sn-k-↑-e : (K : Γ ⊢K⦂ Y ⊸ Z) → SN (K aₖ ↑ op V M) → SN' (K aₖ M)
-sn-k-↑-e K (sn sM) r with aₖ→`aₖ K r
-... | ↝id r = sn'→sn (sn-k-↑-e id (sM (context-↑ r)))
-... | ↝∘l K r = sn-k-↑-e K (sM (context-K K (let-↑ _ _ _))) (context-K K r)
-... | ↝∘↓ K r = sn-k-↑-e K (sM (context-K K (↓-↑ _ _ _))) (context-K K r)
-
 kred-↑ : (K : Γ ⊢K⦂ Y ⊸ Z) →
          KRed (K ∘l ↑ op V M) →
          -------------
@@ -211,16 +276,8 @@ kred-↑ K rK rV =
   sn-let (K-rename _ K)
     (sn'→sn (sn-k-↑-e (K-rename _ K) (rK rV (context-K (K-rename _ K) (let-return _ _)))))
 
-sni-k-↑-e' : (K : Γ ⊢K⦂ Y ⊸ Z) → SNi (K aₖ ↑ op V M) (suc n) → {L : Γ ⊢M⦂ Z} → K aₖ M ↝↝ L → SNi L n
 
-sni-k-↑-e : (K : Γ ⊢K⦂ Y ⊸ Z) → SNi (K aₖ ↑ op V M) n → SNi (K aₖ M) n
-
-sni-k-↑-e' K (sn sM) r with aₖ→`aₖ K r
-... | ↝id r = sni-k-↑-e id (sM (context-↑ r))
-... | ↝∘l K r with sn sM ← sni-k-↑-e K (sM (context-K K (let-↑ _ _ _))) = sni-≤ (n≤1+n _) (sM (context-K K r))
-... | ↝∘↓ K r with sn sM ← sni-k-↑-e K (sM (context-K K (↓-↑ _ _ _))) = sni-≤ (n≤1+n _) (sM (context-K K r))
-
-sni-k-↑-e {n = suc n} K sM = sn (sni-k-↑-e' K sM)
+-- INTERRUPT HANDLERS ARE REDUCIBLE
 
 sn-promise : (K : Γ ⊢K⦂ Y ⊸ Z) →
              KRed (K ∘l N) →
@@ -253,28 +310,11 @@ cred-promise rM rN K rK r =
   sn-promise K (kred-let K rK (credsub'-r rN)) (credsub'-r rM)
     (sn→sni (sn'→sn (cred-kred (K-rename _ K) (kred-r K rK) (credsub'→cred rN)))) (aₖ→`aₖ K r)
 
+
+-- REDUCIBILITY IMPLIES STRONG NORMALISATION
+
 cred→sn' : CRed M → SN' M
 cred→sn' rM = subst SN' ren-id-m (rM id (λ _ ()))
-
-cred-return : VRed V → CRed (return V)
-cred-return rV K rK = subst (λ z → SN' (z aₖ return _)) (ren-id-k K) (rK (vred-r rV))
-
-sn-await : (K : Γ ⊢K⦂ Y ⊸ Z) → SN (K aₖ N [ id-subst [ V ]s ]m) → SN' (K aₖ await ⟨ V ⟩ until N)
-sn-await K s r with aₖ→`aₖ K r
-... | ↝id (await-promise _ _) = s
-... | ↝∘l K (let-await _ _ _) = sn'→sn (sn-await K (subst (λ z → SN (K aₖ let= _ `in z)) (wk₂wk₁M[liftid-subst[W]] _ _) s))
-... | ↝∘↓ K (↓-await _ _ _) = sn'→sn (sn-await K (subst (λ z → SN (K aₖ ↓ _ z _)) (wk₁V[id-subst[W]] _ _) s))
-... | ↝∘l _ (context-let (await-promise _ _)) = s
-... | ↝∘↓ _ (context-↓ (await-promise _ _)) = s
-
-ared-await : (K : Γ ⊢K⦂ X ⊸ Y) → KRed K → CRedSub' N → ARed K N
-ared-await K rK rN rV = sn-await (K-rename _ K) (sn'→sn (cred-kred (K-rename _ K) (kred-r K rK) (rN rV)))
-
-cred-await : VRed V → CRedSub' N → CRed (await V until N)
-cred-await rV rN K rK = rV K _ (ared-await K rK (credsub'-r rN))
-
-vred-⟨⟩ : VRed V → VRed ⟨ V ⟩
-vred-⟨⟩ rV K N rK = subst₂ (λ z w → SN' (z aₖ await ⟨ V-rename _ _ ⟩ until w)) (ren-id-k K) ren-id-l (rK (vred-r rV))
 
 
 -- THE FUNDAMENTAL THEOREM OF LOGICAL RELATIONS
@@ -282,11 +322,17 @@ vred-⟨⟩ rV K N rK = subst₂ (λ z w → SN' (z aₖ await ⟨ V-rename _ _ 
 SubRed : (s : Sub Γ Γ') → Set
 SubRed {Γ} s = {X : Type} (x : X ∈ Γ) → VRed (s x)
 
+
+-- PREDICATES EXPRESSING THAT ALL REDUCIBLE SUBSTITUTIONS OF A TERM ARE REDUCIBLE
+
 VRedSub : Γ ⊢V⦂ X → Set
 VRedSub {Γ} V = {Γ' : Ctx} {s : Sub Γ Γ'} → SubRed s → VRed (V [ s ]v)
 
 CRedSub : Γ ⊢M⦂ X → Set
 CRedSub {Γ} M = {Γ' : Ctx} {s : Sub Γ Γ'} → SubRed s → CRed (M [ s ]m)
+
+
+-- PROPERTIES OF THE ABOVE PREDICATES
 
 subred-⨟ : SubRed s → SubRed (s ⨟ ren r)
 subred-⨟ {r = r} rs x = subst VRed (sym ren-rename-v) (vred-r (rs x))
@@ -314,6 +360,9 @@ cred-⨟ rs rM rV K rK = subst (λ z → SN' (K aₖ M-rename _ z)) eq (rM (subr
     ≡⟨ cong (_[ id-subst [ V ]s ]m) ren-rename-m ⟩
       M-rename (wk₂ r) (M [ lift s ]m) [ id-subst [ V ]s ]m
     ∎
+
+
+-- THE FUNDAMENTAL THEOREM OF LOGICAL RELATIONS
 
 fund-v : (V : Γ ⊢V⦂ X) → VRedSub V
 

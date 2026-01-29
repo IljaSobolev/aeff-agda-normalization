@@ -1,5 +1,4 @@
-open import Data.Nat using (ℕ; zero; suc; _+_; _≤_; z≤n; s≤s; _<_)
-open import Data.Nat.Properties using (≤-refl; ≤-reflexive; +-mono-≤-<; +-suc)
+open import Data.Nat using (_<_)
 open import Data.Nat.Induction using (<-wellFounded)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Product using (_×_; _,_)
@@ -10,21 +9,21 @@ open import Induction.WellFounded using (Acc; acc)
 
 open import AEffFinTreeSN.AEffSequential
 open import AEffFinTreeSN.StronglyNormalising using (SN; sn)
+open import AEffBaseSN.StronglyNormalising using () renaming (SN to SN*; sn to sn*)
+open import AEffBaseSN.Main using () renaming (strong-norm to strong-norm*)
+open import AEff.Simulation using (ContextShape; [-]; coe; other; _↝c_; coe-ctx; other-ctx; coe-[-]; coe-↓; ∣_∣; size-mono-↝)
+open import AEff.Types using (GType)
+
 import AEffBaseSN.AEffBase.Types as B
 import AEffBaseSN.AEffBase.AEff as B
 import AEffBaseSN.AEffBase.Renamings as B
 import AEffBaseSN.AEffBase.Substitutions as B
 import AEffBaseSN.AEffBase.Preservation as B
 import AEffBaseSN.AEffBase.Finality as B
-open import AEffBaseSN.StronglyNormalising using () renaming (SN to SN*; sn to sn*)
-open import AEffBaseSN.Main using () renaming (strong-norm to strong-norm*)
-open import AEff.Simulation using (Context; [-]; coe; other; _↝c_; coe-ctx; other-ctx; coe-[-]; coe-↓; ∣_∣; size-mono-↝)
-
-open import AEff.Types using (GType)
 
 module AEffFinTreeSN.Simulation where
 
--- EMBEDDING OF AEFF TYPES, CONTEXT, VARIABLES, TERMS INTO AEFFBASE
+-- EMBEDDING OF AEFFFIN TYPES, CONTEXTS, VARIABLES AND TERMS INTO AEFFBASE
 
 emb-ty-v : VType → B.Type
 
@@ -63,14 +62,21 @@ emb-tm-m (await V until N) = B.await emb-tm-v V until emb-tm-m N
 emb-tm-m (coerce p M) = emb-tm-m M
 
 
--- RELATION BETWEEN AEFF RENAMINGS AND AEFFBASE RENAMINGS
+-- RELATION BETWEEN AEFFFIN RENAMINGS AND AEFFBASE RENAMINGS
 
 infix 4 _~ᵣ_
 _~ᵣ_ : (r : Ren Γ Δ) (r† : B.Ren (emb-ctx Γ) (emb-ctx Δ)) → Set
 r ~ᵣ r† = {X : VType} (x : X ∈ _) → emb-∈ (r x) ≡ r† (emb-∈ x)
 
 
--- RELATED RENAMINGS ACT THE SAME ON EMBEDDED TERMS
+-- RELATION BETWEEN AEFFFIN SUBSTITUTIONS AND AEFFBASE SUBSTITUTIONS
+
+infix 4 _~ₛ_
+_~ₛ_ : (s : Sub Γ Δ) (s† : B.Sub (emb-ctx Γ) (emb-ctx Δ)) → Set
+s ~ₛ s† = {X : VType} (x : X ∈ _) → emb-tm-v (s x) ≡ s† (emb-∈ x)
+
+
+-- RELATED RENAMINGS ACT THE SAME ON RELATED TERMS
 
 ~ᵣ-v : (V : Γ ⊢V⦂ X) →
        {r : Ren Γ Δ} {r† : B.Ren (emb-ctx Γ) (emb-ctx Δ)} →
@@ -107,14 +113,7 @@ r ~ᵣ r† = {X : VType} (x : X ∈ _) → emb-∈ (r x) ≡ r† (emb-∈ x)
 ~ᵣ-m (coerce p M) ~r = ~ᵣ-m M ~r
 
 
--- RELATION BETWEEN AEFF SUBSTITUTIONS AND AEFFBASE SUBSTITUTIONS
-
-infix 4 _~ₛ_
-_~ₛ_ : (s : Sub Γ Δ) (s† : B.Sub (emb-ctx Γ) (emb-ctx Δ)) → Set
-s ~ₛ s† = {X : VType} (x : X ∈ _) → emb-tm-v (s x) ≡ s† (emb-∈ x)
-
-
--- RELATED SUBSTITUTIONS ACT THE SAME ON EMBEDDED TERMS
+-- RELATED SUBSTITUTIONS ACT THE SAME ON RELATED TERMS
 
 ~ₛ-v : (V : Γ ⊢V⦂ X)
        {s : Sub Γ Δ} {s† : B.Sub (emb-ctx Γ) (emb-ctx Δ)} →
@@ -150,6 +149,9 @@ s ~ₛ s† = {X : VType} (x : X ∈ _) → emb-tm-v (s x) ≡ s† (emb-∈ x)
 ~ₛ-m (await V until N) ~s = cong₂ (B.await_until_) (~ₛ-v V ~s) (~ₛ-lift N ~s)
 ~ₛ-m (coerce p M) ~s = ~ₛ-m M ~s
 
+
+-- FURTHER IDENTITIES ABOUT RELATED RENAMINGS, SUBSTITUTIONS AND TERMS
+
 ~ᵣ-wk₁-v : (V : Γ ⊢V⦂ X) →
            -----------
            emb-tm-v (V-rename (wk₁ {X = Z}) V) ≡ B.V-rename B.wk₁ (emb-tm-v V)
@@ -176,24 +178,29 @@ s ~ₛ s† = {X : VType} (x : X ∈ _) → emb-tm-v (s x) ≡ s† (emb-∈ x)
 ~-strengthen (`` c) = refl
 
 
--- SINCE AEFFBASE DOESN'T HAVE COERCION, WE HAVE TO KEEP TRACK OF REDUCTIONS
--- INVOLVING COERCE TERMS USING EVALUATION CONTEXTS
+-- FINDING THE CONTEXT SHAPE OF A TERM (SEE AEFF/SIMULATION.AGDA)
 
-find-ctx : {Γ : Ctx} {X : CType} → Γ ⊢M⦂ X → Context
-find-ctx (return _) = [-]
-find-ctx (let= M `in _) = other (find-ctx M)
-find-ctx (_ · _) = [-]
-find-ctx (↑ _ _ M) = other (find-ctx M)
-find-ctx (↓ _ _ M) = other (find-ctx M)
-find-ctx (promise _ ∣ _ , _ ↦ _ `in N) = other (find-ctx N)
-find-ctx (await _ until M) = [-]
-find-ctx (coerce _ M) = coe (find-ctx M)
+ctx-shape-of : {Γ : Ctx} {X : CType} → Γ ⊢M⦂ X → ContextShape
+ctx-shape-of (return _) = [-]
+ctx-shape-of (let= M `in _) = other (ctx-shape-of M)
+ctx-shape-of (_ · _) = [-]
+ctx-shape-of (↑ _ _ M) = other (ctx-shape-of M)
+ctx-shape-of (↓ _ _ M) = other (ctx-shape-of M)
+ctx-shape-of (promise _ ∣ _ , _ ↦ _ `in N) = other (ctx-shape-of N)
+ctx-shape-of (await _ until M) = [-]
+ctx-shape-of (coerce _ M) = coe (ctx-shape-of M)
 
 
--- THE SIMULATION RESULT: A REDUCTION IN AEFFFIN EITHER CORRESPONDS TO A REDUCTION IN AEFFBASE
--- OR IT IS THE REDUCTION OF THE EVALUATION CONTEXT
+-- THE SIMULATION RESULT: A REDUCTION IN AEFFFIN
+-- EITHER CORRESPONDS TO A REDUCTION IN AEFFBASE,
+-- OR IT IS A REDUCTION OF THE CONTEXT SHAPE
 
-sim : M ↝↝ N → emb-tm-m M B.↝↝ emb-tm-m N ⊎ (emb-tm-m M ≡ emb-tm-m N) × find-ctx M ↝c find-ctx N
+sim : M ↝↝ N →
+      ---------------------
+      emb-tm-m M B.↝↝ emb-tm-m N ⊎
+      (emb-tm-m M ≡ emb-tm-m N)
+        × ctx-shape-of M ↝c ctx-shape-of N
+
 sim (apply M V) rewrite ~ₛᵣ-m M V = inj₁ (B.apply _ _)
 sim (let-return V N) rewrite ~ₛᵣ-m N V = inj₁ (B.let-return _ _)
 sim (let-↑ V M N) = inj₁ (B.let-↑ _ _ _)
@@ -226,9 +233,15 @@ sim (coerce-↑ V M) = inj₂ (refl , coe-↓)
 sim (coerce-promise x p q M N) = inj₂ (refl , coe-↓)
 
 
--- STRONG NORMALISATION PROOF BY MEANS OF THE SIMULATION
+-- STRONG NORMALISATION PROOF BY MEANS OF THE SIMULATION AND
+-- WELL-FOUNDEDNESS OF CONTEXT SHAPE REDUCTION
 
-sn*→sn : Acc _<_ ∣ find-ctx M ∣ → SN* (emb-tm-m M) → M ↝↝ N → SN N
+sn*→sn : Acc _<_ ∣ ctx-shape-of M ∣ →
+         SN* (emb-tm-m M) →
+         M ↝↝ N →
+         -------
+         SN N
+
 sn*→sn aM sM r with sim r
 sn*→sn aM (sn* f) _ | inj₁ r = sn (sn*→sn (<-wellFounded _) (f r))
 sn*→sn (acc aM) sM _ | inj₂ (e , r) rewrite e = sn (sn*→sn (aM (size-mono-↝ r)) sM)

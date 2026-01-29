@@ -37,22 +37,22 @@ data ParallelShape : Set where
   ↑   : ParallelShape → ParallelShape
 
 variable
-  Ps Ps' Qs Qs' Rs Rs' : ParallelShape
+  S S' T T' : ParallelShape
 
 
 -- REDUCTION OF PARALLEL SHAPES
 
 infix 4 _⇝_
 data _⇝_ : ParallelShape → ParallelShape → Set where
-  ↑-∥ₗ       : ↑ Ps ∥ Qs ⇝ ↑ (Ps ∥ ↓ Qs)
-  ↑-∥ᵣ       : Ps ∥ ↑ Qs ⇝ ↑ (↓ Ps ∥ Qs)
+  ↑-∥ₗ       : ↑ S ∥ T ⇝ ↑ (S ∥ ↓ T)
+  ↑-∥ᵣ       : S ∥ ↑ T ⇝ ↑ (↓ S ∥ T)
   ↓-run      : ↓ run ⇝ run
-  ↓-∥        : ↓ (Ps ∥ Qs) ⇝ ↓ Ps ∥ ↓ Qs
-  ↓-↑        : ↓ (↑ Ps) ⇝ ↑ (↓ Ps)
-  context-∥ₗ : Ps ⇝ Ps' → Ps ∥ Qs ⇝ Ps' ∥ Qs
-  context-∥ᵣ : Qs ⇝ Qs' → Ps ∥ Qs ⇝ Ps ∥ Qs'
-  context-↑  : Ps ⇝ Ps' → ↑ Ps ⇝ ↑ Ps'
-  context-↓  : Ps ⇝ Ps' → ↓ Ps ⇝ ↓ Ps'
+  ↓-∥        : ↓ (S ∥ T) ⇝ ↓ S ∥ ↓ T
+  ↓-↑        : ↓ (↑ S) ⇝ ↑ (↓ S)
+  context-∥ₗ : S ⇝ S' → S ∥ T ⇝ S' ∥ T
+  context-∥ᵣ : T ⇝ T' → S ∥ T ⇝ S ∥ T'
+  context-↑  : S ⇝ S' → ↑ S ⇝ ↑ S'
+  context-↓  : S ⇝ S' → ↓ S ⇝ ↓ S'
 
 
 private
@@ -61,41 +61,41 @@ private
 
   #↑ₛ : ParallelShape → ℕ
   #↑ₛ run = 0
-  #↑ₛ (Ps ∥ Qs) = #↑ₛ Ps + #↑ₛ Qs
-  #↑ₛ (↓ Ps) = #↑ₛ Ps
-  #↑ₛ (↑ Ps) = suc (#↑ₛ Ps)
+  #↑ₛ (S ∥ T) = #↑ₛ S + #↑ₛ T
+  #↑ₛ (↓ S) = #↑ₛ S
+  #↑ₛ (↑ S) = suc (#↑ₛ S)
 
 
   -- NUMBER OF NODES OF A PARALLEL SHAPE REGARDED AS A BINARY TREE
 
   size : ParallelShape → ℕ
   size run = 1
-  size (Ps ∥ Qs) = suc (size Ps + size Qs)
-  size (↓ Ps) = size Ps
-  size (↑ Ps) = size Ps
+  size (S ∥ T) = suc (size S + size T)
+  size (↓ S) = size S
+  size (↑ S) = size S
 
 
   -- NUMBER OF REMAINING ↓-run, ↓-∥ AND ↓-↑ REDUCTIONS ASSUMING NO ↑-∥ₗ OR ↑-∥ᵣ REDUCTION HAPPENS
 
   ∣_∣↓ : ParallelShape → ℕ
   ∣ run ∣↓ = 0
-  ∣ Ps ∥ Qs ∣↓ = ∣ Ps ∣↓ + ∣ Qs ∣↓
-  ∣ ↓ Ps ∣↓ = ∣ Ps ∣↓ + (size Ps + #↑ₛ Ps)
-  ∣ ↑ Ps ∣↓ = ∣ Ps ∣↓
+  ∣ S ∥ T ∣↓ = ∣ S ∣↓ + ∣ T ∣↓
+  ∣ ↓ S ∣↓ = ∣ S ∣↓ + (size S + #↑ₛ S)
+  ∣ ↑ S ∣↓ = ∣ S ∣↓
 
 
   -- NUMBER OF REMAINING ↑-∥ₗ AND ↑-∥ᵣ REDUCTIONS
 
   ∣_∣↑ : ParallelShape → ℕ
   ∣ run ∣↑ = 0
-  ∣ Ps ∥ Qs ∣↑ = (∣ Ps ∣↑ + #↑ₛ Ps) + (∣ Qs ∣↑ + #↑ₛ Qs)
-  ∣ ↓ Ps ∣↑ = ∣ Ps ∣↑
-  ∣ ↑ Ps ∣↑ = ∣ Ps ∣↑
+  ∣ S ∥ T ∣↑ = (∣ S ∣↑ + #↑ₛ S) + (∣ T ∣↑ + #↑ₛ T)
+  ∣ ↓ S ∣↑ = ∣ S ∣↑
+  ∣ ↑ S ∣↑ = ∣ S ∣↑
 
 
   -- REDUCTION PRESERVES NUMBER OF SIGNALS AND SIZE
 
-  #↑ₛ-⇝-≡ : Ps ⇝ Qs → #↑ₛ Qs ≡ #↑ₛ Ps
+  #↑ₛ-⇝-≡ : S ⇝ T → #↑ₛ T ≡ #↑ₛ S
   #↑ₛ-⇝-≡ ↑-∥ₗ = refl
   #↑ₛ-⇝-≡ ↑-∥ᵣ = sym (+-suc _ _)
   #↑ₛ-⇝-≡ ↓-run = refl
@@ -106,7 +106,7 @@ private
   #↑ₛ-⇝-≡ (context-↑ r) rewrite #↑ₛ-⇝-≡ r = refl
   #↑ₛ-⇝-≡ (context-↓ r) rewrite #↑ₛ-⇝-≡ r = refl
 
-  size-⇝-≡ : Ps ⇝ Qs → size Qs ≡ size Ps
+  size-⇝-≡ : S ⇝ T → size T ≡ size S
   size-⇝-≡ ↑-∥ₗ = refl
   size-⇝-≡ ↑-∥ᵣ = refl
   size-⇝-≡ ↓-run = refl
@@ -144,24 +144,24 @@ private
 -- PARALLEL SHAPE REDUCTION EITHER DECREASES ∣_∣↑ OR LEAVES ∣_∣↑ UNCHANGED AND DECREASES ∣_∣↓
 
 ∣_∣p : ParallelShape → ℕ × ℕ
-∣ Ps ∣p = ∣ Ps ∣↑ , ∣ Ps ∣↓
+∣ S ∣p = ∣ S ∣↑ , ∣ S ∣↓
 
-maxs-< : Ps ⇝ Qs → ∣ Qs ∣p <ₗₑₓ ∣ Ps ∣p
-maxs-< {Ps = ↑ Ps ∥ _} ↑-∥ₗ =
-  inj₁ (+-monoˡ-< _ (+-monoʳ-< ∣ Ps ∣↑ ≤-refl))
-maxs-< {Ps = Ps ∥ _} ↑-∥ᵣ =
-  inj₁ (+-monoʳ-< (∣ Ps ∣↑ + #↑ₛ Ps) (+-monoʳ-< _ ≤-refl))
+maxs-< : S ⇝ T → ∣ T ∣p <ₗₑₓ ∣ S ∣p
+maxs-< {S = ↑ S ∥ _} ↑-∥ₗ =
+  inj₁ (+-monoˡ-< _ (+-monoʳ-< ∣ S ∣↑ ≤-refl))
+maxs-< {S = S ∥ _} ↑-∥ᵣ =
+  inj₁ (+-monoʳ-< (∣ S ∣↑ + #↑ₛ S) (+-monoʳ-< _ ≤-refl))
 maxs-< ↓-run =
   inj₂ (refl , s≤s z≤n)
-maxs-< {Ps = ↓ (Ps ∥ _)} ↓-∥ =
-  inj₂ (refl , +-lemma-< ∣ Ps ∣↓ _ (#↑ₛ Ps) _ _ _)
-maxs-< {Ps = ↓ (↑ Ps)} ↓-↑ =
-  inj₂ (refl , +-monoʳ-< ∣ Ps ∣↓ (+-monoʳ-< _ ≤-refl))
+maxs-< {S = ↓ (S ∥ _)} ↓-∥ =
+  inj₂ (refl , +-lemma-< ∣ S ∣↓ _ (#↑ₛ S) _ _ _)
+maxs-< {S = ↓ (↑ S)} ↓-↑ =
+  inj₂ (refl , +-monoʳ-< ∣ S ∣↓ (+-monoʳ-< _ ≤-refl))
 maxs-< (context-∥ₗ r) rewrite #↑ₛ-⇝-≡ r with maxs-< r
 ... | inj₁ x = inj₁ (+-monoˡ-< _ (+-monoˡ-< _ x))
 ... | inj₂ (x , y) rewrite x = inj₂ (refl , +-monoˡ-< _ y)
-maxs-< {Ps = Ps ∥ _} (context-∥ᵣ r) rewrite #↑ₛ-⇝-≡ r with maxs-< r
-... | inj₁ x = inj₁ (+-monoʳ-< (∣ Ps ∣↑ + #↑ₛ Ps) (+-monoˡ-< _ x))
+maxs-< {S = S ∥ _} (context-∥ᵣ r) rewrite #↑ₛ-⇝-≡ r with maxs-< r
+... | inj₁ x = inj₁ (+-monoʳ-< (∣ S ∣↑ + #↑ₛ S) (+-monoˡ-< _ x))
 ... | inj₂ (x , y) rewrite x = inj₂ (refl , +-monoʳ-< _ y)
 maxs-< (context-↑ r) =
   maxs-< r

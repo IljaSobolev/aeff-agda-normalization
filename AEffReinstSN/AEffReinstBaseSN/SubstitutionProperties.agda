@@ -19,13 +19,22 @@ module AEffReinstSN.AEffReinstBaseSN.SubstitutionProperties where
 cong₃ : ∀ {A B C D : Set} (f : A → B → C → D) {x y u v s t} → x ≡ y → u ≡ v → s ≡ t → f x u s ≡ f y v t
 cong₃ f refl refl refl = refl
 
+
+-- POINTWISE EQUALITY OF RENAMINGS
+
 infix 4 _≈ᵣ_
 _≈ᵣ_ : Ren Γ Γ' → Ren Γ Γ' → Set
 r ≈ᵣ r' = {Y : Type} (x : Y ∈ _) → r x ≡ r' x
 
+
+-- POINTWISE EQUALITY OF SUBSTITUTIONS
+
 infix 4 _≈ₛ_
 _≈ₛ_ : Sub Γ Γ' → Sub Γ Γ' → Set
 s ≈ₛ s' = {Y : Type} (x : Y ∈ _) → s x ≡ s' x
+
+
+-- ACTION OF POINTWISE EQUAL RENAMINGS RESULTS IN EQUAL TERMS
 
 cong-ren-v : r ≈ᵣ r' → V-rename r V ≡ V-rename r' V
 
@@ -52,6 +61,9 @@ cong-ren-m {M = promise op ↦ M `in N} f = cong₂ (promise op ↦_`in_) (cong-
 cong-ren-m {M = await V until M} f = cong₂ await_until_ (cong-ren-v f) (cong-ren-l f)
 cong-ren-m {M = match+ V M N} f = cong₃ match+ (cong-ren-v f) (cong-ren-l f) (cong-ren-l f)
 
+
+-- ACTION OF POINTWISE EQUAL SUBSTITUTIONS RESULTS IN EQUAL TERMS
+
 cong-sub-v : s ≈ₛ s' → V [ s ]v ≡ V [ s' ]v
 
 cong-sub-m : s ≈ₛ s' → M [ s ]m ≡ M [ s' ]m
@@ -76,6 +88,9 @@ cong-sub-m {M = ↓ op V M} f = cong₂ (↓ op) (cong-sub-v {V = V} f) (cong-su
 cong-sub-m {M = promise op ↦ M `in N} f = cong₂ (promise op ↦_`in_) (cong-sub-l f) (cong-sub-l f)
 cong-sub-m {M = await V until M} f = cong₂ await_until_ (cong-sub-v {V = V} f) (cong-sub-l f)
 cong-sub-m {M = match+ V M N} f = cong₃ match+ (cong-sub-v {V = V} f) (cong-sub-l f) (cong-sub-l f)
+
+
+-- ACTION OF IDENTITY RENAMINGS LEAVES THE TERM UNCHANGED
 
 ren-id-v : V-rename id-ren V ≡ V
 
@@ -102,6 +117,9 @@ ren-id-m {M = promise op ↦ M `in N} = cong₂ (promise op ↦_`in_) ren-id-l r
 ren-id-m {M = await V until M} = cong₂ await_until_ ren-id-v ren-id-l
 ren-id-m {M = match+ V M N} = cong₃ match+ ren-id-v ren-id-l ren-id-l
 
+
+-- ACTION OF IDENTITY SUBSTITUTIONS LEAVES THE TERM UNCHANGED
+
 sub-id-v : V [ id-subst ]v ≡ V
 
 sub-id-m : M [ id-subst ]m ≡ M
@@ -127,6 +145,9 @@ sub-id-m {M = promise op ↦ M `in N} = cong₂ (promise op ↦_`in_) sub-id-l s
 sub-id-m {M = await V until M} = cong₂ await_until_ (sub-id-v {V = V}) sub-id-l
 sub-id-m {M = match+ V M N} = cong₃ match+ sub-id-v sub-id-l sub-id-l
 
+
+-- ACTION OF A COMPOSITION OF RENAMINGS IS THE SAME AS PERFORMING THE RENAMINGS ONE AFTER THE OTHER
+
 ren-ren-v : V-rename r (V-rename r' V) ≡ V-rename (r ∘ r') V
 
 ren-ren-m : M-rename r (M-rename r' M) ≡ M-rename (r ∘ r') M
@@ -151,6 +172,9 @@ ren-ren-m {M = ↓ op V M} = cong₂ (↓ op) ren-ren-v ren-ren-m
 ren-ren-m {M = promise op ↦ M `in N} = cong₂ (promise op ↦_`in_) ren-ren-l ren-ren-l
 ren-ren-m {M = await V until M} = cong₂ await_until_ ren-ren-v ren-ren-l
 ren-ren-m {M = match+ V M N} = cong₃ match+ ren-ren-v ren-ren-l ren-ren-l
+
+
+-- A RENAMING AND SUBSTITUTION THAT COMMUTE ON VARIABLES ALSO COMMUTE ON TERMS
 
 sub-ren-var : s' ∘ r ≈ₛ V-rename r' ∘ s → lift {X = X} s' ∘ wk₂ r ≈ₛ V-rename (wk₂ r') ∘ lift s
 sub-ren-var f Hd = refl
@@ -181,13 +205,22 @@ sub-ren-m {M = promise op ↦ M `in N} f = cong₂ (promise op ↦_`in_) (sub-re
 sub-ren-m {M = await V until M} f = cong₂ await_until_ (sub-ren-v {V = V} f) (sub-ren-l f)
 sub-ren-m {M = match+ V M N} f = cong₃ match+ (sub-ren-v {V = V} f) (sub-ren-l f) (sub-ren-l f)
 
+
+-- COMPOSITION OF SUBSTITUTIONS
+
 infixr 9 _⨟_
 _⨟_ : Sub Γ Γ' → Sub Γ' Γ'' → Sub Γ Γ''
 (s ⨟ s') x = s x [ s' ]v
 
+
+-- LIFTING A COMPOSITION OF SUBSTITUTIONS IS POINTWISE EQUAL TO A COMPOSITION OF LIFTED SUBSTITUTIONS
+
 lift-⨟ : lift {X = X} s ⨟ lift s' ≈ₛ lift (s ⨟ s')
 lift-⨟ Hd = refl
 lift-⨟ {s = s} (Tl x) = sub-ren-v {V = s x} (λ _ → refl)
+
+
+-- ACTION OF A COMPOSITION OF SUBSTITUTIONS IS THE SAME AS PERFORMING THE SUBSTITUTIONS ONE AFTER THE OTHER
 
 sub-sub-v : V [ s ]v [ s' ]v ≡ V [ s ⨟ s' ]v
 
@@ -213,6 +246,9 @@ sub-sub-m {M = ↓ op V M} = cong₂ (↓ op) (sub-sub-v {V = V}) sub-sub-m
 sub-sub-m {M = promise op ↦ M `in N} = cong₂ (promise op ↦_`in_) sub-sub-l sub-sub-l
 sub-sub-m {M = await V until M} = cong₂ await_until_ (sub-sub-v {V = V}) sub-sub-l
 sub-sub-m {M = match+ V M N} = cong₃ match+ (sub-sub-v {V = V}) sub-sub-l sub-sub-l
+
+
+-- VARIOUS IDENTITIES INVOLVING RENAMINGS AND SUBSTITUTIONS
 
 wk₁V[id-subst[W]] : (V : Γ ⊢V⦂ X) (W : Γ ⊢V⦂ Y) →
                     ---------------------------
@@ -312,6 +348,45 @@ wk₁wk₁M[s] : (Z U : Type) (s : Sub Γ Γ') (M : Γ ⊢M⦂ X) →
 
 wk₁wk₁M[s] _ _ _ _ = trans (wk₁[M[s]] _ _ _) (cong (M-rename wk₁) (wk₁[M[s]] _ _ _))
 
+wk₂wk₁V[Hd] : V
+              ≡
+              V-rename (wk₂ wk₁) V [ id-subst [ ` Hd ]s ]v
+
+wk₂wk₁V[Hd] {V = V} = sym (trans (sub-ren-v {V = V} (λ {Hd → refl; (Tl x) → refl})) (trans ren-id-v sub-id-v))
+
+wk₂wk₁M[Hd] : M
+              ≡
+              M-rename (wk₂ wk₁) M [ id-subst [ ` Hd ]s ]m
+
+wk₂wk₁M[Hd] {M = M} = sym (trans (sub-ren-m {M = M} (λ {Hd → refl; (Tl x) → refl})) (trans ren-id-m sub-id-m))
+
+wk₂r[wk₂r'[wk₁V]] : V-rename (wk₁ {X = X}) (V-rename r (V-rename r' V))
+                    ≡
+                    V-rename (wk₂ r) (V-rename (wk₂ r') (V-rename wk₁ V))
+
+wk₂r[wk₂r'[wk₁V]] =
+  trans ren-ren-v
+  (trans ren-ren-v
+  (trans (cong-ren-v (λ {Hd → refl; (Tl x) → refl}))
+  (trans (sym ren-ren-v)
+  (sym ren-ren-v))))
+
+m-ren-lemma-big :
+  M-rename (wk₂ (wk₂ r))
+    (M-rename (wk₂ (wk₂ (wk₂ r')))
+      (M-rename (wk₂ wk₁) (M-rename (wk₂ wk₁) M))
+    [ lift (lift (id-subst [ V ]s)) ]m)
+  [ lift (id-subst [ V' ]s) ]m
+  ≡
+  M-rename (wk₂ r) (M-rename (wk₂ r') M)
+
+m-ren-lemma-big =
+  trans (cong (λ z → M-rename _ (z [ _ ]m) [ _ ]m) (trans (trans ren-ren-l ren-ren-l) (sym (trans ren-ren-l ren-ren-l))))
+  (trans (cong (λ z → M-rename _ z [ _ ]m) (wk₂wk₁[M[lifts]] _ _ _))
+  (trans (cong (λ z → M-rename _ (M-rename (wk₂ wk₁) z) [ _ ]m) (sym (wk₂wk₁M[liftid-subst[W]] _ _)))
+  (trans (cong (_[ _ ]m) (trans ren-ren-l (sym ren-ren-l)))
+  (sym (wk₂wk₁M[liftid-subst[W]] _ _)))))
+
 strengthenV[lifts] : (s : Sub Γ Γ') (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A) →
                      --------------------------
                      strengthen-val V [ s ]v
@@ -331,6 +406,9 @@ ren-strengthenV : (r : Ren Γ Γ') (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ``` A) →
 
 ren-strengthenV r (` Tl x) = refl
 ren-strengthenV r (`` c) = refl
+
+
+-- STABILITY OF REDUCTIONS UNDER SUBSTITUTION
 
 sub-↝↝ : (s : Sub Γ Γ') → M ↝↝ M' → M [ s ]m ↝↝ M' [ s ]m
 
@@ -357,6 +435,9 @@ sub-↝↝ s (context-↑ r) = context-↑ (sub-↝↝ s r)
 sub-↝↝ s (context-promise r) = context-promise (sub-↝↝ (lift s) r)
 sub-↝↝ s (context-let r) = context-let (sub-↝↝ s r)
 sub-↝↝ s (context-↓ r) = context-↓ (sub-↝↝ s r)
+
+
+-- EACH RENAMING IS ALSO A SUBSTITUTION
 
 ren : Ren Γ Γ' → Sub Γ Γ'
 ren r x = ` r x
@@ -386,6 +467,9 @@ ren-rename-m {M = promise op ↦ M `in N} = cong₂ (promise op ↦_`in_) ren-re
 ren-rename-m {M = await V until M} = cong₂ await_until_ ren-rename-v ren-rename-l
 ren-rename-m {M = match+ V M N} = cong₃ match+ ren-rename-v ren-rename-l ren-rename-l
 
+
+-- STABILITY OF REDUCTIONS UNDER RENAMING
+
 ren-↝↝ : (r : Ren Γ Γ') → M ↝↝ M' → M-rename r M ↝↝ M-rename r M'
 
 ren-↝↝ {M = M} {M' = M'} rn r
@@ -394,7 +478,13 @@ ren-↝↝ {M = M} {M' = M'} rn r
   sym (ren-rename-m {M = M'} {r = rn}) =
   sub-↝↝ _ r
   
-ren-↝↝-Σ : (r : Ren Γ Γ') → M-rename r M ↝↝ M' → Σ[ M'' ∈ _ ] M' ≡ M-rename r M'' × M ↝↝ M''
+
+-- UNUSED VARIABLES IN A COMPUTATION STAY UNUSED IN ALL OF ITS REDUCTS
+
+ren-↝↝-Σ : (r : Ren Γ Γ') →
+           M-rename r M ↝↝ M' →
+           -------------------------------------------
+           Σ[ M'' ∈ _ ] M' ≡ M-rename r M'' × M ↝↝ M''
 
 ren-↝↝-Σ {M = ƛ _ · _} r (apply _ _) = _ , sub-ren-m (λ {Hd → refl; (Tl x₂) → refl}) , apply _ _
 ren-↝↝-Σ {M = let= return _ `in _} r (let-return _ _) = _ , sub-ren-m (λ {Hd → refl; (Tl x₂) → refl}) , let-return _ _
