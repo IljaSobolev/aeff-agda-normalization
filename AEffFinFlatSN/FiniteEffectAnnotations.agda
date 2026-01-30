@@ -310,11 +310,6 @@ infix 40 _↓ₑ_
 _↓ₑ_ : Σₛ → I → I
 op ↓ₑ i = i [ op ↦ leaf ] ∪ lkp op i
 
-infix 40 _↓↓ₑ_
-_↓↓ₑ_ : List Σₛ → I → I
-[]ₗ ↓↓ₑ i = i
-(op ∷ₗ ops) ↓↓ₑ i = op ↓ₑ (ops ↓↓ₑ i)
-
 lkp-↓ₑ-≢ : (i : I) → op ≢ op' → lkp op' i ⊑ lkp op' (op ↓ₑ i)
 lkp-↓ₑ-≢ leaf p = l⊑n
 lkp-↓ₑ-≢ {op} (node f) p with f op
@@ -404,16 +399,6 @@ p ∈ᵢ? leaf = no (λ ())
 ... | yes refl = ∈-∪-i₂ (∈ᵢ-lkp-i u)
 ... | no     a = ∈-∪-i₁ (∈-[↦]-i a u)
 
-∈ᵢ-↓↓-e : (q : Path) (i : I) → p ∈ᵢ q ↓↓ₑ i → Σ[ p' ∈ Path ] p' ∈ᵢ i × p ≡ q ↓↓ p'
-∈ᵢ-↓↓-e []ₗ i u = _ , u , refl
-∈ᵢ-↓↓-e (_ ∷ₗ q) i u with ∈ᵢ-↓-e (q ↓↓ₑ i) u
-... | _ , u , refl with ∈ᵢ-↓↓-e q i u
-...   | _ , u , refl = _ , u , refl
-
-∈ᵢ-↓↓-i : (q : Path) (i : I) → p ∈ᵢ i → q ↓↓ p ∈ᵢ q ↓↓ₑ i
-∈ᵢ-↓↓-i []ₗ i u = u
-∈ᵢ-↓↓-i (_ ∷ₗ q) i u = ∈ᵢ-↓-i (∈ᵢ-↓↓-i q i u)
-
 
 -- THE FINITENESS PREDICATE
 
@@ -470,24 +455,3 @@ size-↓ₑ-< isf u = len-↓ₚ-< (itop isf _ ([]∈ᵢ u)) (itop isf _ u)
 
 size-↓ₑ-≡ : (isf : isfin i) → ¬ [ op ]ₗ ∈ᵢ i → ∣ fin-↓ₑ op isf ∣ ≡ ∣ isf ∣
 size-↓ₑ-≡ isf u = len-↓ₚ-≡ (λ x → ∈ᵢ-startswith (ptoi isf _ x) u)
-
-itop-↓↓ₑ : (isf : isfin i) → p ∈ᵢ q ↓↓ₑ i → p ∈ₚ q ↓↓ₚ paths isf
-itop-↓↓ₑ {q = q} isf u with ∈ᵢ-↓↓-e q _ u
-... | _ , u , refl = ∈-map-i _ (itop isf _ u)
-
-ptoi-↓↓ₑ : (isf : isfin i) → p ∈ₚ q ↓↓ₚ paths isf → p ∈ᵢ q ↓↓ₑ i
-ptoi-↓↓ₑ {q = q} isf u with ∈-map-e _ (paths isf) u
-... | _ , u , refl = ∈ᵢ-↓↓-i q _ (ptoi isf _ u)
-
-fin-↓↓ₑ : (q : Path) → isfin i → isfin (q ↓↓ₑ i)
-fin-↓↓ₑ []ₗ isf = isf
-fin-↓↓ₑ (op ∷ₗ q) isf = fin-↓ₑ op (fin-↓↓ₑ q isf)
-
-size-↓↓ₑ : (isf : isfin i) (q : Path) → ∣ fin-↓↓ₑ q isf ∣ ≡ len (q ↓↓ₚ paths isf)
-size-↓↓ₑ isf q =
-  ≤-antisym
-    (len-⊑ (λ x → itop-↓↓ₑ {q = q} isf (ptoi (fin-↓↓ₑ q isf) _ x)))
-    (len-⊑ (λ x → itop (fin-↓↓ₑ q isf) _ (ptoi-↓↓ₑ {q = q} isf x)))
-
-size-↓↓ₑ-≤ : (isf : isfin i) → ∣ fin-↓↓ₑ q isf ∣ ≤ ∣ isf ∣
-size-↓↓ₑ-≤ {i} {q} isf rewrite size-↓↓ₑ isf q = len-map-≤ _ (paths isf)
