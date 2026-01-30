@@ -208,6 +208,17 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
                     ↝
                     (promise op ∣ p , q ↦ M₁ `in (let= M₂ `in (M-rename (wk₂ wk₁) N)))
 
+  let-await       : {X Y Z : VType}
+                    {o : O}
+                    {i : I} →
+                    (V : Γ ⊢V⦂ ⟨ X ⟩) →
+                    (M : Γ ∷ X ⊢M⦂ Y ! (o , i)) →
+                    (N : Γ ∷ Y ⊢M⦂ Z ! (o , i)) →
+                    -------------------------------------------------------
+                    let= (await V until M) `in N
+                    ↝
+                    await V until (let= M `in M-rename (wk₂ wk₁) N)
+
   promise-↑       : {X Y : VType}
                     {o o' : O}
                     {i i' : I}
@@ -283,6 +294,18 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
                     ↓ op V (promise op' ∣ q , r ↦ M `in N )
                     ↝
                     promise op' ∣ ⊑-aux-trans _ _ _ q (lkpᵢ-↓ₑ-neq-⊑ {i = i} {o = o} p) , r ↦ M `in (↓ op (V-rename wk₁ V) N)
+
+  ↓-await         : {X Y : VType}
+                    {o : O}
+                    {i : I}
+                    {op : Σₛ} →
+                    (V : Γ ⊢V⦂ ```(payload op)) →
+                    (W : Γ ⊢V⦂ ⟨ X ⟩) →
+                    (M : Γ ∷ X ⊢M⦂ Y ! (o , i)) →
+                    ------------------------------------------
+                    ↓ op V (await W until M)
+                    ↝
+                    await W until (↓ op (V-rename wk₁ V) M)
 
   match+-inl      : {X Y : VType}
                     {C : CType}
@@ -363,3 +386,15 @@ data _↝_ {Γ : Ctx} : {C : CType} → Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set wh
                     coerce p q (promise op ∣ r , s ↦ M `in N)
                     ↝
                     promise op ∣ (⊑-aux-trans _ _ _ r (rel q op)) , s ↦ M `in (coerce p q N)
+                    
+  coerce-await    : {X Y : VType}
+                    {o o' : O}
+                    {i i' : I}
+                    {p : o ⊑ₒ o'}
+                    {q : i ⊑ᵢ i'} →
+                    (V : Γ ⊢V⦂ ⟨ X ⟩) →
+                    (M : Γ ∷ X ⊢M⦂ Y ! (o , i)) →
+                    -----------------------------
+                    coerce p q (await V until M)
+                    ↝
+                    await V until (coerce p q M)

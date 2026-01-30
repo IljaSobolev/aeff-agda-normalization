@@ -59,7 +59,6 @@ import AEffFinTreeSN.Main
 -- AEFF WITH REINSTALLABLE INTERRUPT HANDLERS
 
 import AEffReinstSN.AEff
-import AEffReinstSN.AwaitingComputations
 import AEffReinstSN.CoinductiveEffectAnnotations
 import AEffReinstSN.Finality
 import AEffReinstSN.Preservation

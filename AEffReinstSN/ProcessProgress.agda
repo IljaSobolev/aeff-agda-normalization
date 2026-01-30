@@ -8,7 +8,6 @@ open import Data.Sum
 open import Data.Unit
 
 open import AEffReinstSN.AEff
-open import AEffReinstSN.AwaitingComputations
 open import AEffReinstSN.CoinductiveEffectAnnotations
 open import AEffReinstSN.Preservation
 open import AEffReinstSN.ProcessPreservation

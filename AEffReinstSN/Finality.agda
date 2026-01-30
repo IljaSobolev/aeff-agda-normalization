@@ -8,7 +8,6 @@ open import Data.Sum
 open import Data.Unit
 
 open import AEffReinstSN.AEff
-open import AEffReinstSN.AwaitingComputations
 open import AEffReinstSN.CoinductiveEffectAnnotations
 open import AEffReinstSN.Preservation
 open import AEffReinstSN.Progress
@@ -79,6 +78,17 @@ mutual
                       let= (promise op ∣ p , q ↦ M₁ `in M₂) `in N
                       ↝↝
                       (promise op ∣ p , q ↦ M₁ `in (let= M₂ `in (M-rename (wk₂ wk₁) N)))
+
+    let-await       : {X Y Z : VType}
+                      {o : O}
+                      {i : I} →
+                      (V : Γ ⊢V⦂ ⟨ X ⟩) →
+                      (M : Γ ∷ X ⊢M⦂ Y ! (o , i)) →
+                      (N : Γ ∷ Y ⊢M⦂ Z ! (o , i)) →
+                      -------------------------------------------------------
+                      let= (await V until M) `in N
+                      ↝↝
+                      await V until (let= M `in M-rename (wk₂ wk₁) N)
 
     promise-↑       : {X Y : VType}
                       {o o' : O}
@@ -155,6 +165,18 @@ mutual
                       ↓ op V (promise op' ∣ q , r ↦ M `in N )
                       ↝↝
                       promise op' ∣ ⊑-aux-trans _ _ _ q (lkpᵢ-↓ₑ-neq-⊑ {i = i} {o = o} p) , r ↦ M `in (↓ op (V-rename wk₁ V) N)
+
+    ↓-await         : {X Y : VType}
+                      {o : O}
+                      {i : I}
+                      {op : Σₛ} →
+                      (V : Γ ⊢V⦂ ```(payload op)) →
+                      (W : Γ ⊢V⦂ ⟨ X ⟩) →
+                      (M : Γ ∷ X ⊢M⦂ Y ! (o , i)) →
+                      ------------------------------------------
+                      ↓ op V (await W until M)
+                      ↝↝
+                      await W until (↓ op (V-rename wk₁ V) M)
 
     match+-inl      : {X Y : VType}
                       {C : CType}
@@ -289,6 +311,18 @@ mutual
                       ↝↝
                       promise op ∣ (⊑-aux-trans _ _ _ r (rel q op)) , s ↦ M `in (coerce p q N)
 
+    coerce-await   : {X Y : VType}
+                     {o o' : O}
+                     {i i' : I}
+                     {p : o ⊑ₒ o'}
+                     {q : i ⊑ᵢ i'} →
+                     (V : Γ ⊢V⦂ ⟨ X ⟩) →
+                     (M : Γ ∷ X ⊢M⦂ Y ! (o , i)) →
+                     -----------------------------
+                     coerce p q (await V until M)
+                     ↝↝
+                     await V until (coerce p q M)
+
 
 -- ONE-TO-ONE CORRESPONDENCE BETWEEN THE TWO SETS OF REDUCTION RULES
 
@@ -307,6 +341,8 @@ mutual
   let-↑ p V M N
 ↝↝-to-↝ (let-promise p q M₁ M₂ N) =
   let-promise p q M₁ M₂ N
+↝↝-to-↝ (let-await V M N) =
+  let-await V M N
 ↝↝-to-↝ (promise-↑ p q r V M N) =
   promise-↑ p q r V M N
 ↝↝-to-↝ (↓-return V W) =
@@ -317,6 +353,8 @@ mutual
   ↓-promise-op p q V M N
 ↝↝-to-↝ (↓-promise-op' p q r V M N) =
   ↓-promise-op' p q r V M N
+↝↝-to-↝ (↓-await V M N) =
+  ↓-await V M N
 ↝↝-to-↝ (match+-inl V M N) =
   match+-inl V M N
 ↝↝-to-↝ (match+-inr V M N) =
@@ -339,6 +377,8 @@ mutual
   coerce-↑ p V M
 ↝↝-to-↝ (coerce-promise p q M N) =
   coerce-promise p q M N
+↝↝-to-↝ (coerce-await V M) =
+  coerce-await V M
 
 
 mutual
@@ -380,6 +420,8 @@ mutual
     let-↑ p V M N
   ↝-to-↝↝ (let-promise p q M₁ M₂ N) =
     let-promise p q M₁ M₂ N
+  ↝-to-↝↝ (let-await V M N) =
+    let-await V M N
   ↝-to-↝↝ (promise-↑ p q r V M N) =
     promise-↑ p q r V M N
   ↝-to-↝↝ (↓-return V W) =
@@ -390,6 +432,8 @@ mutual
     ↓-promise-op p q V M N
   ↝-to-↝↝ (↓-promise-op' p q r V M N) =
     ↓-promise-op' p q r V M N
+  ↝-to-↝↝ (↓-await V M N) =
+    ↓-await V M N
   ↝-to-↝↝ (match+-inl V M N) =
     match+-inl V M N
   ↝-to-↝↝ (match+-inr V M N) =
@@ -404,132 +448,12 @@ mutual
     coerce-↑ r V M
   ↝-to-↝↝ (coerce-promise r s M N) =
     coerce-promise r s M N
+  ↝-to-↝↝ (coerce-await V M) =
+    coerce-await V M
 
 
 -- FINALITY OF RESULT FORMS
 
-run-invert-let : {Γ : Ctx}
-                 {X Y : VType}
-                 {o : O}
-                 {i : I}
-                 {M : ⟨⟨ Γ ⟩⟩ ⊢M⦂ X ! (o , i)}
-                 {N : (⟨⟨ Γ ⟩⟩ ∷ X) ⊢M⦂ Y ! (o , i)} →
-                 RunResult⟨ Γ ∣ let= M `in N ⟩ →
-                 -------------------------------------
-                 RunResult⟨ Γ ∣ M ⟩
-
-run-invert-let (awaiting (let-in R)) =
-  awaiting R
-
-
-run-invert-↓ : {Γ : Ctx}
-               {X : VType}
-               {o : O}
-               {i : I}
-               {op : Σₛ}
-               {V : ⟨⟨ Γ ⟩⟩ ⊢V⦂ ```(payload op)}
-               {M : ⟨⟨ Γ ⟩⟩ ⊢M⦂ X ! (o , i)} →
-               RunResult⟨ Γ ∣ ↓ op V M ⟩ → 
-               -------------------------------
-               RunResult⟨ Γ ∣ M ⟩
-
-run-invert-↓ (awaiting (interrupt await)) =
-  awaiting await
-run-invert-↓ (awaiting (interrupt (let-in R))) =
-  awaiting (let-in R)
-run-invert-↓ (awaiting (interrupt (interrupt R))) =
-  awaiting (interrupt R)
-run-invert-↓ (awaiting (interrupt (coerce R))) =
-  awaiting (coerce R)
-
-
-run-invert-promise : {Γ : Ctx}
-                     {X Y : VType}
-                     {o o' : O}
-                     {i i' : I}
-                     {op : Σₛ}
-                     {p : just (o' , i') ⊑-aux lkpᵢ op i}
-                     {q : (∅ᵢ [ op ↦ just (o' , i') ]ᵢ) ⊑ᵢ i'} →
-                     {M : (⟨⟨ Γ ⟩⟩ ∷ ```(payload op)) ⊢M⦂ (⟨ X ⟩ + 𝟙 ! (o' , i'))}
-                     {N : (⟨⟨ Γ ⟩⟩ ∷ ⟨ X ⟩) ⊢M⦂ (Y ! (o , i))} → 
-                     RunResult⟨ Γ ∣ (promise op ∣ p , q ↦ M `in N) ⟩ →
-                     --------------------------------------------------------
-                     RunResult⟨ Γ ∷ X ∣ N ⟩
-
-run-invert-promise (promise R) =
-  R
-
-
-run-invert-coerce : {Γ : Ctx}
-                    {X : VType}
-                    {o o' : O}
-                    {i i' : I}
-                    {p : o ⊑ₒ o'}
-                    {q : i ⊑ᵢ i'}
-                    {M : ⟨⟨ Γ ⟩⟩ ⊢M⦂ X ! (o , i)} →
-                    RunResult⟨ Γ ∣ coerce p q M ⟩ →
-                    -------------------------------
-                    RunResult⟨ Γ ∣ M ⟩
-
-run-invert-coerce (awaiting (coerce R)) =
-  awaiting R
-
-
-run-apply-⊥ : {Γ : Ctx}
-              {X : VType}
-              {C : CType}
-              {M : (⟨⟨ Γ ⟩⟩ ∷ X) ⊢M⦂ C}
-              {V : ⟨⟨ Γ ⟩⟩ ⊢V⦂ X} →
-              RunResult⟨ Γ ∣ ƛ M · V ⟩ →
-              --------------------------
-              ⊥
-
-run-apply-⊥ (awaiting ())
-
-
-run-↑-⊥ : {Γ : Ctx}
-          {X : VType}
-          {o : O}
-          {i : I}
-          {op : Σₛ}
-          {p : op ∈ₒ o}
-          {V : ⟨⟨ Γ ⟩⟩ ⊢V⦂ ```(payload op)}
-          {M : ⟨⟨ Γ ⟩⟩ ⊢M⦂ (X ! (o , i))} → 
-          RunResult⟨ Γ ∣ ↑ op p V M ⟩ →
-          --------------------------------
-          ⊥
-                 
-run-↑-⊥ (awaiting ())
-
-
-run-let-return-⊥ : {Γ :  Ctx}
-                   {X Y : VType}
-                   {o : O}
-                   {i : I}
-                   {V : ⟨⟨ Γ ⟩⟩ ⊢V⦂ X}
-                   {N : (⟨⟨ Γ ⟩⟩ ∷ X) ⊢M⦂ (Y ! (o , i))} →
-                   RunResult⟨ Γ ∣ let= return V `in N ⟩ →
-                   --------------------------------------
-                   ⊥
-
-run-let-return-⊥ (awaiting (let-in ()))
-
-
-run-let-promise-⊥ : {Γ : Ctx}
-                    {X Y Z : VType}
-                    {o o' : O}
-                    {i i' : I}
-                    {op : Σₛ}
-                    {p : just (o' , i') ⊑-aux lkpᵢ op i}
-                    {q : (∅ᵢ [ op ↦ just (o' , i') ]ᵢ) ⊑ᵢ i'} →
-                    {M₁ : (⟨⟨ Γ ⟩⟩ ∷ ```(payload op)) ⊢M⦂ (⟨ X ⟩ + 𝟙 ! (o' , i'))}
-                    {M₂ : (⟨⟨ Γ ⟩⟩ ∷ ⟨ X ⟩) ⊢M⦂ (Y ! (o , i))}
-                    {N  : (⟨⟨ Γ ⟩⟩ ∷ Y) ⊢M⦂ (Z ! (o , i))} →
-                    RunResult⟨ Γ ∣ let= promise op ∣ p , q ↦ M₁ `in M₂ `in N ⟩ →
-                    ----------------------------------------------------------
-                    ⊥
-
-run-let-promise-⊥ (awaiting (let-in ()))
 
 run-finality-↝↝ : {Γ : Ctx}
                   {C : CType}
@@ -539,32 +463,7 @@ run-finality-↝↝ : {Γ : Ctx}
                   -----------------------
                   ⊥
 
-run-finality-↝↝ (awaiting ()) (apply M V)
-run-finality-↝↝ R (let-return V N) =
-  run-let-return-⊥ R
-run-finality-↝↝ R (let-↑ p V M N) =
-  run-↑-⊥ (run-invert-let R)
-run-finality-↝↝ R (let-promise p q M₁ M₂ N) =
-  run-let-promise-⊥ R
-run-finality-↝↝ (promise (awaiting ())) (promise-↑ p q r V M N)
-run-finality-↝↝ (awaiting (interrupt ())) (↓-return V W)
-run-finality-↝↝ (awaiting (interrupt ())) (↓-↑ p V W M)
-run-finality-↝↝ (awaiting (interrupt ())) (↓-promise-op p q V M N)
-run-finality-↝↝ (awaiting (interrupt ())) (↓-promise-op' p q r V M N)
-run-finality-↝↝ (awaiting ()) (await-promise V M)
-run-finality-↝↝ R (context-let r) =
-  run-finality-↝↝ (run-invert-let R) r
-run-finality-↝↝ R (context-↑ r) =
-  run-↑-⊥ R
-run-finality-↝↝ R (context-↓ r) =
-  run-finality-↝↝ (run-invert-↓ R) r
-run-finality-↝↝ R (context-promise r) =
-  run-finality-↝↝ (run-invert-promise R) r
-run-finality-↝↝ R (context-coerce r) =
-  run-finality-↝↝ (run-invert-coerce R) r
-run-finality-↝↝ (awaiting (coerce ())) (coerce-return V)
-run-finality-↝↝ (awaiting (coerce ())) (coerce-↑ p V M)
-run-finality-↝↝ (awaiting (coerce ())) (coerce-promise p q M N)
+run-finality-↝↝ (promise R) (context-promise r) = run-finality-↝↝ R r
 
 
 comp-finality-↝↝ : {Γ : Ctx}

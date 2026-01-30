@@ -8,7 +8,6 @@ open import Data.Sum
 open import Data.Unit
 
 open import AEffReinstSN.AEff
-open import AEffReinstSN.AwaitingComputations
 open import AEffReinstSN.CoinductiveEffectAnnotations
 open import AEffReinstSN.Finality
 open import AEffReinstSN.Preservation
@@ -320,8 +319,6 @@ par-finality-↝↝ : {o o' : O}
 
 par-finality-↝↝ (run R) .id (run r) =
   run-finality-↝↝ R r 
-par-finality-↝↝ (run R) .id (↑ p V M) =
-  run-↑-⊥ R
 par-finality-↝↝ (par R S) .(par _ ⇝-refl) (context-∥ₗ r') =
   par-finality-↝↝ R _ r'
 par-finality-↝↝ (par R S) .(par ⇝-refl _) (context-∥ᵣ r') =
