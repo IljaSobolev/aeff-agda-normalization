@@ -165,8 +165,6 @@ progress (coerce p q M) with progress M
 
 -- PROGRESS THEOREM FOR CLOSED COMPUTATIONS
 
-{- COROLLARY 3.4 -}
-
 closed-progress : {C : CType} →
                   (M : [] ⊢M⦂ C) →
                   --------------------------

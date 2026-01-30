@@ -108,8 +108,6 @@ progress (await ⟨ V ⟩ until M) =
 
 -- PROGRESS THEOREM FOR CLOSED COMPUTATIONS
 
-{- COROLLARY 3.4 -}
-
 closed-progress : (M : [] ⊢M⦂ X) →
                   --------------------------
                   Σ[ N ∈ [] ⊢M⦂ X ] M ↝ N
