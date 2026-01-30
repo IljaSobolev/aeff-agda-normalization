@@ -310,5 +310,7 @@ sn*→sn aM sM r with sim r
 sn*→sn aM (sn* f) _ | inj₁ r = sn (sn*→sn (<-wellFounded _) (f r))
 sn*→sn (acc aM) sM _ | inj₂ (e , r) rewrite e = sn (sn*→sn (aM (size-mono-↝ r)) sM)
 
+{- COROLLARY 19 -}
+
 strong-norm : {Γ : Ctx} {X : CType} (M : Γ ⊢M⦂ X) → SN M
 strong-norm M = sn (sn*→sn (<-wellFounded _) (strong-norm* (emb-tm-m M)))

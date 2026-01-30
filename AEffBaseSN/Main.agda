@@ -57,6 +57,8 @@ CRedSub' {Γ} {X} M =
 
 -- THE LOGICAL RELATION IS PRESERVED UNDER RENAMINGS
 
+{- PROPOSITION 1 -}
+
 vred-r : VRed V → VRed (V-rename r V)
 vred-r {_} {``` x} rV = tt
 vred-r {_} {X ⇒ Y} rV rW K rK = subst SN' (cong (λ z → K aₖ V-rename _ z · _) (sym ren-ren-v)) (rV rW K rK)
@@ -67,6 +69,8 @@ kred-r K rK rV = subst SN' (cong (_aₖ _) (sym (ren-ren-k K))) (rK rV)
 
 
 -- REDUCIBLE CONTINUATIONS APPLIED TO REDUCIBLE COMPUTATIONS RESULT IN STRONGLY NORMALISING TERMS
+
+{- PROPOSITION 2 -}
 
 cred-kred : (K : Γ ⊢K⦂ X ⊸ Y) → KRed K → CRed M → SN' (K aₖ M)
 cred-kred K rK rM = subst (λ z → SN' (K aₖ z)) ren-id-m (rM K rK)
@@ -80,6 +84,8 @@ sn-var-await : {x : ⟨ X ⟩ ∈ Γ} (K : Γ ⊢K⦂ Y ⊸ Z) → SN' (K aₖ a
 sn-var-await K r with aₖ→`aₖ K r
 ... | ↝∘l K (let-await _ _ _) = sn'→sn (sn-var-await K)
 ... | ↝∘↓ K (↓-await _ _ _) = sn'→sn (sn-var-await K)
+
+{- PROPOSITION 4 -}
 
 vred-var : (x : X ∈ Γ) → VRed (` x)
 vred-var {``` _} _ = tt
@@ -115,6 +121,8 @@ vred-ƛ rM rW K rK = sn-ƛ K (subst (λ z → SN (K aₖ z [ id-subst [ _ ]s ]m)
 
 -- LET-TERMS ARE REDUCIBLE
 
+{- PROPOSITION 26 -}
+
 sn-let : (K : Γ ⊢K⦂ X ⊸ Y) → SN (K aₖ N [ id-subst [ V ]s ]m) → SN' (K aₖ let= return V `in N)
 sn-let K s r with aₖ→`aₖ K r
 ... | ↝id (let-return _ _) = s
@@ -130,14 +138,20 @@ cred-let rM rN K rK = rM (K ∘l _) (kred-let K rK (credsub'-r rN))
 
 -- INTERRUPTS ARE REDUCIBLE
 
+{- PROPOSITION 7 -}
+
 sn-↓ : (K : Γ ⊢K⦂ X ⊸ Y) → SN (K aₖ return V) → SN' (K aₖ ↓ op W (return V))
 sn-↓ K s r with aₖ→`aₖ K r
 ... | ↝id (↓-return _ _) = s
 ... | ↝∘l _ (context-let (↓-return _ _)) = s
 ... | ↝∘↓ _ (context-↓ (↓-return _ _)) = s
 
+{- PROPOSITION 8 -}
+
 kred-↓ : (K : Γ ⊢K⦂ X ⊸ Y) → KRed K → KRed (K ∘↓ op [ V ])
 kred-↓ K rK rV = sn-↓ (K-rename _ K) (sn'→sn (rK rV))
+
+{- PROPOSITION 9 -}
 
 cred-↓ : CRed M → CRed (↓ op V M)
 cred-↓ rM K rK = rM (K ∘↓ _ [ _ ]) (kred-↓ K rK)
@@ -151,6 +165,8 @@ cred-return rV K rK = subst (λ z → SN' (z aₖ return _)) (ren-id-k K) (rK (v
 
 -- SIGNALS ARE REDUCIBLE
 
+{- PROPOSITION 5 -}
+
 sn-↑ : (K : Γ ⊢K⦂ X ⊸ Y) → SN (K aₖ M) → SN' (K aₖ ↑ op V M)
 sn-↑ K (sn f) r with aₖ→`aₖ K r
 ... | ↝id (context-↑ r) = sn'→sn (sn-↑ id (f r))
@@ -159,11 +175,15 @@ sn-↑ K (sn f) r with aₖ→`aₖ K r
 ... | ↝∘↓ K (↓-↑ _ _ _) = sn'→sn (sn-↑ K (sn f))
 ... | ↝∘↓ _ (context-↓ (context-↑ r)) = sn'→sn (sn-↑ K (f (context-K K r)))
 
+{- PROPOSITION 6 -}
+
 cred-↑ : CRed M → CRed (↑ op V M)
 cred-↑ rM K rK = sn-↑ K (sn'→sn (rM K rK))
 
 
 -- AWAIT-TERMS ARE REDUCIBLE
+
+{- PROPOSITION 10 -}
 
 sn-await : (K : Γ ⊢K⦂ Y ⊸ Z) → SN (K aₖ N [ id-subst [ V ]s ]m) → SN' (K aₖ await ⟨ V ⟩ until N)
 sn-await K s r with aₖ→`aₖ K r
@@ -173,8 +193,12 @@ sn-await K s r with aₖ→`aₖ K r
 ... | ↝∘l _ (context-let (await-promise _ _)) = s
 ... | ↝∘↓ _ (context-↓ (await-promise _ _)) = s
 
+{- PROPOSITION 11 -}
+
 ared-await : (K : Γ ⊢K⦂ X ⊸ Y) → KRed K → CRedSub' N → ARed K N
 ared-await K rK rN rV = sn-await (K-rename _ K) (sn'→sn (cred-kred (K-rename _ K) (kred-r K rK) (rN rV)))
+
+{- PROPOSITION 12 -}
 
 cred-await : VRed V → CRedSub' N → CRed (await V until N)
 cred-await rV rN K rK = rV K _ (ared-await K rK (credsub'-r rN))
@@ -197,6 +221,8 @@ sn-k-↑-e K (sn sM) r with aₖ→`aₖ K r
 
 sni-k-↑-e' : (K : Γ ⊢K⦂ Y ⊸ Z) → SNi (K aₖ ↑ op V M) (suc n) → {L : Γ ⊢M⦂ Z} → K aₖ M ↝↝ L → SNi L n
 
+{- PROPOSITION 25 -}
+
 sni-k-↑-e : (K : Γ ⊢K⦂ Y ⊸ Z) → SNi (K aₖ ↑ op V M) n → SNi (K aₖ M) n
 
 sni-k-↑-e' K (sn sM) r with aₖ→`aₖ K r
@@ -208,6 +234,22 @@ sni-k-↑-e {n = suc n} K sM = sn (sni-k-↑-e' K sM)
 
 
 -- AUXILIARY LEMMAS ON REDUCIBILITY OF CERTAIN EXTENSIONS OF CONTINUATIONS
+
+{- PROPOSITION 13 (1) -}
+
+kred-↝ : (K : Γ ⊢K⦂ Y ⊸ Z) →
+         M ↝↝ N →
+         KRed (K ∘l M) →
+         --------------
+         KRed (K ∘l N)
+
+kred-↝ K r rK rV =
+  sn-let (K-rename _ K)
+    (sn→sn'
+      (rK rV (context-K (K-rename _ K) (let-return _ _)))
+      (context-K (K-rename _ K) (sub-↝↝ _ (ren-↝↝ _ r))))
+
+{- PROPOSITION 13 (2) -}
 
 kred-comm-let : (K : Γ ⊢K⦂ Z ⊸ U) →
                 KRed (K ∘l L ∘l N) →
@@ -232,6 +274,19 @@ kred-comm-let K rK rV =
       M-rename (wk₂ (wk₂ r)) (M-rename (wk₂ wk₁) L) [ lift (id-subst [ V ]s) ]m
     ∎
 
+{- PROPOSITION 13 (3) -}
+
+kred-↑ : (K : Γ ⊢K⦂ Y ⊸ Z) →
+         KRed (K ∘l ↑ op V M) →
+         -------------
+         KRed (K ∘l M)
+
+kred-↑ K rK rV =
+  sn-let (K-rename _ K)
+    (sn'→sn (sn-k-↑-e (K-rename _ K) (rK rV (context-K (K-rename _ K) (let-return _ _)))))
+
+{- PROPOSITION 13 (4) -}
+
 kred-comm-↓ : (K : Γ ⊢K⦂ Z ⊸ U) →
               KRed (K ∘↓ op [ V ] ∘l N) →
               ----------------------
@@ -255,29 +310,10 @@ kred-comm-↓ K rK rV =
       V-rename (wk₂ r) (V-rename wk₁ W) [ id-subst [ V ]s ]v
     ∎
 
-kred-↝ : (K : Γ ⊢K⦂ Y ⊸ Z) →
-         M ↝↝ N →
-         KRed (K ∘l M) →
-         --------------
-         KRed (K ∘l N)
-
-kred-↝ K r rK rV =
-  sn-let (K-rename _ K)
-    (sn→sn'
-      (rK rV (context-K (K-rename _ K) (let-return _ _)))
-      (context-K (K-rename _ K) (sub-↝↝ _ (ren-↝↝ _ r))))
-
-kred-↑ : (K : Γ ⊢K⦂ Y ⊸ Z) →
-         KRed (K ∘l ↑ op V M) →
-         -------------
-         KRed (K ∘l M)
-
-kred-↑ K rK rV =
-  sn-let (K-rename _ K)
-    (sn'→sn (sn-k-↑-e (K-rename _ K) (rK rV (context-K (K-rename _ K) (let-return _ _)))))
-
 
 -- INTERRUPT HANDLERS ARE REDUCIBLE
+
+{- PROPOSITION 14 -}
 
 sn-promise : (K : Γ ⊢K⦂ Y ⊸ Z) →
              KRed (K ∘l N) →
@@ -305,6 +341,8 @@ sn-promise K rK rM (sn h) (↝∘↓ K' (context-↓ (promise-↑ _ _ _))) =
 sn-promise K rK rM (sn h) (↝∘↓ _ (context-↓ (context-promise r))) =
   sn'→sn (λ r' → sn-promise K (kred-↝ K r rK) rM (h (context-K (K-rename wk₁ K) r)) (aₖ→`aₖ K r'))
 
+{- PROPOSITION 15 -}
+
 cred-promise : CRedSub' M → CRedSub' N → CRed (promise op ↦ M `in N)
 cred-promise rM rN K rK r =
   sn-promise K (kred-let K rK (credsub'-r rN)) (credsub'-r rM)
@@ -312,6 +350,8 @@ cred-promise rM rN K rK r =
 
 
 -- REDUCIBILITY IMPLIES STRONG NORMALISATION
+
+{- THEOREM 3 -}
 
 cred→sn' : CRed M → SN' M
 cred→sn' rM = subst SN' ren-id-m (rM id (λ _ ()))
@@ -364,6 +404,8 @@ cred-⨟ rs rM rV K rK = subst (λ z → SN' (K aₖ M-rename _ z)) eq (rM (subr
 
 -- THE FUNDAMENTAL THEOREM OF LOGICAL RELATIONS
 
+{- THEOREM 16 -}
+
 fund-v : (V : Γ ⊢V⦂ X) → VRedSub V
 
 fund-m : (M : Γ ⊢M⦂ X) → CRedSub M
@@ -384,8 +426,12 @@ fund-m (↓ op V M) rs = cred-↓ (fund-m M rs)
 
 -- ALL TERMS ARE REDUCIBLE AND STRONGLY NORMALISING
 
+{- COROLLARY 17 -}
+
 all-terms-red : (M : Γ ⊢M⦂ X) → CRed M
 all-terms-red M rewrite sym (sub-id-m {M = M}) = fund-m M vred-var
+
+{- THEOREM 18 -}
 
 strong-norm : (M : Γ ⊢M⦂ X) → SN M
 strong-norm M = sn'→sn (cred→sn' (all-terms-red M))

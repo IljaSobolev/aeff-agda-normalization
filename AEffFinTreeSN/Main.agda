@@ -99,16 +99,20 @@ form-#↑ (promise ff) = z≤n
 -- ACTING WITH op ON A TERM THAT HAS NO HANDLER FOR op
 -- DOES NOT INCREASE THE MAXIMUM NUMBER OF OUTGOING SIGNALS
 
+{- PROPOSITION 23 -}
+
 ≡-↓-sn : ¬ [ op ]ₗ ∈ᵢ i-of (type-of M) → SN↑ M n → SN↑ (↓ op V M) n
 ≡-↓-sn {_} {_} {_ ! _} u s = sn (≡-↓-sn' u s (sn→sn↑ (strong-norm _)) [-]) z≤n
 
 
--- HELPER FUNCTIONS
+-- INTRODUCING AN INTERRUPT PRESERVES STRONG NORMALISATION
 
 sn-↓ : ΣSN M → ΣSN (↓ op V M)
 sn-↓ {M = M} {op} (_ , _ , sM) with [ op ]ₗ ∈ᵢ? i-of (type-of M)
 ... | yes _ = strong-norm-Σ (strong-norm _)
 ... | no  a = _ , sn↑-sni↑ (≡-↓-sn a (sni↑→sn↑ sM))
+
+-- REMOVING A SIGNAL PRESERVES STRONG NORMALISATION AND REDUCES MAXIMUM NUMBER OF OUTGOING SIGNALS
 
 sn-strip-↑ : ΣSN (↑ op V M) → ΣSN M
 sn-strip-↑ (_ , _ , sn sM (s≤s le)) = _ , _ , sn-strip-↑' (sn sM (s≤s le))
@@ -421,6 +425,8 @@ all-sn* (run M) = run (strong-norm-Σ (strong-norm M))
 all-sn* (P ∥ Q) = all-sn* P ∥ all-sn* Q
 all-sn* (↑ _ _ P) = ↑ (all-sn* P)
 all-sn* (↓ _ _ P) = ↓ (all-sn* P)
+
+{- THEOREM 24 -}
 
 strong-normₚ : (P : Γ ⊢P⦂) → SNₚ P
 strong-normₚ P = sn (strong-normₚ' (all-sn* P) (<-wf _) (<-wf _) (<ₗₑₓ-wf _) (<-wf _))

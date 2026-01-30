@@ -186,6 +186,8 @@ cred-↑ rM K rK = sn-↑ K (sn'→sn (rM K rK))
 
 -- PATTERN MATCHING ON SUM TYPES IS REDUCIBLE
 
+{- PROPOSITION 27 -}
+
 sn-match+-inl : (K : Γ ⊢K⦂ Z ⊸ U [ n ]) →
                 SN (K aₖ M [ id-subst [ V ]s ]m) →
                 ----------------------------
@@ -381,6 +383,8 @@ ren-distr-aₖ (K ∘↓ op [ x ]) = ren-distr-aₖ K
 
 
 -- INTERRUPT HANDLERS ARE REDUCIBLE
+
+{- PROPOSITION 20 -}
 
 sn-promise : (K : Γ ⊢K⦂ Y ⊸ Z [ k ]) →
              KRed (K ∘l N) →

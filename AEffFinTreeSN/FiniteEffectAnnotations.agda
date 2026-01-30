@@ -465,6 +465,8 @@ size-↓ₑ-≤ isf = len-map-≤ _ (paths isf)
 ∈ᵢ-startswith : p ∈ᵢ i → ¬ [ op ]ₗ ∈ᵢ i → ¬ startswith op p
 ∈ᵢ-startswith (Tl u) v refl = v (Tl ([]∈ᵢ u))
 
+{- PROPOSITION 22 -}
+
 size-↓ₑ-< : (isf : isfin i) → [ op ]ₗ ∈ᵢ i → ∣ fin-↓ₑ op isf ∣ < ∣ isf ∣
 size-↓ₑ-< isf u = len-↓ₚ-< (itop isf _ ([]∈ᵢ u)) (itop isf _ u)
 
