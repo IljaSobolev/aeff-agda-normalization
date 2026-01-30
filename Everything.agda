@@ -3,7 +3,6 @@
 -- ORIGINAL AEFF
 
 import AEff.AEff
-import AEff.AwaitingComputations
 import AEff.EffectAnnotations
 import AEff.Finality
 import AEff.Preservation

@@ -243,11 +243,13 @@ sim (apply M V) rewrite ~ₛᵣ-m M V = inj₁ (B.apply _ _)
 sim (let-return V N) rewrite ~ₛᵣ-m N V = inj₁ (B.let-return _ _)
 sim (let-↑ p V M N) = inj₁ (B.let-↑ _ _ _)
 sim (let-promise {X} p M₁ M₂ N) rewrite ~ᵣ-wk₂-wk₁-m {Z = ⟨ X ⟩} N = inj₁ (B.let-promise _ _ _)
+sim (let-await {X} V M N) rewrite ~ᵣ-wk₂-wk₁-m {Z = X} N = inj₁ (B.let-await _ _ _)
 sim (promise-↑ p q V M N) rewrite ~-strengthen V = inj₁ (B.promise-↑ _ _ _)
 sim (↓-return V W) = inj₁ (B.↓-return _ _)
 sim (↓-↑ p V W M) = inj₁ (B.↓-↑ _ _ _)
 sim (↓-promise-op {X} p V M N) rewrite ~ₛᵣ-m M V | ~ᵣ-wk₁-v {Z = ⟨ X ⟩} V = inj₁ (B.↓-promise-op _ _ _)
-sim (↓-promise-op' {X} p q V M N) rewrite ~ᵣ-wk₁-v  {Z = ⟨ X ⟩} V = inj₁ (B.↓-promise-op' (λ z → p (sym z)) _ _ _)
+sim (↓-promise-op' {X} p q V M N) rewrite ~ᵣ-wk₁-v {Z = ⟨ X ⟩} V = inj₁ (B.↓-promise-op' (λ z → p (sym z)) _ _ _)
+sim (↓-await {X} V M N) rewrite ~ᵣ-wk₁-v {Z = X} V = inj₁ (B.↓-await _ _ _)
 sim (await-promise V M) rewrite ~ₛᵣ-m M V = inj₁ (B.await-promise _ _)
 sim (context-let r) with sim r
 ... | inj₁ r = inj₁ (B.context-let r)
@@ -267,6 +269,7 @@ sim (context-coerce r) with sim r
 sim (coerce-return V) = inj₂ (refl , coe-[-])
 sim (coerce-↑ r V M) = inj₂ (refl , coe-↓)
 sim (coerce-promise r M N) = inj₂ (refl , coe-↓)
+sim (coerce-await V M) = inj₂ (refl , coe-[-])
 
 
 -- REDUCTION OF A CONTEXT SHAPE DECREASES ITS HEIGHT

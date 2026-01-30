@@ -6,7 +6,6 @@ open import Data.Sum
 open import Data.Unit
 
 open import AEff.AEff
-open import AEff.AwaitingComputations
 open import AEff.EffectAnnotations
 open import AEff.Preservation
 open import AEff.ProcessPreservation

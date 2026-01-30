@@ -5,7 +5,6 @@ open import Data.Sum
 open import Data.Unit
 
 open import AEff.AEff
-open import AEff.AwaitingComputations
 open import AEff.EffectAnnotations
 open import AEff.Preservation
 open import AEff.Renamings
@@ -47,13 +46,12 @@ data RunResult⟨_∣_⟩ (Γ : Ctx) : {C : CType} → ⟨⟨ Γ ⟩⟩ ⊢M⦂ 
              ----------------------------------------------------
              RunResult⟨ Γ ∣ promise op ∣ p ↦ M `in N ⟩
 
-  awaiting : {C : CType}
-             {Y : VType}
-             {y : ⟨ Y ⟩ ∈ ⟨⟨ Γ ⟩⟩}
-             {M : ⟨⟨ Γ ⟩⟩ ⊢M⦂ C} → 
-             y ⧗ M →
-             ---------------------
-             RunResult⟨ Γ ∣ M ⟩
+  await   : {C : CType}
+            {X : VType}
+            {x : ⟨ X ⟩ ∈ ⟨⟨ Γ ⟩⟩}
+            {M : ⟨⟨ Γ ⟩⟩ ∷ X ⊢M⦂ C} →
+            ------------------------------------
+            RunResult⟨ Γ ∣ await (` x) until M ⟩
 
 data CompResult⟨_∣_⟩ (Γ : Ctx) : {C : CType} → ⟨⟨ Γ ⟩⟩ ⊢M⦂ C → Set where
 
@@ -99,8 +97,8 @@ progress (let= M `in N) with progress M
   inj₁ (_ , let-return V N)
 ... | inj₂ (comp (promise {_} {_} {_} {_} {_} {_} {_} {p} {M'} {M''} R)) =
   inj₁ (_ , let-promise p M' M'' N)
-... | inj₂ (comp (awaiting R)) =
-  inj₂ (comp (awaiting (let-in R)))
+... | inj₂ (comp await) =
+  inj₁ (_ , let-await _ _ _)
 ... | inj₂ (signal {_} {_} {_} {_} {p} {V} {M'} R) =
   inj₁ (_ , let-↑ p V M' N)
 progress ((` x) · W) with ⇒-not-in-ctx x
@@ -117,8 +115,8 @@ progress (↓ op V M) with progress M
   inj₁ (_ , context (↓ op V [-]) r)
 ... | inj₂ (comp (return W)) =
   inj₁ (_ , (↓-return V W))
-... | inj₂ (comp (awaiting R)) =
-  inj₂ (comp (awaiting (interrupt R)))
+... | inj₂ (comp await) =
+  inj₁ (_ , ↓-await _ _ _)
 ... | inj₂ (signal {X} {o} {i} {op'} {p} {W} {M'} R) =
   inj₁ (_ , (↓-↑ p V W M'))
 ... | inj₂ (comp (promise {_} {_} {_} {_} {_} {_} {op'} {p} {M'} {M''} R)) with decₛ op op'
@@ -134,7 +132,7 @@ progress (promise op ∣ p ↦ M `in N) with progress N
 ... | inj₂ (signal {_} {_} {_} {_} {q} {V} {M'} R) =
   inj₁ (_ , promise-↑ p q V M M')
 progress (await ` x until M) =
-  inj₂ (comp (awaiting await))
+  inj₂ (comp await)
 progress (await ⟨ V ⟩ until M) =
   inj₁ (_ , await-promise V M)
 progress (coerce p q M) with progress M
@@ -144,8 +142,8 @@ progress (coerce p q M) with progress M
   inj₁ (_ , coerce-return V)
 ... | inj₂ (comp (promise {_} {_} {_} {_} {_} {_} {op'} {r} {M'} {M''} R)) =
   inj₁ (_ , coerce-promise r M' M'')
-... | inj₂ (comp (awaiting R)) =
-  inj₂ (comp (awaiting (coerce R)))
+... | inj₂ (comp await) =
+  inj₁ (_ , coerce-await _ _)
 ... | inj₂ (signal {_} {_} {_} {_} {r} {V} {M'} R) =
   inj₁ (_ , coerce-↑ r V M')
 

@@ -6,7 +6,6 @@ open import Data.Sum
 open import Data.Unit
 
 open import AEff.AEff
-open import AEff.AwaitingComputations
 open import AEff.EffectAnnotations
 open import AEff.Finality
 open import AEff.Preservation
@@ -318,8 +317,6 @@ par-finality-↝↝ : {o o' : O}
 
 par-finality-↝↝ (run R) .id (run r) =
   run-finality-↝↝ R r 
-par-finality-↝↝ (run R) .id (↑ p V M) =
-  run-↑-⊥ R
 par-finality-↝↝ (par R S) .(par _ ⇝-refl) (context-∥ₗ r') =
   par-finality-↝↝ R _ r'
 par-finality-↝↝ (par R S) .(par ⇝-refl _) (context-∥ᵣ r') =
