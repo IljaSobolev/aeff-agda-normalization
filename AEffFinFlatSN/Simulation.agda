@@ -231,6 +231,7 @@ sim (context-coerce r) with sim r
 sim (coerce-return V) = inj₂ (refl , coe-[-])
 sim (coerce-↑ V M) = inj₂ (refl , coe-↓)
 sim (coerce-promise x p q M N) = inj₂ (refl , coe-↓)
+sim (coerce-await V M) = inj₂ (refl , coe-[-])
 
 
 -- STRONG NORMALISATION PROOF BY MEANS OF THE SIMULATION AND

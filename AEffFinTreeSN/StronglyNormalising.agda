@@ -59,6 +59,8 @@ reducts-base (coerce _ (↑ _ _ _)) =
   [ r↝ (coerce-↑ _ _) ]ₗ
 reducts-base (coerce _ (promise _ ∣ _ , _ ↦ _ `in _)) =
   [ r↝ (coerce-promise _ _ _ _ _) ]ₗ
+reducts-base (coerce _ (await _ until _)) =
+  [ r↝ (coerce-await _ _) ]ₗ
 reducts-base _ =
   []ₗ
 
@@ -109,6 +111,7 @@ reducts-complete' (r↝ (await-promise V M)) = inj₁ Hd
 reducts-complete' (r↝ (coerce-return V)) = inj₁ Hd
 reducts-complete' (r↝ (coerce-↑ V M)) = inj₁ Hd
 reducts-complete' (r↝ (coerce-promise x p q M N)) = inj₁ Hd
+reducts-complete' (r↝ (coerce-await V M)) = inj₁ Hd
 reducts-complete' (r↝ (context-let r)) = inj₂ (map-∈ₗ (++-∈ₗ (reducts-complete' (r↝ r))))
 reducts-complete' (r↝ (context-↑ r)) = inj₂ (map-∈ₗ (++-∈ₗ (reducts-complete' (r↝ r))))
 reducts-complete' (r↝ (context-↓ {_} {_ ! _} r)) = inj₂ (map-∈ₗ (++-∈ₗ (reducts-complete' (r↝ r))))

@@ -402,3 +402,10 @@ data _↝↝_ : Γ ⊢M⦂ C → Γ ⊢M⦂ C → Set where
                     coerce {isf' = isf''} x (promise op ∣ p , q ↦ M `in N)
                     ↝↝
                     promise op ∣ ⊑-trans p (lkp-mono x) , ∈ᵢ-⊑ x q ↦ M `in coerce x N
+
+  coerce-await    : (V : Γ ⊢V⦂ ⟨ X ⟩) →
+                    (M : Γ ∷ X ⊢M⦂ Y ! (i , isf)) →
+                    -----------------------------
+                    coerce {isf' = isf'} x (await V until M)
+                    ↝↝
+                    await V until (coerce x M)
