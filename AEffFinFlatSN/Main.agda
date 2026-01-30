@@ -26,73 +26,73 @@ open import AEff.AEff using (payload)
 
 module AEffFinFlatSN.Main where
 
--- FORM M N SAYS THAT M AND N ARE OF FORMS E [ L ] AND E [ ↓ op V L ] RESPECTIVELY
+-- INFIX-↓ M N SAYS ROUGHLY THAT M AND N ARE OF FORMS E [ L ] AND E [ ↓ op V L ] RESPECTIVELY
 
-data Form {op} {i} {isf} : Γ ⊢M⦂ X ! (i , isf) → Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf) → Set where
-  [-]     : Form M (↓ op V M)
-  return  : Form (return V) (return V)
-  ↑       : Form M N → Form (↑ op' V M) (↑ op' V N)
-  await   : Form M N → Form (await V until M) (await V until N)
-  promise : ∀ {x y x' y'} → Form M N → Form (promise op' ∣ x , y ↦ L `in M) (promise op' ∣ x' , y' ↦ L `in N)
+data Infix-↓ {op} {i} {isf} : Γ ⊢M⦂ X ! (i , isf) → Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf) → Set where
+  [-]     : Infix-↓ M (↓ op V M)
+  return  : Infix-↓ (return V) (return V)
+  ↑       : Infix-↓ M N → Infix-↓ (↑ op' V M) (↑ op' V N)
+  await   : Infix-↓ M N → Infix-↓ (await V until M) (await V until N)
+  promise : ∀ {x y x' y'} → Infix-↓ M N → Infix-↓ (promise op' ∣ x , y ↦ L `in M) (promise op' ∣ x' , y' ↦ L `in N)
 
-form-sub : {M : Γ ⊢M⦂ X ! (i , isf)}
-           {N : Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)}
-           (s : Sub Γ Γ') →
-           Form M N →
-           --------------------------
-           Form (M [ s ]m) (N [ s ]m)
+infix-↓-sub : {M : Γ ⊢M⦂ X ! (i , isf)}
+              {N : Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)}
+              (s : Sub Γ Γ') →
+              Infix-↓ M N →
+              --------------------------
+              Infix-↓ (M [ s ]m) (N [ s ]m)
 
-form-sub s [-] = [-]
-form-sub s return = return
-form-sub s (↑ ff) = ↑ (form-sub _ ff)
-form-sub s (await ff) = await (form-sub _ ff)
-form-sub s (promise ff) = promise (form-sub _ ff)
+infix-↓-sub s [-] = [-]
+infix-↓-sub s return = return
+infix-↓-sub s (↑ ff) = ↑ (infix-↓-sub _ ff)
+infix-↓-sub s (await ff) = await (infix-↓-sub _ ff)
+infix-↓-sub s (promise ff) = promise (infix-↓-sub _ ff)
 
 
 -- IF M DOES NOT HAVE A HANDLER FOR op, THEN AN INTERRUPT op PRESERVES THE STRUCTURE OF M
 
-form-↝ : {M : Γ ⊢M⦂ X ! (i , isf)}
-         {N : Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)} →
-         ¬ [ op ]ₗ ∈ᵢ i →
-         Form M N →
-         N ↝↝ N' →
-         ----------------------------
-         Form M N' ⊎ Σ[ M' ∈ _ ] Form M' N' × M ↝↝ M'
+infix-↓-↝ : {M : Γ ⊢M⦂ X ! (i , isf)}
+            {N : Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)} →
+            ¬ [ op ]ₗ ∈ᵢ i →
+            Infix-↓ M N →
+            N ↝↝ N' →
+            ----------------------------
+            Infix-↓ M N' ⊎ Σ[ M' ∈ _ ] Infix-↓ M' N' × M ↝↝ M'
 
-form-↝ u [-] (↓-return V W) = inj₁ return
-form-↝ u [-] (↓-↑ V W M) = inj₁ (↑ [-])
-form-↝ u [-] (↓-promise-op p q V M N) = ⊥-elim (u q)
-form-↝ u [-] (↓-promise-op' V p q r M N) = inj₁ (promise [-])
-form-↝ u [-] (↓-await W V M) = inj₁ (await [-])
-form-↝ u [-] (context-↓ r) = inj₂ (_ , [-] , r)
-form-↝ u (↑ ff) (context-↑ r) with form-↝ u ff r
+infix-↓-↝ u [-] (↓-return V W) = inj₁ return
+infix-↓-↝ u [-] (↓-↑ V W M) = inj₁ (↑ [-])
+infix-↓-↝ u [-] (↓-promise-op p q V M N) = ⊥-elim (u q)
+infix-↓-↝ u [-] (↓-promise-op' V p q r M N) = inj₁ (promise [-])
+infix-↓-↝ u [-] (↓-await W V M) = inj₁ (await [-])
+infix-↓-↝ u [-] (context-↓ r) = inj₂ (_ , [-] , r)
+infix-↓-↝ u (↑ ff) (context-↑ r) with infix-↓-↝ u ff r
 ... | inj₁ ff = inj₁ (↑ ff)
 ... | inj₂ (_ , ff , r) = inj₂ (_ , ↑ ff , context-↑ r)
-form-↝ u (await ff) (await-promise V N) = inj₂ (_ , form-sub _ ff , await-promise V _)
-form-↝ u (promise (↑ ff)) (promise-↑ p q V M N) = inj₂ (_ , ↑ (promise ff) , promise-↑ _ _ _ _ _)
-form-↝ u (promise ff) (context-promise r) with form-↝ u ff r
+infix-↓-↝ u (await ff) (await-promise V N) = inj₂ (_ , infix-↓-sub _ ff , await-promise V _)
+infix-↓-↝ u (promise (↑ ff)) (promise-↑ p q V M N) = inj₂ (_ , ↑ (promise ff) , promise-↑ _ _ _ _ _)
+infix-↓-↝ u (promise ff) (context-promise r) with infix-↓-↝ u ff r
 ... | inj₁ ff = inj₁ (promise ff)
 ... | inj₂ (_ , ff , r) = inj₂ (_ , promise ff , context-promise r)
 
-form-#↑ : Form M N → #↑ N ≤ #↑ M
-form-#↑ [-] = z≤n
-form-#↑ return = z≤n
-form-#↑ (↑ ff) = s≤s (form-#↑ ff)
-form-#↑ (await ff) = z≤n
-form-#↑ (promise ff) = z≤n
+infix-↓-#↑ : Infix-↓ M N → #↑ N ≤ #↑ M
+infix-↓-#↑ [-] = z≤n
+infix-↓-#↑ return = z≤n
+infix-↓-#↑ (↑ ff) = s≤s (infix-↓-#↑ ff)
+infix-↓-#↑ (await ff) = z≤n
+infix-↓-#↑ (promise ff) = z≤n
 
 ≡-↓-sn' : {M : Γ ⊢M⦂ X ! (i , isf)}
           {N : Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)} →
           ¬ [ op ]ₗ ∈ᵢ i →
           SN↑ M n →
           SN↑ N m →
-          Form M N →
+          Infix-↓ M N →
           --------------------------
           ∀ {N'} → N ↝↝ N' → SN↑ N' n
 
-≡-↓-sn' u (sn sM le) (sn sN le') ff r with form-↝ u ff r
-... | inj₁ ff = sn (≡-↓-sn' u (sn sM le) (sN r) ff) (≤-trans (form-#↑ ff) le)
-... | inj₂ (_ , ff , r') = sn (≡-↓-sn' u (sM r') (sN r) ff) (≤-trans (form-#↑ ff) (sn-#↑ (sM r')))
+≡-↓-sn' u (sn sM le) (sn sN le') ff r with infix-↓-↝ u ff r
+... | inj₁ ff = sn (≡-↓-sn' u (sn sM le) (sN r) ff) (≤-trans (infix-↓-#↑ ff) le)
+... | inj₂ (_ , ff , r') = sn (≡-↓-sn' u (sM r') (sN r) ff) (≤-trans (infix-↓-#↑ ff) (sn-#↑ (sM r')))
 
 
 -- ACTING WITH op ON A TERM THAT HAS NO HANDLER FOR op
