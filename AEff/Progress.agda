@@ -40,7 +40,7 @@ data RunResult⟨_∣_⟩ (Γ : Ctx) : {C : CType} → ⟨⟨ Γ ⟩⟩ ⊢M⦂ 
              {o o' : O}
              {i i' : I}
              {op : Σₛ}
-             {p : (o' , i') ⊑ lkpᵢ op i}
+             {p : lkpᵢ op i ≡ just (o' , i')}
              {M : ⟨⟨ Γ ⟩⟩ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')}
              {N : ⟨⟨ Γ ⟩⟩ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)} →
              RunResult⟨ Γ ∷ X ∣ N ⟩ →

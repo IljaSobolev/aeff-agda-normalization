@@ -68,7 +68,7 @@ mutual
                       {o o' : O}
                       {i i' : I}
                       {op : Σₛ} →
-                      (p : (o' , i') ⊑ lkpᵢ op i) →
+                      (p : lkpᵢ op i ≡ just (o' , i')) →
                       (M₁ : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
                       (M₂ : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
                       (N : Γ ∷ Y ⊢M⦂ Z ! (o , i)) →
@@ -81,7 +81,7 @@ mutual
                       {o o' : O}
                       {i i' : I}
                       {op op' : Σₛ} →
-                      (p : (o' , i') ⊑ lkpᵢ op i) →
+                      (p : lkpᵢ op i ≡ just (o' , i')) →
                       (q : op' ∈ₒ o) →
                       (V : Γ ∷ ⟨ X ⟩ ⊢V⦂ ```(payload op')) → 
                       (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
@@ -121,31 +121,32 @@ mutual
                       {o o' : O}
                       {i i' : I}
                       {op : Σₛ} →
-                      (p : (o' , i') ⊑ lkpᵢ op i) →
+                      (p : lkpᵢ op i ≡ just (o' , i')) →
                       (V : Γ ⊢V⦂ ```(payload op)) → 
                       (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
                       ---------------------------------------------------------------------------------------
                       ↓ op V (promise op ∣ p ↦ M `in N )
                       ↝↝
-                      (let= (coerce (⊑ₒ-trans (proj₁ (⊑-proj p (proj₂ (proj₂ (⊑-just p))))) (↓ₑ-⊑ₒ-o' {o = o} (proj₂ (proj₂ (⊑-just p)))))
-                                    (⊑ᵢ-trans (proj₂ (⊑-proj p (proj₂ (proj₂ (⊑-just p))))) (↓ₑ-⊑ₒ-i' {o = o} (proj₂ (proj₂ (⊑-just p)))))
-                                    (M [ id-subst [ V ]s ]m)) `in
-                                    ↓ op (V-rename wk₁ V) N)
+                      let= coerce (↓ₑ-⊑ₒ-o' {o} p) (↓ₑ-⊑ₒ-i' {o} p) (M [ id-subst [ V ]s ]m) `in ↓ op (V-rename wk₁ V) N
 
     ↓-promise-op'   : {X Y : VType}
                       {o o' : O}
                       {i i' : I}
                       {op op' : Σₛ} →
                       (p : ¬ op ≡ op') →
-                      (q : (o' , i') ⊑ lkpᵢ op' i) →
+                      (q : lkpᵢ op' i ≡ just (o' , i')) →
                       (V : Γ ⊢V⦂ ```(payload op)) → 
                       (M : Γ ∷ ```(payload op') ⊢M⦂ ⟨ X ⟩ ! (o' , i')) →
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
                       ------------------------------------------------------------------------------------------
                       ↓ op V (promise op' ∣ q ↦ M `in N )
                       ↝↝
-                      promise op' ∣ (lkpᵢ-↓ₑ-neq-⊑ {o = o} {i = i} p q) ↦ M `in (↓ op (V-rename wk₁ V) N)
+                      promise op' ∣ (proj₁ (proj₂ (proj₂ (lkpᵢ-↓ₑ-neq {o = o} {i = i} p q)))) ↦
+                        (coerce (proj₁ (proj₂ (proj₂ (proj₂ (lkpᵢ-↓ₑ-neq {o = o} {i = i} p q)))))
+                                               (proj₂ (proj₂ (proj₂ (proj₂ (lkpᵢ-↓ₑ-neq {o = o} {i = i} p q)))))
+                                               M)
+                        `in ↓ op (V-rename wk₁ V) N
 
     await-promise   : {X : VType}
                       {C : CType} → 
@@ -198,7 +199,7 @@ mutual
                       {o o' : O}
                       {i i' : I}
                       {op : Σₛ} →
-                      {r : (o' , i') ⊑ lkpᵢ op i}
+                      {r : lkpᵢ op i ≡ just (o' , i')}
                       {M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o' , i')} →
                       {N N' : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)} →
                       N ↝↝ N' →
@@ -250,19 +251,13 @@ mutual
                       {p : o ⊑ₒ o'}
                       {q : i ⊑ᵢ i'}
                       {op : Σₛ} →
-                      (r : (o'' , i'') ⊑ lkpᵢ op i)
+                      (r : lkpᵢ op i ≡ just (o'' , i''))
                       (M : Γ ∷ ```(payload op) ⊢M⦂ ⟨ X ⟩ ! (o'' , i'')) →
                       (N : Γ ∷ ⟨ X ⟩ ⊢M⦂ Y ! (o , i)) →
                       ------------------------------------------------------------------
                       coerce p q (promise op ∣ r ↦ M `in N)
                       ↝↝
-                      promise_∣_↦_`in_ op
-                                       (subst (λ oi → (o'' , i'') ⊑ oi) (sym (lkpᵢ-next-eq q (proj₂ (proj₂ (⊑-just r)))))
-                                               (⊑-trans r (proj₂ (proj₂ (⊑-just r))) (
-                                                 (lkpᵢ-next-⊑ₒ q (proj₂ (proj₂ (⊑-just r)))) ,
-                                                 (lkpᵢ-next-⊑ᵢ q (proj₂ (proj₂ (⊑-just r)))))))
-                                       M
-                                       (coerce p q N)
+                      promise op ∣ lkpᵢ-next-eq q r ↦ coerce (lkpᵢ-next-⊑ₒ q r) (lkpᵢ-next-⊑ᵢ q r) M `in coerce p q N
 
 
 -- ONE-TO-ONE CORRESPONDENCE BETWEEN THE TWO SETS OF REDUCTION RULES
@@ -415,7 +410,7 @@ run-invert-promise : {Γ : Ctx}
                      {o o' : O}
                      {i i' : I}
                      {op : Σₛ}
-                     {p : (o' , i') ⊑ lkpᵢ op i}
+                     {p : lkpᵢ op i ≡ just (o' , i')}
                      {M : (⟨⟨ Γ ⟩⟩ ∷ ```(payload op)) ⊢M⦂ (⟨ X ⟩ ! (o' , i'))}
                      {N : (⟨⟨ Γ ⟩⟩ ∷ ⟨ X ⟩) ⊢M⦂ (Y ! (o , i))} → 
                      RunResult⟨ Γ ∣ (promise op ∣ p ↦ M `in N) ⟩ →
@@ -486,7 +481,7 @@ run-let-promise-⊥ : {Γ : Ctx}
                     {o o' : O}
                     {i i' : I}
                     {op : Σₛ}
-                    {p : (o' , i') ⊑ lkpᵢ op i}
+                    {p : lkpᵢ op i ≡ just (o' , i')}
                     {M₁ : (⟨⟨ Γ ⟩⟩ ∷ ```(payload op)) ⊢M⦂ (⟨ X ⟩ ! (o' , i'))}
                     {M₂ : (⟨⟨ Γ ⟩⟩ ∷ ⟨ X ⟩) ⊢M⦂ (Y ! (o , i))}
                     {N  : (⟨⟨ Γ ⟩⟩ ∷ Y) ⊢M⦂ (Z ! (o , i))} →
