@@ -108,7 +108,7 @@ sn-strip-↑ : SNi↑ (↑ op V M) (suc n) m → SNi↑ M n m
 sn-strip-↑ (sn sM le) = sn (λ r → sn-strip-↑ (sM (context-↑ r))) (≤-pred le)
 
 sn* : Γ ⊢P⦂ → Set
-sn* [] = ⊤
+sn* (run M) = ΣSN M
 sn* (M ∥ P) = ΣSN M × sn* P
 
 sn-↓ : (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) → ΣSN M → ΣSN (↓ op V M)
@@ -117,10 +117,11 @@ sn-↓ {M = M} op V (_ , _ , sM) with [ op ]ₗ ∈ᵢ? i-of (type-of M)
 ... | no  a = _ , sn↑-sni↑ (≡-↓-sn a (sni↑→sn↑ sM))
 
 sn*-↓ₜ : (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) → sn* P → sn* (↓ₜ op V P)
-sn*-↓ₜ {P = []} _ _ sP = tt
+sn*-↓ₜ {P = run _} _ _ sM = sn-↓ _ _ sM
 sn*-↓ₜ {P = _ ∥ _} _ _ (sM , sP) = sn-↓ _ _ sM , sn*-↓ₜ _ _ sP
 
 sn*-run : P ↝↝ₚ-↝ Q → sn* P → sn* Q
+sn*-run (run r) (_ , _ , sn f _) = _ , _ , f r
 sn*-run (context-∥ₗ r) ((_ , _ , sn f _) , sP) = (_ , _ , f r) , sP
 sn*-run (context-∥ᵣ r) (sM , sP) = sM , sn*-run r sP
 
@@ -136,35 +137,38 @@ sn*-↝ (run r) sP = sn*-run r sP
 ∣ M ∣ₘ = ∣ isf-of (type-of M) ∣
 
 ∣_∣↑ : sn* P → ℕ
-∣_∣↑ {P = []} _ = 0
+∣_∣↑ {P = run _} (n , _) = n
 ∣_∣↑ {P = _ ∥ _} ((n , _) , sP) = n + ∣ sP ∣↑
 
 ∣_∣i : sn* P → ℕ
-∣_∣i {P = []} _ = 0
+∣_∣i {P = run M} _ = ∣ M ∣ₘ
 ∣_∣i {P = M ∥ _} (_ , sP) = ∣ M ∣ₘ + ∣ sP ∣i
 
 ∣_∣↝ : sn* P → ℕ
-∣_∣↝ {P = []} _ = 0
+∣_∣↝ {P = run _} (_ , m , _) = m
 ∣_∣↝ {P = _ ∥ _} ((_ , m , _) , sP) = m + ∣ sP ∣↝
 
 run-↝-< : {P : Γ ⊢P⦂} (r : P ↝↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣↝ < ∣ sP ∣↝
+run-↝-< (run r) (_ , _ , sn _ _) = ≤-refl
 run-↝-< (context-∥ₗ r) ((_ , _ , sn _ _) ,  _) = ≤-refl
 run-↝-< (context-∥ᵣ r) ( _ , sP) = +-monoʳ-< _ (run-↝-< r sP)
 
 run-i-≡ : {P : Γ ⊢P⦂} (r : P ↝↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣i ≡ ∣ sP ∣i
+run-i-≡ (run r) _ = refl
 run-i-≡ (context-∥ₗ r) (_ ,  _) = refl
 run-i-≡ (context-∥ᵣ r) (_ , sP) = cong (_ +_) (run-i-≡ r sP)
 
 run-↑-≡ : {P : Γ ⊢P⦂} (r : P ↝↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣↑ ≡ ∣ sP ∣↑
+run-↑-≡ (run r) (_ , _ , sn _ _) = refl
 run-↑-≡ (context-∥ₗ r) ((_ , _ , sn _ _) ,  _) = refl
 run-↑-≡ (context-∥ᵣ r) ( _ , sP) = cong (_ +_) (run-↑-≡ r sP)
 
 has : Σₛ → Γ ⊢P⦂ → Set
-has op [] = ⊥
+has op (run M) = [ op ]ₗ ∈ᵢ i-of (type-of M)
 has op (M ∥ P) = [ op ]ₗ ∈ᵢ i-of (type-of M) ⊎ has op P
 
 has? : (op : Σₛ) (P : Γ ⊢P⦂) → Dec (has op P)
-has? op [] = no (λ ())
+has? op (run M) = [ op ]ₗ ∈ᵢ? i-of (type-of M)
 has? op (M ∥ P) with [ op ]ₗ ∈ᵢ? i-of (type-of M)
 ... | yes a = yes (inj₁ a)
 ... | no  a with has? op P
@@ -183,21 +187,24 @@ module _ (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) where
   ∣∣ₘ-↓-≡ M h = size-↓ₑ-≡ (isf-of (type-of M)) h
 
   sn*-↓ₜ-i-≤ : {P : Γ ⊢P⦂} (sP : sn* P) → ∣ sn*-↓ₜ op V sP ∣i ≤ ∣ sP ∣i
-  sn*-↓ₜ-i-≤ {P = []} sP = z≤n
+  sn*-↓ₜ-i-≤ {P = run M} sP = ∣∣ₘ-↓-≤ M
   sn*-↓ₜ-i-≤ {P = M ∥ P} (_ , sP) = +-mono-≤ (∣∣ₘ-↓-≤ M) (sn*-↓ₜ-i-≤ sP)
 
   sn*-↓ₜ-i-< : {P : Γ ⊢P⦂} (sP : sn* P) → has op P → ∣ sn*-↓ₜ op V sP ∣i < ∣ sP ∣i
+  sn*-↓ₜ-i-< {P = run M} _ h = ∣∣ₘ-↓-< M h
   sn*-↓ₜ-i-< {P = M ∥ P} (_ , sP) (inj₁ h) = +-mono-<-≤ (∣∣ₘ-↓-< M h) (sn*-↓ₜ-i-≤ sP)
   sn*-↓ₜ-i-< {P = M ∥ P} (_ , sP) (inj₂ h) = +-mono-≤-< (∣∣ₘ-↓-≤ M) (sn*-↓ₜ-i-< sP h)
 
   sn*-↓ₜ-i-≡ : {P : Γ ⊢P⦂} (sP : sn* P) → ¬ has op P → ∣ sn*-↓ₜ op V sP ∣i ≡ ∣ sP ∣i
-  sn*-↓ₜ-i-≡ {P = []} sP h = refl
+  sn*-↓ₜ-i-≡ {P = run M} _ h = ∣∣ₘ-↓-≡ M h
   sn*-↓ₜ-i-≡ {P = M ∥ P} (sM , sP) h with [ op ]ₗ ∈ᵢ? i-of (type-of M)
   ... | yes a = ⊥-elim (h (inj₁ a))
   ... | no  a rewrite sym (∣∣ₘ-↓-≡ M a) = cong (_ +_) (sn*-↓ₜ-i-≡ sP (h ∘ inj₂))
 
   sn*-↓ₜ-↑-≡ : {P : Γ ⊢P⦂} (sP : sn* P) → ¬ has op P → ∣ sn*-↓ₜ op V sP ∣↑ ≡ ∣ sP ∣↑
-  sn*-↓ₜ-↑-≡ {P = []} sP hP = refl
+  sn*-↓ₜ-↑-≡ {P = run M} (_ , _ , sn _ _) h with [ op ]ₗ ∈ᵢ? i-of (type-of M)
+  ... | yes a = ⊥-elim (h a)
+  ... | no  a = refl
   sn*-↓ₜ-↑-≡ {P = M ∥ P} (sM , sP) h with [ op ]ₗ ∈ᵢ? i-of (type-of M)
   ... | yes a = ⊥-elim (h (inj₁ a))
   ... | no  a = cong (_ +_) (sn*-↓ₜ-↑-≡ sP (h ∘ inj₂))
@@ -209,9 +216,9 @@ module _ (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) where
             ⊎
             ∣ sn*-↑-∥ r sP ∣i ≡ ∣ sP ∣i × ∣ sn*-↑-∥ r sP ∣↑ < ∣ sP ∣↑
 
-  ↑-∥-i-< (↑-∥ₗ {M = M} {N = N} {P = P}) ((suc _ , _ , sn _ _) , sP) with has? op (N ∥ P)
-  ... | yes a = inj₁ (+-monoʳ-< ∣ M ∣ₘ (sn*-↓ₜ-i-< sP a))
-  ... | no  a rewrite sym (sn*-↓ₜ-↑-≡ sP a) = inj₂ (cong (∣ M ∣ₘ +_) (sn*-↓ₜ-i-≡ sP a) , ≤-refl)
+  ↑-∥-i-< (↑-∥ₗ {M = M} {P = P}) ((suc _ , _ , sn _ _) , sP) with has? op P
+  ... | yes a = inj₁ (+-monoʳ-< _ (sn*-↓ₜ-i-< sP a))
+  ... | no  a rewrite sym (sn*-↓ₜ-↑-≡ sP a) = inj₂ (cong (_ +_) (sn*-↓ₜ-i-≡ sP a) , ≤-refl)
   ↑-∥-i-< (↑-∥ᵣ {M = M} r) (sM , sP) with ↑-∥-i-< r sP
   ... | inj₁ le = inj₁ (+-mono-≤-< (∣∣ₘ-↓-≤ M) le)
   ... | inj₂ (eq , le) with [ op ]ₗ ∈ᵢ? i-of (type-of M)
@@ -245,7 +252,7 @@ strong-normₚ' sP ai a↑ (acc a↝) (run r)
 -- ALL PARALLEL PROCESSES ARE STRONGLY NORMALISING
 
 all-sn* : (P : Γ ⊢P⦂) → sn* P
-all-sn* [] = tt
+all-sn* (run M) = strong-norm-Σ (strong-norm M)
 all-sn* (M ∥ P) = strong-norm-Σ (strong-norm M) , all-sn* P
 
 strong-normₚ : (P : Γ ⊢P⦂) → SNₚ P

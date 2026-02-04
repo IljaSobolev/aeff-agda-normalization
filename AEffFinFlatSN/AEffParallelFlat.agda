@@ -6,11 +6,11 @@ open import AEff.AEff using (payload)
 
 module AEffFinFlatSN.AEffParallelFlat where
 
--- FLATTENED PARALLEL PROCESSES
+-- FLATTENED NONEMPTY PARALLEL PROCESSES
 
 infix 10 _⊢P⦂
 data _⊢P⦂ Γ : Set where
-  []  : Γ ⊢P⦂
+  run : Γ ⊢M⦂ C → Γ ⊢P⦂
   _∥_ : Γ ⊢M⦂ C → Γ ⊢P⦂ → Γ ⊢P⦂
 
 variable
@@ -20,7 +20,7 @@ variable
 -- APPLYING AN INTERRUPT TO ALL COMPUTATIONS IN A PARALLEL PROCESS
 
 ↓ₜ : (op : Σₛ) → Γ ⊢V⦂ ```(payload op) → Γ ⊢P⦂ → Γ ⊢P⦂
-↓ₜ op V [] = []
+↓ₜ op V (run M) = run (↓ op V M)
 ↓ₜ op V (M ∥ P) = ↓ op V M ∥ ↓ₜ op V P
 
 
@@ -29,10 +29,10 @@ variable
 infix 10 _↝↝ₚ-[_,_]_
 data _↝↝ₚ-[_,_]_ : Γ ⊢P⦂ → (op : Σₛ) → Γ ⊢V⦂ ```(payload op) → Γ ⊢P⦂ → Set where
 
-  ↑-∥ₗ : ----------------------
-         ↑ op V M ∥ (N ∥ P)
+  ↑-∥ₗ : ---------------
+         ↑ op V M ∥ P
          ↝↝ₚ-[ op , V ]
-         M ∥ (↓ op V N ∥ ↓ₜ op V P)
+         M ∥ ↓ₜ op V P
 
   ↑-∥ᵣ : P ↝↝ₚ-[ op , V ] Q →
          -------------
@@ -45,6 +45,12 @@ data _↝↝ₚ-[_,_]_ : Γ ⊢P⦂ → (op : Σₛ) → Γ ⊢V⦂ ```(payload 
 
 infix 10 _↝↝ₚ-↝_
 data _↝↝ₚ-↝_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where
+
+  run        : M ↝↝ N →
+               ------
+               run M
+               ↝↝ₚ-↝
+               run N
 
   context-∥ₗ : M ↝↝ N →
                -----
@@ -59,8 +65,8 @@ data _↝↝ₚ-↝_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where
                M ∥ Q
 
 
--- A REDUCTION OF A PARALLEL PROCESS IS EITHER A REDUCTION IN ONE OF THE COMPUTATION
--- OR THE SENDING OF A SIGNALS FROM ONE COMPUTATION TO ALL THE OTHERS
+-- A REDUCTION OF A PARALLEL PROCESS IS EITHER A REDUCTION IN ONE OF THE COMPUTATIONS
+-- OR SENDING A SIGNAL FROM ONE COMPUTATION TO ALL THE OTHERS
 
 infix 10 _↝↝ₚ_
 data _↝↝ₚ_ : Γ ⊢P⦂ → Γ ⊢P⦂ → Set where
