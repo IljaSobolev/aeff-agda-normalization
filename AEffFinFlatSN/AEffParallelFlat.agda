@@ -29,10 +29,10 @@ variable
 infix 10 _↝↝ₚ-[_,_]_
 data _↝↝ₚ-[_,_]_ : Γ ⊢P⦂ → (op : Σₛ) → Γ ⊢V⦂ ```(payload op) → Γ ⊢P⦂ → Set where
 
-  ↑-∥ₗ : --------------
-         ↑ op V M ∥ P
+  ↑-∥ₗ : ----------------------
+         ↑ op V M ∥ (N ∥ P)
          ↝↝ₚ-[ op , V ]
-         M ∥ ↓ₜ op V P
+         M ∥ (↓ op V N ∥ ↓ₜ op V P)
 
   ↑-∥ᵣ : P ↝↝ₚ-[ op , V ] Q →
          -------------

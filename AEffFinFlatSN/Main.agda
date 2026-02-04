@@ -209,9 +209,9 @@ module _ (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) where
             ⊎
             ∣ sn*-↑-∥ r sP ∣i ≡ ∣ sP ∣i × ∣ sn*-↑-∥ r sP ∣↑ < ∣ sP ∣↑
 
-  ↑-∥-i-< (↑-∥ₗ {M = M} {P = P}) ((suc _ , _ , sn _ _) , sP) with has? op P
-  ... | yes a = inj₁ (+-monoʳ-< _ (sn*-↓ₜ-i-< sP a))
-  ... | no  a rewrite sym (sn*-↓ₜ-↑-≡ sP a) = inj₂ (cong (_ +_) (sn*-↓ₜ-i-≡ sP a) , ≤-refl)
+  ↑-∥-i-< (↑-∥ₗ {M = M} {N = N} {P = P}) ((suc _ , _ , sn _ _) , sP) with has? op (N ∥ P)
+  ... | yes a = inj₁ (+-monoʳ-< ∣ M ∣ₘ (sn*-↓ₜ-i-< sP a))
+  ... | no  a rewrite sym (sn*-↓ₜ-↑-≡ sP a) = inj₂ (cong (∣ M ∣ₘ +_) (sn*-↓ₜ-i-≡ sP a) , ≤-refl)
   ↑-∥-i-< (↑-∥ᵣ {M = M} r) (sM , sP) with ↑-∥-i-< r sP
   ... | inj₁ le = inj₁ (+-mono-≤-< (∣∣ₘ-↓-≤ M) le)
   ... | inj₂ (eq , le) with [ op ]ₗ ∈ᵢ? i-of (type-of M)
