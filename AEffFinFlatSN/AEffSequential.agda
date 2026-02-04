@@ -118,12 +118,12 @@ data _⊢M⦂_ where
                        -------------------
                        Γ ⊢M⦂ X ! (i' , isf')
 
-type-of : Γ ⊢M⦂ C → CType
-type-of {C = C} _ = C
-
 variable
   V V' W W' U U' : Γ ⊢V⦂ X
   M M' N N' L L' : Γ ⊢M⦂ C
+
+type-of : Γ ⊢M⦂ C → CType
+type-of {C = C} _ = C
 
 
 -- SET OF RENAMINGS BETWEEN CONTEXTS

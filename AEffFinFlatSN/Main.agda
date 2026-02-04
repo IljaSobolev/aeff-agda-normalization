@@ -49,7 +49,8 @@ infix-↓-sub s (await ff) = await (infix-↓-sub _ ff)
 infix-↓-sub s (promise ff) = promise (infix-↓-sub _ ff)
 
 
--- IF M DOES NOT HAVE A HANDLER FOR op, THEN AN INTERRUPT op PRESERVES THE STRUCTURE OF M
+-- IF M DOES NOT HAVE A HANDLER FOR AN INTERRUPT,
+-- THEN ACTING WITH THAT INTERRUPT PRESERVES THE STRUCTURE OF M
 
 infix-↓-↝ : {M : Γ ⊢M⦂ X ! (i , isf)}
             {N : Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)} →
@@ -95,73 +96,94 @@ infix-↓-#↑ (promise ff) = z≤n
 ... | inj₂ (_ , ff , r') = sn (≡-↓-sn' u (sM r') (sN r) ff) (≤-trans (infix-↓-#↑ ff) (sn-#↑ (sM r')))
 
 
--- ACTING WITH op ON A TERM THAT HAS NO HANDLER FOR op
+-- ACTING WITH AN INTERRUPT ON A TERM THAT HAS NO HANDLER FOR THAT INTERRUPT
 -- DOES NOT INCREASE THE MAXIMUM NUMBER OF OUTGOING SIGNALS
 
 ≡-↓-sn : ¬ [ op ]ₗ ∈ᵢ i-of (type-of M) → SN↑ M n → SN↑ (↓ op V M) n
 ≡-↓-sn {_} {_} {_ ! _} u s = sn (≡-↓-sn' u s (sn→sn↑ (strong-norm _)) [-]) z≤n
 
 
--- THE PROOF OF STRONG NORMALISATION FOR PARALLEL PROCESSES
-
-sn-strip-↑ : SNi↑ (↑ op V M) (suc n) m → SNi↑ M n m
-sn-strip-↑ (sn sM le) = sn (λ r → sn-strip-↑ (sM (context-↑ r))) (≤-pred le)
-
-sn* : Γ ⊢P⦂ → Set
-sn* (run M) = ΣSN M
-sn* (M ∥ P) = ΣSN M × sn* P
+-- INTRODUCING AN INTERRUPT PRESERVES STRONG NORMALISATION
 
 sn-↓ : (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) → ΣSN M → ΣSN (↓ op V M)
 sn-↓ {M = M} op V (_ , _ , sM) with [ op ]ₗ ∈ᵢ? i-of (type-of M)
 ... | yes _ = strong-norm-Σ (strong-norm _)
 ... | no  a = _ , sn↑-sni↑ (≡-↓-sn a (sni↑→sn↑ sM))
 
+-- REMOVING A SIGNAL PRESERVES STRONG NORMALISATION AND REDUCES MAXIMUM NUMBER OF OUTGOING SIGNALS
+
+sn-strip-↑ : SNi↑ (↑ op V M) (suc n) m → SNi↑ M n m
+sn-strip-↑ (sn sM le) = sn (λ r → sn-strip-↑ (sM (context-↑ r))) (≤-pred le)
+
+
+-- DATATYPE EXPRESSING THAT EACH INDIVIDUAL COMPUTATION IN A PROCESS
+-- IS STRONGLY NORMALISING IN ISOLATION,
+-- AND ITS PROPERTIES
+
+data sn* : Γ ⊢P⦂ → Set where
+  run : ΣSN M → sn* (run M)
+  _∥_ : ΣSN M → sn* P → sn* (M ∥ P)
+
 sn*-↓ₜ : (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) → sn* P → sn* (↓ₜ op V P)
-sn*-↓ₜ {P = run _} _ _ sM = sn-↓ _ _ sM
-sn*-↓ₜ {P = _ ∥ _} _ _ (sM , sP) = sn-↓ _ _ sM , sn*-↓ₜ _ _ sP
+sn*-↓ₜ _ _ (run sM) = run (sn-↓ _ _ sM)
+sn*-↓ₜ _ _ (sM ∥ sP) = sn-↓ _ _ sM ∥ sn*-↓ₜ _ _ sP
 
 sn*-run : P ↝↝ₚ-↝ Q → sn* P → sn* Q
-sn*-run (run r) (_ , _ , sn f _) = _ , _ , f r
-sn*-run (context-∥ₗ r) ((_ , _ , sn f _) , sP) = (_ , _ , f r) , sP
-sn*-run (context-∥ᵣ r) (sM , sP) = sM , sn*-run r sP
+sn*-run (run r) (run (_ , _ , sn f _)) = run (_ , _ , f r)
+sn*-run (context-∥ₗ r) ((_ , _ , sn f _) ∥ sP) = (_ , _ , f r) ∥ sP
+sn*-run (context-∥ᵣ r) (sM ∥ sP) = sM ∥ sn*-run r sP
 
 sn*-↑-∥ : P ↝↝ₚ-[ op , V ] Q → sn* P → sn* Q
-sn*-↑-∥ ↑-∥ₗ ((suc _ , _ , sn sM le) , sP) = (_ , _ , sn-strip-↑ (sn sM le)) , sn*-↓ₜ _ _ sP
-sn*-↑-∥ (↑-∥ᵣ r) (sM , sP) = sn-↓ _ _ sM , sn*-↑-∥ r sP
+sn*-↑-∥ ↑-∥ₗ ((suc _ , _ , sn sM le) ∥ sP) = (_ , _ , sn-strip-↑ (sn sM le)) ∥ sn*-↓ₜ _ _ sP
+sn*-↑-∥ (↑-∥ᵣ r) (sM ∥ sP) = sn-↓ _ _ sM ∥ sn*-↑-∥ r sP
 
 sn*-↝ : P ↝↝ₚ Q → sn* P → sn* Q
 sn*-↝ (↑-∥ r) sP = sn*-↑-∥ r sP
 sn*-↝ (run r) sP = sn*-run r sP
 
-∣_∣ₘ : Γ ⊢M⦂ C → ℕ
-∣ M ∣ₘ = ∣ isf-of (type-of M) ∣
+
+-- INDUCTION MEASURES
+
+-- SUM OF MAXIMUM OUTGOING SIGNALS OVER ALL INDIVIDUAL COMPUTATIONS
 
 ∣_∣↑ : sn* P → ℕ
-∣_∣↑ {P = run _} (n , _) = n
-∣_∣↑ {P = _ ∥ _} ((n , _) , sP) = n + ∣ sP ∣↑
+∣ run (n , _) ∣↑ = n
+∣ (n , _) ∥ sP ∣↑ = n + ∣ sP ∣↑
+
+-- SUM OF SIZES OF INTERRUPT ANNOTATIONS OVER ALL INDIVIDUAL COMPUTATIONS
 
 ∣_∣i : sn* P → ℕ
-∣_∣i {P = run M} _ = ∣ M ∣ₘ
-∣_∣i {P = M ∥ _} (_ , sP) = ∣ M ∣ₘ + ∣ sP ∣i
+∣ run {M = M} sM ∣i = ∣ isf-of (type-of M) ∣
+∣ _∥_ {M = M} _ sP ∣i = ∣ isf-of (type-of M) ∣ + ∣ sP ∣i
+
+-- SUM OF UPPER BOUNDS ON THE NUMBER OF REDUCTION STEPS OVER ALL INDIVIDUAL COMPUTATIONS
 
 ∣_∣↝ : sn* P → ℕ
-∣_∣↝ {P = run _} (_ , m , _) = m
-∣_∣↝ {P = _ ∥ _} ((_ , m , _) , sP) = m + ∣ sP ∣↝
+∣ run (_ , m , _) ∣↝ = m
+∣ (_ , m , _) ∥ sP ∣↝ = m + ∣ sP ∣↝
 
-run-↝-< : {P : Γ ⊢P⦂} (r : P ↝↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣↝ < ∣ sP ∣↝
-run-↝-< (run r) (_ , _ , sn _ _) = ≤-refl
-run-↝-< (context-∥ₗ r) ((_ , _ , sn _ _) ,  _) = ≤-refl
-run-↝-< (context-∥ᵣ r) ( _ , sP) = +-monoʳ-< _ (run-↝-< r sP)
 
-run-i-≡ : {P : Γ ⊢P⦂} (r : P ↝↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣i ≡ ∣ sP ∣i
-run-i-≡ (run r) _ = refl
-run-i-≡ (context-∥ₗ r) (_ ,  _) = refl
-run-i-≡ (context-∥ᵣ r) (_ , sP) = cong (_ +_) (run-i-≡ r sP)
+-- REDUCING AN INDIVIDUAL COMPUTATION LEAVES ∣_∣i AND ∣_∣↑ UNCHANGED AND REDUCES ∣_∣↝
 
-run-↑-≡ : {P : Γ ⊢P⦂} (r : P ↝↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣↑ ≡ ∣ sP ∣↑
-run-↑-≡ (run r) (_ , _ , sn _ _) = refl
-run-↑-≡ (context-∥ₗ r) ((_ , _ , sn _ _) ,  _) = refl
-run-↑-≡ (context-∥ᵣ r) ( _ , sP) = cong (_ +_) (run-↑-≡ r sP)
+run-i-≡ : (r : P ↝↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣i ≡ ∣ sP ∣i
+run-i-≡ (run r) (run (_ , _ , sn _ _)) = refl
+run-i-≡ (context-∥ₗ r) ((_ , _ , sn _ _) ∥ _) = refl
+run-i-≡ (context-∥ᵣ r) (_ ∥ sP) = cong (_ +_) (run-i-≡ r sP)
+
+run-↑-≡ : (r : P ↝↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣↑ ≡ ∣ sP ∣↑
+run-↑-≡ (run r) (run (_ , _ , sn _ _)) = refl
+run-↑-≡ (context-∥ₗ r) ((_ , _ , sn _ _) ∥ _) = refl
+run-↑-≡ (context-∥ᵣ r) (_ ∥ sP) = cong (_ +_) (run-↑-≡ r sP)
+
+run-↝-< : (r : P ↝↝ₚ-↝ Q) (sP : sn* P) → ∣ sn*-run r sP ∣↝ < ∣ sP ∣↝
+run-↝-< (run _) (run (_ , _ , sn _ _)) = ≤-refl
+run-↝-< (context-∥ₗ _) ((_ , _ , sn _ _) ∥ _) = ≤-refl
+run-↝-< (context-∥ᵣ r) (_ ∥ sP) = +-monoʳ-< _ (run-↝-< r sP)
+
+
+-- A PREDICATE EXPRESSING THAT AN INTERRUPT HANDLER IS SET UP
+-- IN AT LEAST ONE OF THE INDIVIDUAL COMPUTATIONS IN A PARALLEL PROCESS,
+-- AND PROOF THAT IT IS DECIDABLE
 
 has : Σₛ → Γ ⊢P⦂ → Set
 has op (run M) = [ op ]ₗ ∈ᵢ i-of (type-of M)
@@ -177,37 +199,39 @@ has? op (M ∥ P) with [ op ]ₗ ∈ᵢ? i-of (type-of M)
 
 module _ (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) where
 
-  ∣∣ₘ-↓-≤ : (M : Γ ⊢M⦂ C) → ∣ ↓ op V M ∣ₘ ≤ ∣ M ∣ₘ
-  ∣∣ₘ-↓-≤ M = size-↓ₑ-≤ (isf-of (type-of M))
+  -- ACTING WITH AN INTERRUPT NEVER INCREASES ∣_∣i,
+  -- AND DECREASES IT OR LEAVES IT UNCHANGED DEPENDING ON WHETHER A HANDLER FOR THAT INTERRUPT
+  -- IS SET UP IN AT LEAST ONE OF THE COMPUTATIONS
 
-  ∣∣ₘ-↓-< : (M : Γ ⊢M⦂ C) → [ op ]ₗ ∈ᵢ i-of (type-of M) → ∣ ↓ op V M ∣ₘ < ∣ M ∣ₘ
-  ∣∣ₘ-↓-< M = size-↓ₑ-< (isf-of (type-of M))
+  sn*-↓ₜ-i-≤ : (sP : sn* P) → ∣ sn*-↓ₜ op V sP ∣i ≤ ∣ sP ∣i
+  sn*-↓ₜ-i-≤ (run {M = M} _) = size-↓ₑ-≤ (isf-of (type-of M))
+  sn*-↓ₜ-i-≤ (_∥_ {M = M} _ sP) = +-mono-≤ (size-↓ₑ-≤ (isf-of (type-of M))) (sn*-↓ₜ-i-≤ sP)
 
-  ∣∣ₘ-↓-≡ : (M : Γ ⊢M⦂ C) → ¬ [ op ]ₗ ∈ᵢ i-of (type-of M) → ∣ ↓ op V M ∣ₘ ≡ ∣ M ∣ₘ
-  ∣∣ₘ-↓-≡ M h = size-↓ₑ-≡ (isf-of (type-of M)) h
+  sn*-↓ₜ-i-< : (sP : sn* P) → has op P → ∣ sn*-↓ₜ op V sP ∣i < ∣ sP ∣i
+  sn*-↓ₜ-i-< (run {M = M} _) h = size-↓ₑ-< (isf-of (type-of M)) h
+  sn*-↓ₜ-i-< (_∥_ {M = M} _ sP) (inj₁ h) = +-mono-<-≤ (size-↓ₑ-< (isf-of (type-of M)) h) (sn*-↓ₜ-i-≤ sP)
+  sn*-↓ₜ-i-< (_∥_ {M = M} _ sP) (inj₂ h) = +-mono-≤-< (size-↓ₑ-≤ (isf-of (type-of M))) (sn*-↓ₜ-i-< sP h)
 
-  sn*-↓ₜ-i-≤ : {P : Γ ⊢P⦂} (sP : sn* P) → ∣ sn*-↓ₜ op V sP ∣i ≤ ∣ sP ∣i
-  sn*-↓ₜ-i-≤ {P = run M} sP = ∣∣ₘ-↓-≤ M
-  sn*-↓ₜ-i-≤ {P = M ∥ P} (_ , sP) = +-mono-≤ (∣∣ₘ-↓-≤ M) (sn*-↓ₜ-i-≤ sP)
-
-  sn*-↓ₜ-i-< : {P : Γ ⊢P⦂} (sP : sn* P) → has op P → ∣ sn*-↓ₜ op V sP ∣i < ∣ sP ∣i
-  sn*-↓ₜ-i-< {P = run M} _ h = ∣∣ₘ-↓-< M h
-  sn*-↓ₜ-i-< {P = M ∥ P} (_ , sP) (inj₁ h) = +-mono-<-≤ (∣∣ₘ-↓-< M h) (sn*-↓ₜ-i-≤ sP)
-  sn*-↓ₜ-i-< {P = M ∥ P} (_ , sP) (inj₂ h) = +-mono-≤-< (∣∣ₘ-↓-≤ M) (sn*-↓ₜ-i-< sP h)
-
-  sn*-↓ₜ-i-≡ : {P : Γ ⊢P⦂} (sP : sn* P) → ¬ has op P → ∣ sn*-↓ₜ op V sP ∣i ≡ ∣ sP ∣i
-  sn*-↓ₜ-i-≡ {P = run M} _ h = ∣∣ₘ-↓-≡ M h
-  sn*-↓ₜ-i-≡ {P = M ∥ P} (sM , sP) h with [ op ]ₗ ∈ᵢ? i-of (type-of M)
+  sn*-↓ₜ-i-≡ : (sP : sn* P) → ¬ has op P → ∣ sn*-↓ₜ op V sP ∣i ≡ ∣ sP ∣i
+  sn*-↓ₜ-i-≡ (run {M = M} _) h = size-↓ₑ-≡ (isf-of (type-of M)) h
+  sn*-↓ₜ-i-≡ (_∥_ {M = M} _ sP) h with [ op ]ₗ ∈ᵢ? i-of (type-of M)
   ... | yes a = ⊥-elim (h (inj₁ a))
-  ... | no  a rewrite sym (∣∣ₘ-↓-≡ M a) = cong (_ +_) (sn*-↓ₜ-i-≡ sP (h ∘ inj₂))
+  ... | no  a rewrite sym (size-↓ₑ-≡ (isf-of (type-of M)) a) = cong (_ +_) (sn*-↓ₜ-i-≡ sP (h ∘ inj₂))
 
-  sn*-↓ₜ-↑-≡ : {P : Γ ⊢P⦂} (sP : sn* P) → ¬ has op P → ∣ sn*-↓ₜ op V sP ∣↑ ≡ ∣ sP ∣↑
-  sn*-↓ₜ-↑-≡ {P = run M} (_ , _ , sn _ _) h with [ op ]ₗ ∈ᵢ? i-of (type-of M)
+
+  -- IF A HANDLER FOR AN INTERRUPT IS NOT SET UP IN ANY COMPUTATION,
+  -- THEN ACTING WITH THAT INTERRUPT LEAVES ∣_∣↑ UNCHANGED
+
+  sn*-↓ₜ-↑-≡ : (sP : sn* P) → ¬ has op P → ∣ sn*-↓ₜ op V sP ∣↑ ≡ ∣ sP ∣↑
+  sn*-↓ₜ-↑-≡ (run {M = M} (_ , _ , sn _ _)) h with [ op ]ₗ ∈ᵢ? i-of (type-of M)
   ... | yes a = ⊥-elim (h a)
   ... | no  a = refl
-  sn*-↓ₜ-↑-≡ {P = M ∥ P} (sM , sP) h with [ op ]ₗ ∈ᵢ? i-of (type-of M)
+  sn*-↓ₜ-↑-≡ (_∥_ {M = M} _ sP) h with [ op ]ₗ ∈ᵢ? i-of (type-of M)
   ... | yes a = ⊥-elim (h (inj₁ a))
   ... | no  a = cong (_ +_) (sn*-↓ₜ-↑-≡ sP (h ∘ inj₂))
+
+
+  -- SENDING A SIGNAL EITHER DECREASES ∣_∣i OR LEAVES ∣_∣i UNCHANGED AND DECREASES ∣_∣↑
 
   ↑-∥-i-< : (r : P ↝↝ₚ-[ op , V ] Q)
             (sP : sn* P) →
@@ -216,14 +240,14 @@ module _ (op : Σₛ) (V : Γ ⊢V⦂ ```(payload op)) where
             ⊎
             ∣ sn*-↑-∥ r sP ∣i ≡ ∣ sP ∣i × ∣ sn*-↑-∥ r sP ∣↑ < ∣ sP ∣↑
 
-  ↑-∥-i-< (↑-∥ₗ {M = M} {P = P}) ((suc _ , _ , sn _ _) , sP) with has? op P
+  ↑-∥-i-< (↑-∥ₗ {M = M} {P = P}) ((suc _ , _ , sn _ _) ∥ sP) with has? op P
   ... | yes a = inj₁ (+-monoʳ-< _ (sn*-↓ₜ-i-< sP a))
   ... | no  a rewrite sym (sn*-↓ₜ-↑-≡ sP a) = inj₂ (cong (_ +_) (sn*-↓ₜ-i-≡ sP a) , ≤-refl)
-  ↑-∥-i-< (↑-∥ᵣ {M = M} r) (sM , sP) with ↑-∥-i-< r sP
-  ... | inj₁ le = inj₁ (+-mono-≤-< (∣∣ₘ-↓-≤ M) le)
+  ↑-∥-i-< (↑-∥ᵣ {M = M} r) (sM ∥ sP) with ↑-∥-i-< r sP
+  ... | inj₁ le = inj₁ (+-mono-≤-< (size-↓ₑ-≤ (isf-of (type-of M))) le)
   ... | inj₂ (eq , le) with [ op ]ₗ ∈ᵢ? i-of (type-of M)
-  ...   | yes a rewrite eq = inj₁ (+-monoˡ-< _ (∣∣ₘ-↓-< M a))
-  ...   | no  a rewrite eq = inj₂ (cong (_+ _) (∣∣ₘ-↓-≡ M a) , +-monoʳ-< _ le)
+  ...   | yes a rewrite eq = inj₁ (+-monoˡ-< _ (size-↓ₑ-< (isf-of (type-of M)) a))
+  ...   | no  a rewrite eq = inj₂ (cong (_+ _) (size-↓ₑ-≡ (isf-of (type-of M)) a) , +-monoʳ-< _ le)
 
 
 -- STRONG NORMALISATION PREDICATE FOR PARALLEL COMPUTATIONS
@@ -232,7 +256,7 @@ data SNₚ (P : Γ ⊢P⦂) : Set where
   sn : ({Q : Γ ⊢P⦂} → P ↝↝ₚ Q → SNₚ Q) → SNₚ P
 
 
--- STRONG NORMALISATION PROOF
+-- MAIN INDUCTION COMBINING THE ABOVE RESULTS
 
 strong-normₚ' : (sP : sn* P) →
                 Acc _<_ ∣ sP ∣i →
@@ -243,17 +267,17 @@ strong-normₚ' : (sP : sn* P) →
 
 strong-normₚ' sP _ _ _ (↑-∥ r) with ↑-∥-i-< _ _ r sP
 strong-normₚ' sP (acc ai) _ _ (↑-∥ r)  | inj₁ le = sn (strong-normₚ' (sn*-↑-∥ r sP) (ai le) (<-wellFounded _) (<-wellFounded _))
-strong-normₚ' sP ai (acc a↑) _ (↑-∥ r) | inj₂ (eq , le) rewrite sym eq = sn (strong-normₚ' _ ai (a↑ le) (<-wellFounded _))
+strong-normₚ' sP ai (acc a↑) _ (↑-∥ r) | inj₂ (eq , le) rewrite sym eq = sn (strong-normₚ' (sn*-↑-∥ r sP) ai (a↑ le) (<-wellFounded _))
 strong-normₚ' sP ai a↑ (acc a↝) (run r)
   rewrite sym (run-i-≡ r sP) | sym (run-↑-≡ r sP) =
-  sn (strong-normₚ' _ ai a↑ (a↝ (run-↝-< r sP)))
+  sn (strong-normₚ' (sn*-run r sP) ai a↑ (a↝ (run-↝-< r sP)))
 
 
 -- ALL PARALLEL PROCESSES ARE STRONGLY NORMALISING
 
 all-sn* : (P : Γ ⊢P⦂) → sn* P
-all-sn* (run M) = strong-norm-Σ (strong-norm M)
-all-sn* (M ∥ P) = strong-norm-Σ (strong-norm M) , all-sn* P
+all-sn* (run M) = run (strong-norm-Σ (strong-norm M))
+all-sn* (M ∥ P) = strong-norm-Σ (strong-norm M) ∥ all-sn* P
 
 strong-normₚ : (P : Γ ⊢P⦂) → SNₚ P
 strong-normₚ P = sn (strong-normₚ' (all-sn* P) (<-wellFounded _) (<-wellFounded _) (<-wellFounded _))

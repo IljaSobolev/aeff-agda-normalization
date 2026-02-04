@@ -50,7 +50,8 @@ infix-↓-sub s (await ff) = await (infix-↓-sub _ ff)
 infix-↓-sub s (promise ff) = promise (infix-↓-sub _ ff)
 
 
--- IF M DOES NOT HAVE A HANDLER FOR op, THEN AN INTERRUPT op PRESERVES THE STRUCTURE OF M
+-- IF M DOES NOT HAVE A HANDLER FOR AN INTERRUPT,
+-- THEN ACTING WITH THAT INTERRUPT PRESERVES THE STRUCTURE OF M
 
 infix-↓-↝ : {M : Γ ⊢M⦂ X ! (i , isf)}
          {N : Γ ⊢M⦂ X ! (op ↓ₑ i , fin-↓ₑ op isf)} →
@@ -96,7 +97,7 @@ infix-↓-#↑ (promise ff) = z≤n
 ... | inj₂ (_ , ff , r') = sn (≡-↓-sn' u (sM r') (sN r) ff) (≤-trans (infix-↓-#↑ ff) (sn-#↑ (sM r')))
 
 
--- ACTING WITH op ON A TERM THAT HAS NO HANDLER FOR op
+-- ACTING WITH AN INTERRUPT ON A TERM THAT HAS NO HANDLER FOR THAT INTERRUPT
 -- DOES NOT INCREASE THE MAXIMUM NUMBER OF OUTGOING SIGNALS
 
 {- PROPOSITION 23 -}
@@ -142,18 +143,18 @@ data sn* : Γ ⊢P⦂ → Set where
   ↑   : sn* P → sn* (↑ op V P)
   ↓   : sn* P → sn* (↓ op V P)
 
-sn*↝ : P ↝↝ₚ Q → sn* P → sn* Q
-sn*↝ (run r) (run (_ , _ , sn f _)) = run (_ , _ , f r)
-sn*↝ (↑-∥ₗ _ _ _) (↑ sP ∥ sQ) = ↑ (sP ∥ ↓ sQ)
-sn*↝ (↑-∥ᵣ _ _ _) (sP ∥ ↑ sQ) = ↑ (↓ sP ∥ sQ)
-sn*↝ (↓-run _ _) (↓ (run s)) = run (sn-↓ s)
-sn*↝ (↓-∥ _ _ _) (↓ (sP ∥ sQ)) = ↓ sP ∥ ↓ sQ
-sn*↝ (↓-↑ _ _ _) (↓ (↑ sP)) = ↑ (↓ sP)
-sn*↝ (↑ _ _) (run sM) = ↑ (run (sn-strip-↑ sM))
-sn*↝ (context-∥ₗ r) (sP ∥ sQ) = sn*↝ r sP ∥ sQ
-sn*↝ (context-∥ᵣ r) (sP ∥ sQ) = sP ∥ sn*↝ r sQ
-sn*↝ (context-↑ r) (↑ sP) = ↑ (sn*↝ r sP)
-sn*↝ (context-↓ r) (↓ sP) = ↓ (sn*↝ r sP)
+sn*-↝ : P ↝↝ₚ Q → sn* P → sn* Q
+sn*-↝ (run r) (run (_ , _ , sn f _)) = run (_ , _ , f r)
+sn*-↝ (↑-∥ₗ _ _ _) (↑ sP ∥ sQ) = ↑ (sP ∥ ↓ sQ)
+sn*-↝ (↑-∥ᵣ _ _ _) (sP ∥ ↑ sQ) = ↑ (↓ sP ∥ sQ)
+sn*-↝ (↓-run _ _) (↓ (run s)) = run (sn-↓ s)
+sn*-↝ (↓-∥ _ _ _) (↓ (sP ∥ sQ)) = ↓ sP ∥ ↓ sQ
+sn*-↝ (↓-↑ _ _ _) (↓ (↑ sP)) = ↑ (↓ sP)
+sn*-↝ (↑ _ _) (run sM) = ↑ (run (sn-strip-↑ sM))
+sn*-↝ (context-∥ₗ r) (sP ∥ sQ) = sn*-↝ r sP ∥ sQ
+sn*-↝ (context-∥ᵣ r) (sP ∥ sQ) = sP ∥ sn*-↝ r sQ
+sn*-↝ (context-↑ r) (↑ sP) = ↑ (sn*-↝ r sP)
+sn*-↝ (context-↓ r) (↓ sP) = ↓ (sn*-↝ r sP)
 
 
 -- INDUCTION MEASURES
@@ -209,7 +210,7 @@ data ↝-type : Set where
 ↑-run-≡i : (r : P ↝↝ₚ Q) (sP : sn* P) →
            ↝-type-of r ≡ ↑-run →
            ------------------------
-           ∣ sn*↝ r sP ∣i ≡ ∣ sP ∣i
+           ∣ sn*-↝ r sP ∣i ≡ ∣ sP ∣i
 
 ↑-run-≡i (↑ _ _) (run _) _ = refl
 ↑-run-≡i (context-∥ₗ r) (sP ∥ _) eq = cong (_+ _) (↑-run-≡i r sP eq)
@@ -220,7 +221,7 @@ data ↝-type : Set where
 ↑-run-<↑ : (r : P ↝↝ₚ Q) (sP : sn* P) →
            ↝-type-of r ≡ ↑-run →
            ------------------------
-           ∣ sn*↝ r sP ∣↑ < ∣ sP ∣↑
+           ∣ sn*-↝ r sP ∣↑ < ∣ sP ∣↑
 
 ↑-run-<↑ (↑ _ _) (run sM) _ = sn-strip-↑-< sM
 ↑-run-<↑ (context-∥ₗ r) (sP ∥ _) eq = +-monoˡ-< _ (↑-run-<↑ r sP eq)
@@ -234,9 +235,9 @@ data ↝-type : Set where
 ↓-run-< : (r : P ↝↝ₚ Q) (sP : sn* P) →
           ↝-type-of r ≡ ↓-run →
           -------------------------
-          ∣ sn*↝ r sP ∣i < ∣ sP ∣i
+          ∣ sn*-↝ r sP ∣i < ∣ sP ∣i
           ⊎
-          ∣ sn*↝ r sP ∣i ≡ ∣ sP ∣i × ∣ sn*↝ r sP ∣↑ ≡ ∣ sP ∣↑
+          ∣ sn*-↝ r sP ∣i ≡ ∣ sP ∣i × ∣ sn*-↝ r sP ∣↑ ≡ ∣ sP ∣↑
 
 ↓-run-< (↓-run {op = op} _ M) (↓ (run sM)) _ with [ op ]ₗ ∈ᵢ? i-of (type-of M)
 ... | yes a = inj₁ (size-↓ₑ-< (isf-of (type-of M)) a)
@@ -276,7 +277,7 @@ data ↝-type : Set where
 ↝-shape-≡i : (r : P ↝↝ₚ Q) (sP : sn* P) →
              ↝-type-of r ≡ ↝-shape →
              ------------------------
-             ∣ sn*↝ r sP ∣i ≡ ∣ sP ∣i
+             ∣ sn*-↝ r sP ∣i ≡ ∣ sP ∣i
 
 ↝-shape-≡i (↑-∥ₗ _ _ _) (↑ _ ∥ _) _ = refl
 ↝-shape-≡i (↑-∥ᵣ _ _ _) (_ ∥ ↑ _) _ = refl
@@ -290,7 +291,7 @@ data ↝-type : Set where
 ↝-shape-≡↑ : (r : P ↝↝ₚ Q) (sP : sn* P) →
              ↝-type-of r ≡ ↝-shape →
              ------------------------
-             ∣ sn*↝ r sP ∣↑ ≡ ∣ sP ∣↑
+             ∣ sn*-↝ r sP ∣↑ ≡ ∣ sP ∣↑
 
 ↝-shape-≡↑ (↑-∥ₗ _ _ _) (↑ _ ∥ _) _ = refl
 ↝-shape-≡↑ (↑-∥ᵣ _ _ _) (_ ∥ ↑ _) _ = refl
@@ -328,7 +329,7 @@ data ↝-type : Set where
 ↝-run-≡i : (r : P ↝↝ₚ Q) (sP : sn* P) →
            ↝-type-of r ≡ ↝-run →
            ------------------------
-           ∣ sn*↝ r sP ∣i ≡ ∣ sP ∣i
+           ∣ sn*-↝ r sP ∣i ≡ ∣ sP ∣i
 
 ↝-run-≡i (run _) (run (_ , _ , sn _ _)) _ = refl
 ↝-run-≡i (context-∥ₗ r) (sP ∥ _) eq = cong (_+ _) (↝-run-≡i r sP eq)
@@ -339,7 +340,7 @@ data ↝-type : Set where
 ↝-run-≡↑ : (r : P ↝↝ₚ Q) (sP : sn* P) →
            ↝-type-of r ≡ ↝-run →
            ------------------------
-           ∣ sn*↝ r sP ∣↑ ≡ ∣ sP ∣↑
+           ∣ sn*-↝ r sP ∣↑ ≡ ∣ sP ∣↑
 
 ↝-run-≡↑ (run _) (run (_ , _ , sn _ _)) _ = refl
 ↝-run-≡↑ (context-∥ₗ r) (sP ∥ _) eq = cong (_+ _) (↝-run-≡↑ r sP eq)
@@ -368,7 +369,7 @@ data ↝-type : Set where
 ↝-run-<↝ : (r : P ↝↝ₚ Q) (sP : sn* P) →
            ↝-type-of r ≡ ↝-run →
            ------------------------
-           ∣ sn*↝ r sP ∣↝ < ∣ sP ∣↝
+           ∣ sn*-↝ r sP ∣↝ < ∣ sP ∣↝
 
 ↝-run-<↝ (run _) (run (_ , _ , sn _ _)) _ = ≤-refl
 ↝-run-<↝ (context-∥ₗ r) (sP ∥ _) eq = +-monoˡ-< _ (↝-run-<↝ r sP eq)
@@ -397,25 +398,25 @@ strong-normₚ' sP ai a↑ ap a↝ r with ↝-type-of r in eq
 strong-normₚ' sP ai (acc a↑) _ _ r | ↑-run
   rewrite
   sym (↑-run-≡i r sP eq) =
-  sn (strong-normₚ' (sn*↝ r sP) ai (a↑ (↑-run-<↑ r sP eq)) (<ₗₑₓ-wf _) (<-wf _))
+  sn (strong-normₚ' (sn*-↝ r sP) ai (a↑ (↑-run-<↑ r sP eq)) (<ₗₑₓ-wf _) (<-wf _))
 strong-normₚ' sP ai a↑ (acc ap) _ r | ↝-shape
   rewrite
   sym (↝-shape-≡i r sP eq) |
   sym (↝-shape-≡↑ r sP eq) =
-  sn (strong-normₚ' (sn*↝ r sP) ai a↑ (ap (↝-shape-<p r eq)) (<-wf _))
+  sn (strong-normₚ' (sn*-↝ r sP) ai a↑ (ap (↝-shape-<p r eq)) (<-wf _))
 strong-normₚ' sP ai a↑ ap (acc a↝) r | ↝-run
   rewrite
   sym (↝-run-≡i r sP eq) |
   sym (↝-run-≡↑ r sP eq) |
   sym (↝-run-≡p r eq) =
-  sn (strong-normₚ' (sn*↝ r sP) ai a↑ ap (a↝ (↝-run-<↝ r sP eq)))
+  sn (strong-normₚ' (sn*-↝ r sP) ai a↑ ap (a↝ (↝-run-<↝ r sP eq)))
 strong-normₚ' sP ai a↑ (acc ap) a↝ r | ↓-run with ↓-run-< r sP eq
 ... | inj₁ x
   with acc ai ← ai =
-  sn (strong-normₚ' (sn*↝ r sP) (ai x) (<-wf _) (<ₗₑₓ-wf _) (<-wf _))
+  sn (strong-normₚ' (sn*-↝ r sP) (ai x) (<-wf _) (<ₗₑₓ-wf _) (<-wf _))
 ... | inj₂ (x , y)
   rewrite sym x | sym y =
-  sn (strong-normₚ' (sn*↝ r sP) ai a↑ (ap (↓-run-<p r eq)) (<-wf _))
+  sn (strong-normₚ' (sn*-↝ r sP) ai a↑ (ap (↓-run-<p r eq)) (<-wf _))
 
 
 -- ALL PARALLEL PROCESSES ARE STRONGLY NORMALISING
