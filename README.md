@@ -18,8 +18,6 @@
 
     - `Preservation.agda` - small-step operational semantics for computations (also serves as a preservation proof)
 
-    - `AwaitingComputations.agda` - characterisation of computations that are temporarily blocked awaiting a promise
-
     - `Progress.agda` - proof of progress for the small-step operational semantics of computations
 
     - `ProcessPreservation.agda` - small-step operational semantics for processes (also serves as a preservation proof)
